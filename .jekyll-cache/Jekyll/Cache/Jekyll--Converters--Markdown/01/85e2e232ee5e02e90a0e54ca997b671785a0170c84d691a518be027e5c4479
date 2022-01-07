@@ -1,0 +1,53 @@
+I"i<h1 id="how-does-the-insertion-sort-algorithm-works">How does the insertion sort algorithm works?</h1>
+
+<p>As you can see in the below insertion sort implementation the list INTEGERS is sorted in place; that is, without creating an additional list which would require additional space.</p>
+
+<p>At each iteration of the for loop \(key\) holds the current value which in the beginning is initialized to \(i = 1\); moreover, in the beginning \(j = i - 1\).</p>
+
+<p>Essentially, this algorithm sorts the input by shifting, through the while loop, \(integers[i-1]\) , \(integers[i-2]\), \(integers[i-3]\) and so one by one position to the right until \(key\) is inserted in the correct position.</p>
+
+<h3 id="loop-invariant">Loop Invariant</h3>
+<p>A loop invariant is a pattern that holds before the first iteration, is maintained at each iteration and it holds when the loop terminates. In this case, the loop invariant is the observation that in the beginning of each iteration the subarray \(integers[\) 0 … i - 1 \(]\) is sorted comprised of the original elements i.e., \(0 ... i - 1\) in the list \(integers\).</p>
+
+<h4 id="initialization">Initialization</h4>
+<p>Before the first iteration \(i = 1\); consequently, the subarray \(integers[0 ...i - 1]\) is sorted since \(0 ... i - 1 = 0\) so the subarray \(integers[0]\) is sorted.</p>
+
+<h4 id="maintenance">Maintenance</h4>
+<p>As I said above, the algorithm works by shifting the elements \(i - 1\), \(i - 2\), \(i - 3\) and so on by one position to the right until it finds the correct position of \(i\); so, the subarray comprised of \(1 ... i\) is sorted.</p>
+
+<h4 id="termination">Termination</h4>
+<p>The sublist comprised of the original elements \(0 ... n\) is now sorted. Where \(n\) is the length of \(integers\).</p>
+
+<h3 id="here-is-the-implementation-in-python">Here is the implementation in Python</h3>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">unittest2</span>
+
+<span class="k">def</span> <span class="nf">insertion_sort</span><span class="p">(</span><span class="n">integers</span><span class="p">):</span>
+    <span class="s">"""
+    Sorts the list INTEGERS.
+
+    :param integers: list of integers
+    :returns: sorted list of integers
+    """</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">integers</span><span class="p">)):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">integers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">key</span><span class="p">:</span>
+            <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">return</span> <span class="n">integers</span>
+
+<span class="k">class</span> <span class="nc">test_insertion_sort</span><span class="p">(</span><span class="n">unittest2</span><span class="p">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">test_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">"""
+        Test if the insertion sort algorithm works.
+        """</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">assertEqual</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span><span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">unittest2</span><span class="p">.</span><span class="n">main</span><span class="p">()</span></code></pre></figure>
+
+:ET
