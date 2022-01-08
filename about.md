@@ -6,7 +6,9 @@ permalink: /about/
 
 Hello!
 
-I am a software developer from Seattle, WA.
+I am Job -- a software developer from Seattle, WA.
+
+![Picture of me](/assets/IMG_0611.jpg)
 
 I am interested in compilers, PL, formal methods, and functional programming.
 
