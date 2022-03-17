@@ -3,9 +3,7 @@ layout: post
 title: "The Mergesort Algorithm"
 author: Job Hernandez
 ---
-# Mergesort work
-
-## How does mergesort work?
+# How does mergesort work?
 
 Mergesort is implemented using a technique called Divide and Conquer. In the mergesort algorithm you Divide the problem by creating two sub-arrays and you Conquer by sorting both of these sub-arrays with mergesort and, finally, you combine these two sorted sub-arrays. Divide and Conquer is recursive in nature.
 
