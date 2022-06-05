@@ -4,16 +4,21 @@ title: About
 permalink: /about/
 ---
 
-Hello!
+### Hello!
 
 I am Job -- a software developer from Seattle, WA.
 
+Fortunately, I am have learned to appreciate programming independent of the programming language I am using and the program I am building; nevertheless, I have a big interest in functional programming, namely Lisp and Haskell. 
+
+Over the years, I have worked on web development, computer algebra, and compilers and I have gotten a kick out solving problems in these domains, but I am very interested in compilers because these systems are large and complex. 
+
+The classic textbook "Structure and Interpretation of Computer Programs" changed my life; reading this book -- when I was first starting out -- made me cry of joy. 
+
+Please reach out on twitter if you have any questions:
+
+### [Twitter](https://twitter.com/sphere_in_space)
+### [Resume](/media/Resume.pdf)
+
+
+
 ![Picture of me](/assets/IMG_0611.jpg)
-
-I am interested in compilers, PL, formal methods, and functional programming.
-
-That is, I want to prove programs correct in Haskell! I have also written some Lisp and some Python.
-
-If you have any questions reach out to me at hj93@protonmail.com or through Twitter. 
-
-Thanks for reading!
