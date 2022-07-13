@@ -18,7 +18,3 @@ Please reach out on twitter if you have any questions:
 
 ### [Twitter](https://twitter.com/sphere_in_space)
 ### [Resume](/media/Resume.pdf)
-
-
-
-<img src="assets/IMG_0611.jpg" width="400" height="400">
