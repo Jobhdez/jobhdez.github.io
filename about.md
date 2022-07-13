@@ -21,4 +21,4 @@ Please reach out on twitter if you have any questions:
 
 
 
-![Picture of me](/assets/IMG_0611.jpg)
+<img src="assets/ajob.jpeg" width="100" height="100">
