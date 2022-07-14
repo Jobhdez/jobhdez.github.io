@@ -6,6 +6,8 @@ permalink: /about/
 
 ### Hello!
 
+![image](/assets/ajob.jpeg)
+
 I am Job -- a software developer from Seattle, WA.
 
 Fortunately, I am have learned to appreciate programming independent of the programming language I am using and the program I am building; nevertheless, I have a big interest in functional programming, namely Lisp and Haskell. 
@@ -19,4 +21,4 @@ Please reach out on twitter if you have any questions:
 ### [Twitter](https://twitter.com/sphere_in_space)
 ### [Resume](/media/Resume.pdf)
 
-![image](/assets/ajob.jpeg)
+
