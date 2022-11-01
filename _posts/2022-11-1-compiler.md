@@ -109,7 +109,9 @@ And finally the `backend` takes this intermediate language and generates the Lis
            (+ (AREF (MAKE-ARRAY 3 (4 5 6)) I)
               (AREF (MAKE-ARRAY 3 (5 6 7)) I))))
  NEWA)
- ```
+```
+
+
  
  ## Finally
  
@@ -118,6 +120,7 @@ And finally the `backend` takes this intermediate language and generates the Lis
  
  One way to improve this compiler is to implement an optimizer. Some optimizations include `loop unrolling` and `loop fusion`, `SIMD vectorization`. 
  Another idea to to generate efficient assembly.
+ 
  
  ## References
  
