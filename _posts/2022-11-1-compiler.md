@@ -101,7 +101,7 @@ And finally the `backend` takes this intermediate language and generates the Lis
 `(compile-lisp lisp-interlan)` ->
 
 
-```common-lisp
+```
 (PROGN
  (SETQ NEWA (MAKE-ARRAY 3))
  (DOTIMES (I 3)
