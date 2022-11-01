@@ -3,13 +3,13 @@ layout: post
 title: "A Linear Algebra Compiler"
 author: Job Hernandez
 ---
-# Intro
+### Intro
 
 Compilers are fun to build, so you should try to build one. Lately, I have been working on a linear algebra compiler[1]; it currently compiles a
 simple linear algebra language called `Yotta` to Common Lisp and C. I would like to explain how this compiler works so you can use it as a model for
 understanding way more advanced compilers.
 
-## Architecture
+### Architecture
 
 The architecture of a compiler is comprised of a frontend, optimizer, and backend. Frontend -> Optimizer -> Backend. For now, we will skip the 
 optimizer part since I have not implemented this component.
@@ -113,7 +113,7 @@ And finally the `backend` takes this intermediate language and generates the Lis
 
 
  
- # Finally
+ #### Finally
  
  There you have it -- a brief and simple explanation of how a simple compiler works. Production compilers are far more complex but they follow the same 
  patterns. Obviously, `Yotta` is a simplified version of the production compilers but I hope this helps you start.
@@ -122,6 +122,6 @@ And finally the `backend` takes this intermediate language and generates the Lis
  Another idea to to generate efficient assembly.
  
  
- # References
+ ### References
  
  [1] [Yotta](https://github.com/Jobhdez/Yotta)
