@@ -112,6 +112,7 @@ And finally the `backend` takes this intermediate language and generates the Lis
  ```
  
  ## Finally
+ 
  There you have it -- a brief and simple explanation of how a simple compiler works. Production compilers are far more complex but they follow the same 
  patterns. Obviously, `Yotta` is a simplified version of the production compilers but I hope this helps you start.
  
@@ -119,4 +120,5 @@ And finally the `backend` takes this intermediate language and generates the Lis
  Another idea to to generate efficient assembly.
  
  ## References
+ 
  [1] [Yotta](https://github.com/Jobhdez/Yotta)
