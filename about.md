@@ -19,6 +19,5 @@ The classic textbook "Structure and Interpretation of Computer Programs" changed
 Please reach out on twitter if you have any questions:
 
 ### [Twitter](https://twitter.com/sphere_in_space)
-### [Resume](/media/Resume.pdf)
 
 
