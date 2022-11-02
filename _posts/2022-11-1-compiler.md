@@ -9,6 +9,10 @@ Compilers are fun to build, so you should try to build one. Lately, I have been 
 simple linear algebra language called `Yotta` to Common Lisp and C. I would like to explain how this compiler works so you can use it as a model for
 understanding more advanced compilers.
 
+### My Experience
+
+I have just started my compiler journey. I have written a couple of other small compilers: a Scheme to Lambda Calculus compiler and a big chunk of a Scheme to C compiler. But lately I have been reading parts of the textbooks `Engineering a Compiler` and a section from the second edition of the `Dragon Book` and parts of `Essentials of Compiliation`, a Racket compiler book. When I started reading these books I was a bit confused as to how intermediate languages/representations were represented but after a while I learned that intermediate languages could be represented as abstract syntax trees or flow graphs. This was one of my moments of clarity. I find linear algebra compilers interesting because such compilers can be used for scientific computing; moreover, I find compilers interesting because compilers are large and complex systems and I enjoy working on hard problems. Overal working on this linear algebra compiler has been interesting and a good experience but there are several things for which I need a better understanding.
+
 ### Architecture
 
 The architecture of a compiler is comprised of a frontend, optimizer, and backend. Frontend -> Optimizer -> Backend. For now, we will skip the 
