@@ -28,15 +28,14 @@ Given the tokens then the `parse tree` will be generated; the parse tree is a tr
 specified by the grammar. An example of how a grammar is defined is the following:
 
 ```
-exp ::= scalar | vector | matrice | vector + vector 
-     |  vector - vector | vector * vector | matrice + matrice 
-     |  matrice * matrice | matrice - matrice | var | var = exp
+exp ::= scalar | vector | matrix | exp + exp 
+     |  exp - exp| exp * exp | var | var = exp
      
 scalar ::= int
 
 vector ::= [int]
 
-matrice ::= [[int]]
+matrix::= [[int]]
 ```
 
 All this is saying is that an `exp` is either a scalar, vector, matrix, or  a vector + vector operation, etc. The parser knows about this grammar and constructs
