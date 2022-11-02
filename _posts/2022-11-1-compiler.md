@@ -101,13 +101,14 @@ And finally the `backend` takes this intermediate language and generates the Lis
 `(compile-lisp lisp-interlan)` ->
 
 
-`
+```
 (PROGN
  (SETQ NEWA (MAKE-ARRAY 3))
  (DOTIMES (I 3)
    (SETF (AREF NEWA I)
            (+ (AREF (MAKE-ARRAY 3 (4 5 6)) I)
-              (AREF (MAKE-ARRAY 3 (5 6 7)) I))))))`
+              (AREF (MAKE-ARRAY 3 (5 6 7)) I))))))
+ ```
 
 
  
@@ -118,6 +119,6 @@ And finally the `backend` takes this intermediate language and generates the Lis
  Another idea to to generate efficient assembly.
  
  
- ###   References
+**References**
  
  [1] [Yotta](https://github.com/Jobhdez/Yotta)
