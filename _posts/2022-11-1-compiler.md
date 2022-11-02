@@ -101,19 +101,15 @@ And finally the `backend` takes this intermediate language and generates the Lis
 `(compile-lisp lisp-interlan)` ->
 
 
-```
+`
 (PROGN
  (SETQ NEWA (MAKE-ARRAY 3))
  (DOTIMES (I 3)
    (SETF (AREF NEWA I)
            (+ (AREF (MAKE-ARRAY 3 (4 5 6)) I)
-              (AREF (MAKE-ARRAY 3 (5 6 7)) I))))
- NEWA)
-```
+              (AREF (MAKE-ARRAY 3 (5 6 7)) I))))))`
 
 
- 
- ###   Finally
  
  There you have it -- a brief and simple explanation of how a simple compiler works. Production compilers are far more complex but they follow the same 
  patterns. Obviously, `Yotta` is a simplified version of the production compilers but I hope this helps you start.
