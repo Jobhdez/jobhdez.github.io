@@ -57,7 +57,7 @@ the parse tree from tokens. The parse tree of the corresponding tokens above is 
 
 Each node is a Common Lisp structure, defined with `defstruct`.
 
-From here you need to generate the `intermediate languages` which close the gap between the source language and the target language. A compiler could have multiple
+From here you need to generate the `intermediate language` which closes the gap between the source language and the target language. A compiler could have multiple
 intermediate languages. Intermediate Languages are implemented with Abstract Syntax trees or with a Flow Graph; in my compiler I used Abstract Syntax trees
 to implement the intermediate languages. Since my compiler is simple the intermediate languages are simple as well; given the parse tree above the following
 intermediate abstract syntax tree is generated for the Lisp backend:
