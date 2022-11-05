@@ -8,7 +8,7 @@ permalink: /about/
 
 ![image](/assets/ajob.jpeg)
 
-I am Job -- a software developer from Seattle, WA.
+I am Job -- a programmer from Seattle, WA.
 
 Fortunately, I am have learned to appreciate programming independent of the programming language I am using and the program I am building; nevertheless, I have a big interest in functional programming, namely Lisp and Haskell. 
 
