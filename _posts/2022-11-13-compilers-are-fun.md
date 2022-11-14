@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Compilers"
+title: "Compilers and why you should build one"
 author: Job Hernandez
 ---
 
@@ -9,7 +9,7 @@ The complexity of compilers is tremendous; for example, in one large program you
 
 # My experience
 Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as `while loops`, `if statements`, `assignments` and `variables` to x86-64; nevertheless, it is not quite done; for example, you cannot really run the assembly code, and the references to variables that are created after the compiler pass that replaces variables for registers and stack locations are off by a bit and off by a lot more more if the respective function is subsequently called. Despite these limitations mostly correct assembly is emitted from expressions such as 
-`x = 30 + -2 print(x)` or `x = 40 + -20 print(x + 10)`. The largest program that gets compiled to my system is 
+`x = 30 + -2 print(x)` or `x = 40 + -20 print(x + 10)`. The largest program that gets compiled in my system is 
 
 ```
 if 2==2:
