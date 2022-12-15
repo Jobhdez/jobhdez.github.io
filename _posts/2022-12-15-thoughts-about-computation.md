@@ -1,0 +1,21 @@
+---
+layout: post
+title: "Thoughts about computation"
+author: Job Hernandez
+---
+
+### functional programming
+Alan Turing introduced the idea of the universal computing machine - a Turing machine that uses what we now call `programs` stored in its memory can compute everything that is in principle computable. One of the ideas you learn in SICP is a very profound one, namely, programs can be thought of as descriptions of an abstract machine. Similarly, an interpreter can be seen as a machine that emulates other machines; that is, if an interpreter takes in a description of a factorial machine the interpreter will be able to compute factorials. So, since interpreters mimic other machines, interpreters are universal machines. Consequently, interpreters can mimic other interpreter machines. Now, this I find fascinating. This means that if your interpreter machine – written in Lisp – takes an interpreter for C machines it will mimic this C evaluator which in turn will mimic any other program described as a C machine. So, what is in principle computed is independent of the programming language. 
+Functional programming languages are beautiful. Partly because functional languages are mathematical and I find math beautiful and deep. Abstraction is key to why I find functional languages beautiful. When I was learning Scheme and was learning about higher order procedures I felt great joy at seeing how a procedure can manipulate other procedures. There was something about passing anonymous procedures as arguments. I think learning Scheme and SICP was a good experience because I learned about interpreters which capture the essence of computation. Alan Turing introduced the idea of the universal computing machine - a Turing machine that uses what we now call `programs` stored in its memory can compute everything that is in principle computable and SICP teaches you exactly this.
+
+### the mind
+I think what Godel said was that a Turing machine can be thought of as a formal system. Godel defines a formal system as:
+>“due to A. M. Turing’s work, [that] a precise and unquestionably adequate definition of the general concept of formal system can now be given ... [A] formal system can simply be defined to be any mechanical procedure for producing formulas, called provable formulas.”  
+
+One of the things Godel proved was that in a consistent formal system there will exist a true statement that can't be proven. And his other theorem dictates that you can't prove the consistency of a formal system S from within S. Here, consistency just means that, for example  --  you can't both hold K and its contradiction at the same time. So, Godel claimed that turing machines are these such systems. But, Godel believes, the human mind isn't a formal system because it can determine things that a formal system cant determine about itself. Consider Godel’s quote:
+>“My incompleteness theorem makes it likely that mind is not mechanical, or else mind cannot understand its own mechanism. If my result is taken together with the rationalistic attitude which Hilbert had and which was not refuted by my results, then [we can infer] the sharp result that mind is not mechanical. This is so, because, if the mind were a machine, there would, contrary to this rationalistic attitude, exist number-theoretic questions undecidable for the human mind.” 
+
+Penrose has argued that given Godel’s theorem, consciousness is not a computation. If this is the case the aim of AI people of creating machines as intelligent as humans will fail.		 	 	 		
+
+### computation 
+I think the theory of computation and its relationship with interpreters is a really deep connection. Without doubt, I marvel at the power of the Scheme programming language; that is, despite how small the language is, one is able to express the notion of universal computation. In less than 500 lines of code, you can build a Scheme interpreter in Scheme that captures a beautiful idea. But you can also build a Scheme interpreter in C or Java that captures the same idea but there is something about functional programming that I find beautiful. It is amazing that the human mind has the power to devise such amazing theoretical constructs.
