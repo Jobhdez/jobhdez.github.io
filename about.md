@@ -16,8 +16,5 @@ Over the years, I have worked on web development, computer algebra, and compiler
 
 The classic textbook "Structure and Interpretation of Computer Programs" changed my life; reading this book -- when I was first starting out -- made me cry of joy. 
 
-Please reach out on twitter if you have any questions:
-
-### [Twitter](https://twitter.com/sphere_in_space)
 
 
