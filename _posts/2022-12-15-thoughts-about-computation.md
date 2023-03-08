@@ -32,7 +32,30 @@ I think the Scheme programming language is such a profound language; Scheme is a
         144
 ```
 
-In the above example we evaluated the expression `(multiply-squares 3 4)` each expression is replaced by an expression that is equivalent via an axiom of the lambda calculus. The evaluation of a recursive function that generates a recursive process whereby a chain of expressions is built up and whereby the chain of expressions contracts as expressions get evaluated follow the substitution model.
+In the above example we evaluated the expression `(multiply-squares 3 4)` - then each expression is replaced by an expression that is equivalent via an axiom of the lambda calculus. Another example of the substitution model is the the evaluation of a recursive function that generates a recursive process whereby a chain of expressions is built up and whereby the chain of expressions then contracts as expressions get evaluated. Here is the Scheme example:
+
+```
+(define (factorial n) 
+   (if (= n 0)
+       1
+       (* n (factorial (- n 1)))))
+```
+
+The process that `factorial` generates is the following:
+
+```
+(factorial 3)
+(* 3 (factorial 2))
+(* 3 (* 2 (factorial 1)))
+(* 3 (* 2 (* 1 (factorial 0))))
+(* 3 (* 2 (* 1 1)))
+(* 3 (* 2 1))
+(* 3 2)
+6
+```
+
+As you can see in the above example a chain of operations is built up and when it reaches the base case the expressions start getting evaluated. At each point the expressions are replaced with an equivalent expression according to an axiom of the lambda calculus.
+
 
 
 ### Computation and Interpreters: Scheme is wonderful
