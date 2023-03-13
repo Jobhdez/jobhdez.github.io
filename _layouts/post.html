@@ -28,6 +28,7 @@ layout: default
 
   <div class="post-content e-content" itemprop="articleBody">
     {{ content }}
+    {% include utterances.html %}
   </div>
 
   {%- if site.disqus.shortname -%}
