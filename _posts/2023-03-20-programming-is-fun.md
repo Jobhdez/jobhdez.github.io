@@ -26,7 +26,7 @@ Example 1:
            return x.1 + x.2 + x.4
 ```
 
-Firstly, by writing down examples you get to understand the problem; that is, you know several input-output pairs so at this point you can focus on how to get from the input to the output. It is here when you get to look for patterns. Notice in my example that `Example 1` and Example 2` are instances of the same rule but `Example 2` is more nested than `Example 1`. By thinking about these examples I was able to notice a recursive pattern so all I had to do is to pattern match on this particular case. The Python code for `Example 1` and `Example 2` looks something like this:
+Firstly, by writing down examples you get to understand the problem; that is, you know several input-output pairs so at this point you can focus on how to get from the input to the output. It is here when you get to look for patterns. Notice in my example that `Example 1` and `Example 2` are instances of the same rule but `Example 2` is more nested than `Example 1`. By thinking about these examples I was able to notice a recursive pattern so all I had to do is to pattern match on this particular case. The Python code for `Example 1` and `Example 2` looks something like this:
 
 ```python
 def explicate_control(ast, counter, vars, assignments):
