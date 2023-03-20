@@ -58,7 +58,7 @@ plugins:
  - jekyll-seo-tag
  
 utterances:
-  repo:"jobhdez/jobhdez.github.io"
+  repo: "jobhdez/jobhdez.github.io"
   issue-term: "pathname"
   label: "utteranc.es"
   theme: "github-light" 
