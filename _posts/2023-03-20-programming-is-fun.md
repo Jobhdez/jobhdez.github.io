@@ -3,7 +3,6 @@ layout: post
 title: "Programming is fun"
 author: Job Hernandez
 ---
-
 Programming is fun! I love to program; whether I am working on web apps, math software or compilers I get a kick out of solving problems; moreover, I enjoy programming because it allows me to focus on a problem and think. 
 
 # Noticing Patterns
