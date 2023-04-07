@@ -3,16 +3,12 @@ layout: post
 title: "SICP's important computing and programming lessons"
 author: Job Hernandez
 ---
-
 # Personal experience with SICP
 The book “Structure and Interpretation of Computer Programs” was one of my favorite experiences I have had in the past 10 years. My copy of SICP is also very special because my mom gave it to me. The way it was written and how it uses mathematics made a huge impression on me. I got my mind blown a few times and I cried of joy while reading a few parts. It was such an amazing experience. SICP also made me love mathematics more and it helped me realize how deep computer science is. The way the authors of SICP described higher order procedures – e.g., how higher order procedures elevate the conceptual level of a given program – was a tremendously meaningful experience for me. So, in other words Scheme and SICP helped me appreciate computer science. In addition, my SICP studies helped me understand that interpreters/DSLs and compilers are the ultimate abstraction which is key for controlling complexity.
 
 # SICP’s important lessons
-
 ## Lesson 1: The Scheme Programming language
-
 ### Scheme is a model of computation
-
 I think the Scheme programming language is such a profound language; Scheme is an extension of the lambda calculus which essentially means that Scheme can be seen as a model of computation. The lambda calculus models all non imperative constructs of programming languages as applications of functions and specifies with axioms the semantics of these expressions. I think the key idea here is the substitution model of computation. Consider the following:
 ```
 (define (multiply-squares n n2) (* (square n) (square n2)))
@@ -80,7 +76,6 @@ The process that the above generates for `(factorial 6)` is as follows:
 (factorial-iter 720 7 6)
 ```
 ## Lesson 2: Functional Programming
-
 One of the important lessons in computing and programming that you will learn from SICP is functional programming. Functional programming is functional in the mathematical sense; that is, an input to a function has exactly only one output. The programs in the first two chapters in the book are functional; moreover, functional programming is a type of programming that satisfies the substitution model of computation. Programs in functional style satisfy the substitution model because functional programs do not entail mutating variables. Variables in functional programming are definitions.
 
 ## Lesson 3: Higher Order Procedures
