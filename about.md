@@ -6,7 +6,7 @@ permalink: /about/
 
 ### Hello!
 
-![image](/assets/ajob.jpeg)
+![image](/assets/jobhdez.jpg)
 
 I am Job -- a programmer from Seattle, WA.
 
