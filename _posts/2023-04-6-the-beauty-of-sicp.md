@@ -47,7 +47,7 @@ The process that factorial generates is the following:
 As you can see in the above example a chain of operations is built up and when it reaches the base case the expressions start getting evaluated. At each point the expressions are replaced with an equivalent expression according to an axiom of the lambda calculus.
 
 ##### Tail Recursion
-One concept I learned from reading this book that not many programmers realize is tail recursion. If a language does not support tail recursion each recursive call has a different frame in the stack. The stack is memory that has a frame for each function call. Each frame consists of the functions return address, and addresses for variables. In contrast, in tail recursive language, the recursive call is not associated with its own frame. It only has to keep track of the state variables, i.e., the addresses of the variables. As a consequece, it is possible to write a recursive procedure that generates an iterative process. In most programming languages a recursive procedure generates a recursive process whose time complexity is O(n) and whose space complexity is O(n); an example of a recursive process is the `factorial` process above; but in Scheme, a recursive procedure may generate an iterative process – i.e., a process whose time complexity is also O(n) but whose space complexity is O(1). The real insight here is that for a given procedure that generates a recursive process one can also write a recursive procedure that generates an iterative process. In Scheme there are no looping constructs, for instance. Here is an example a recursive procedure that generates an iterative process (taken from SICP):
+One concept I learned from reading this book that not many programmers realize is tail recursion. If a language does not support tail recursion each recursive call has a different frame in the stack. The stack is memory that has a frame for each function call. Each frame consists of the function's return address, and addresses for variables. In contrast, in tail recursive language, the recursive call is not associated with its own frame. It only has to keep track of the state variables, i.e., the addresses of the variables. As a consequece, it is possible to write a recursive procedure that generates an iterative process. In most programming languages a recursive procedure generates a recursive process whose time complexity is O(n) and whose space complexity is O(n); an example of a recursive process is the `factorial` process above; but in Scheme, a recursive procedure may generate an iterative process – i.e., a process whose time complexity is also O(n) but whose space complexity is O(1). The real insight here is that for a given procedure that generates a recursive process one can also write a recursive procedure that generates an iterative process. In Scheme there are no looping constructs, for instance. Here is an example a recursive procedure that generates an iterative process (taken from SICP):
 ```Scheme
 (define (factorial n)
   (factorial-iter 1 1 n))
@@ -76,7 +76,7 @@ One of the important lessons in computing and programming that you will learn fr
 
 >The trouble here is that substitution is based ultimately on the notion that the symbols in our language are essentially names for values. But as soon as we introduce set! and the idea that the value of a variable can change, a variable can no longer be simply a name.
 
-Here are some examples  from SICP that illustratin this idea. Suppose you have a function`make-simplified-withdraw` defined as:
+Here are some examples  from SICP illustrating this idea. Suppose you have a function`make-simplified-withdraw` defined as:
 
 ```Scheme
 (define (make-simplifed-withdraw balance)
@@ -96,7 +96,7 @@ What happens when you apply the substitution model to this function?
 ;; evaluates to
 25
 ```
-The above example sets balance to 5 and returns 25 which is the wrong answer; now compare this with a functional version that adheres to the substition model:
+The above example sets balance to 5 and returns 25 which is the wrong answer; now compare this with a functional version that adheres to the substitution model:
 
 ```Scheme
 (define (make-decrementer balance)
