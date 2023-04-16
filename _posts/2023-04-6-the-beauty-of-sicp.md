@@ -116,7 +116,7 @@ The above example sets balance to 5 and returns 25 which is the wrong answer; no
 5
 ```
 
-This brings to another core concept in functional programming, namely, `referentially transparency`. Referentially transperency dictates that given two expressions these two expression have the same computational behavior in that they can be substituted for one another; for example:
+This brings to another core concept in functional programming, namely, `referentially transparency`. Referentially transperency dictates that given two expressions these two expressions have the same computational behavior such that they can be substituted for one another; for example:
 
 ```Scheme
 (define D1 (make-decrementer 25))
