@@ -178,7 +178,7 @@ Higher order procedures are procedures that consume other procedures or return o
   	(+ (cube a) (sum-cubes (+ a 1) b))))
 ```
 
-Here you have two instances of a pattern. WIth a higher order procedure you can do this instead:
+Here you have two instances of a pattern. With a higher order procedure you can do this instead:
 
 ```Scheme
 
@@ -225,13 +225,13 @@ class Fraction:
     def get_denom(self):
         return self.__denom
         
-    def set_numer(self, denom):
+    def set_denom(self, denom):
         self.__denom = denom
      
      ....
 ```
 #### Lesson 5: Data Directed Programming
-Data directed programming is a technique that allows multiple programmers to work on different parts of a system; moreover, it is a type of additive programming where instead of making changes to add new functionality you instead add a module. For instance, suppose you are building a computer algebra system and you are implementing integers, fractions, polynomials, and matrices. If you were use data directed programming you would define a package for each:
+Data directed programming is a technique that allows multiple programmers to work on different parts of a system at the same time; moreover, it is a type of additive programming where instead of making changes to add new functionality you instead add a module. For instance, suppose you are building a computer algebra system and you are implementing integers, fractions, polynomials, and matrices. If you were to use data directed programming you would define a package for each:
 
 ```Scheme
 (define fraction-table (make-hash))
@@ -269,7 +269,7 @@ Once you have the above you can define generic functions:
         ((polynomial? n) ...)))
  ```
  
-The point of this is to allow multiple programmers to work on the given system without introducing name conflicts and in a modular fashion. You do not have to use this method exactly but the lesson here is that you need to program using additive programming and use techniques that allow many programmers to work on different parts of the system at the same time with out introducing conflicts such as name conflicts; in the example above there could be many functions named `addition` but there will not be any conflicts because each math object is represented as a package that can be developed in isolation.
+The point of this is to allow multiple programmers to work on the given system without introducing name conflicts and in a modular fashion. You do not have to use this method exactly but the lesson here is that you need to program using additive programming and use techniques that allow many programmers to work on different parts of the system at the same time without introducing conflicts such as name conflicts; in the example above there could be many functions named `addition` but there will not be any conflicts because each math object is represented as a package that can be developed in isolation.
  
 #### Lesson 6: Interpreters
 I feel very lucky I studied this book because it introduces interpreters. By introducing interpreters, the authors teach a profound idea, namely, the theory of computation. Alan Turing introduced the idea of the universal computing machine - a Turing machine that uses what we now call programs stored in its memory can compute everything that is in principle computable. The SICP authors explain that programs can be thought of as descriptions of an abstract machine. Similarly, an interpreter can be seen as a machine that emulates other machines; that is, if an interpreter takes in a description of a factorial machine the interpreter will be able to compute factorials. So, since interpreters mimic other machines, interpreters are universal machines. Consequently, interpreters can mimic other interpreter machines. Now, this I find fascinating. This means that if your interpreter machine – written in Lisp – takes an interpreter for C machines it will mimic this C evaluator which in turn will mimic any other program described as a C machine. So, what is in principle computed is independent of the programming language. So, this is why I think learning Scheme and “Structure and Interpretation of Computer Programs” is a great thing to do. By studying this book one learns about profound ideas namely interpreters which capture the essence of computation. I think the theory of computation and its relationship with interpreters is a really deep connection. The above should make you marvel at the expressive power of Scheme. Despite how small the language is, one is able to express the notion of universal computation. In about 500 lines of code, you can build a Scheme interpreter in Scheme that captures this beautiful and profound idea. 
