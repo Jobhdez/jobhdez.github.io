@@ -80,7 +80,7 @@ Here are some examples  from SICP that illustratin this idea. Suppose you have a
 
 ```Scheme
 (define (make-simplifed-withdraw balance)
-  (lambda (amound)
+  (lambda (amount)
     (set! balance (- balance amount))
     balance))
 ```
