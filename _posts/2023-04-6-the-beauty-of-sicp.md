@@ -10,6 +10,7 @@ The book “Structure and Interpretation of Computer Programs” was one of my f
 #### Lesson 1: The Scheme Programming language
 ##### Scheme is a model of computation
 I think the Scheme programming language is such a profound language; Scheme is an extension of the lambda calculus which essentially means that Scheme can be seen as a model of computation. The lambda calculus models all non imperative constructs of programming languages as applications of functions and specifies with axioms the semantics of these expressions. I think the key idea here is the substitution model of computation. Consider the following:
+
 ```Scheme
 (define (multiply-squares n n2) (* (square n) (square n2)))
 (define (square n) (* n n))
@@ -48,6 +49,7 @@ As you can see in the above example a chain of operations is built up and when i
 
 ##### Tail Recursion
 One concept I learned from reading this book that not many programmers realize is tail recursion. If a language does not support tail recursion each recursive call has a different frame in the stack. The stack is memory that has a frame for each function call. Each frame consists of the function's return address, and addresses for variables. In contrast, in tail recursive language, the recursive call is not associated with its own frame. It only has to keep track of the state variables, i.e., the addresses of the variables. As a consequece, it is possible to write a recursive procedure that generates an iterative process. In most programming languages a recursive procedure generates a recursive process whose time complexity is O(n) and whose space complexity is O(n); an example of a recursive process is the `factorial` process above; but in Scheme, a recursive procedure may generate an iterative process – i.e., a process whose time complexity is also O(n) but whose space complexity is O(1). The real insight here is that for a given procedure that generates a recursive process one can also write a recursive procedure that generates an iterative process. In Scheme there are no looping constructs, for instance. Here is an example a recursive procedure that generates an iterative process (taken from SICP):
+
 ```Scheme
 (define (factorial n)
   (factorial-iter 1 1 n))
@@ -160,9 +162,6 @@ Here, the body of `square-plus` refers to `x`, `a`, and `b` whose binding site i
 (define (square-plus a b x) ...)
 ```
      
-    
-
-
 #### Lesson 3: Higher Order Procedures
 Higher order procedures are procedures that consume other procedures or return other procedures. Higher order procedures increase the conceptual level of the given program; instead of thinking in terms of particular sums, higher order procedures allow you to abstract the summation pattern and apply this pattern to instances of summations. Modularity is the consequence of this because instead of repeating code with multiple concrete summations you get to have an abstraction applied multiple times. Consider the following to summations:
 
