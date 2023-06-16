@@ -1,8 +1,9 @@
 ---
 layout: post
-title: “Web system architecture”
+title: Web System Architecture
 author: Job Hernandez
 ---
+
 *draft*
 
 ### Intro
