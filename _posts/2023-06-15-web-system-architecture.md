@@ -4,6 +4,7 @@ title: Web System Architecture
 author: Job Hernandez
 ---
 *version 1.1*: June 16 2023, added more detail, and diagrams
+
 *version 1*: June 15 2023, initial release
 
 ### Intro
