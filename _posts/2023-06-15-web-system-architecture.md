@@ -9,7 +9,7 @@ author: Job Hernandez
 ### Intro
 One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a [talk](https://www.youtube.com/watch?v=hnpzNAPiC0E&t) by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted.
 
-So, I naturally enjoyed my time reading `Scalable Web Architecture and Distributed Systems`, the first chapter in the book `The Architecture of Open Source Applications.
+So, I naturally enjoyed my time reading `Scalable Web Architecture and Distributed Systems`, the first chapter in the book `The Architecture of Open Source Applications`.
 
 In this essay I will try to summarize this chapter and share some of my thoughts about how I would design a social media application. And I am not an expert; I am just writing about this because its interesting and for learning purposes.
 
