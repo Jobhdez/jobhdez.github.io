@@ -4,9 +4,9 @@ title: "Why you should build a compiler :)"
 author: Job Hernandez
 ---
 
-*version 1.1*: add better support for my claim
+*version 1.1*: July 3 2023 - add better support for my claim
 
-*version 1*: initial version
+*version 1*: Nov 13 2022 - initial version
 
 ## My background
 Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as `while loops`, `if statements`, `assignments` and `variables`, `tuples` and `functions` to x86-64; nevertheless, it is not quite done; for example, as of `7/3/23` it lowers the source language to an x86 AST. The x86 AST is mostly correct so I just now have to create the x86 file and finish up tuples which require a 64 bit tag.
