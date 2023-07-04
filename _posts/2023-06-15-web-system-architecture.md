@@ -17,10 +17,10 @@ In this essay I will try to summarize this chapter and share some of my thoughts
 ### Design Principles
 According to the author of this chapter some key design decisions for building scalable web applications consist of:
 
-Availability;
-Performance;
-Reliability; and
-Scalability
+- Availability;
+- Performance;
+- Reliability; and
+- Scalability.
 
 A system is said to be *available* if it is always up and running. If a system is unavailable even for one minute the given company may lose thousands or even millions of dollars.
 
