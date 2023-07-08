@@ -12,19 +12,9 @@ Mathematics is deep and beautiful. Mathematics is not only a tool to calculate. 
 
 When I read the `Unreasonable Effectiveness of Mathematics` by Eugene Wigner I started marveling about the beauty of mathematics. 
 
-To illustrate this I am going to talk about quarks and group theory. How were quarks discovered? Around the middle of the 20th century scientists started discovering hadrons. Murray Gell-Mann then classified these hadrons as an $SU(3)$ group.
+To illustrate this I am going to talk about quarks and group theory. How were quarks discovered? Around the middle of the 20th century scientists started discovering hadrons. Murray Gell-Mann then classified these hadrons as a group.
 
-In group theory a group is the following.
-
-A group is a set G together with a law of composition that has the following properties:
-
-1. The law of composition is associative: $$(ab)c = a(bc) for\\ all\\ a, b, c \in G$$
-   
-2. $G$ contains an identity element 1 such that $$1a = a, a1 = a for\\ all\\ a \in G$$
-   
-3. Every element $a$ of $G$ has an inverse, an element $$b\\ such\\ that\\ ab=1, ba=1$$
-
-The $$SU(3)$$ is such a group that consists of 8 matrices.
+In group theory a group a set with properties.
 
 The beauty of mathematics that I see is the realization that quarks were deduced and discovered from this mathematical structure. How can this be? How can it be that a mathematical structure was used to discover something physical? Mathematical objects are abstract objects after all which are causally inert; so how can this be? This question is part of the beauty of mathematics.
 
