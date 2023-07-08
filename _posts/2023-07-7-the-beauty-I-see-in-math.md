@@ -29,9 +29,9 @@ In group theory a `group` is the following.
 
 A group is a set $$ G $$ together with a law of composition that has the following properties:
 
-1. The law of composition is associative: $$ (ab)c = a(bc)\\ \forall a, b, c\\ \in G $$
+1. The law of composition is associative: $$ (ab)c = a(bc) $$ $$ \forall a, b, c $$ $$ \in G $$
 
-2. $$ G $$ contains an identity element $$ 1 $$ such that $$ 1a = a $$ and $$ a1 = a\\ \forall a\\ \in G $$
+2. $$ G $$ contains an identity element $$ 1 $$ such that $$ 1a = a $$ and $$ a1 = a $$ $$ \forall a $$ $$ \in G $$
 
 3. Every element $$ a $$ of $$ G $$ has an inverse, an element $$ b $$ such that $$ ab=1 $$ and $$ ba=1 $$
 
