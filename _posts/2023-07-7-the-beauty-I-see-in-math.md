@@ -2,7 +2,7 @@
 layout: post
 title: "The beauty I see in mathematics"
 author: Job Hernandez
-—
+---
 
 *version 1*: initial version
 
