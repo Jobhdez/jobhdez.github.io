@@ -2,7 +2,7 @@
 layout: post
 title: "The beauty I see in mathematics"
 author: Job Hernandez
----
+—
 
 *version 1*: initial version
 
@@ -12,9 +12,19 @@ Mathematics is deep and beautiful. Mathematics is not only a tool to calculate. 
 
 When I read the `Unreasonable Effectiveness of Mathematics` by Eugene Wigner I started marveling about the beauty of mathematics. 
 
-To illustrate this I am going to talk about quarks and group theory. How were quarks discovered? Around the middle of the 20th century scientists started discovering hadrons. Murray Gell-Mann then classified these hadrons as a group.
+To illustrate this I am going to talk about quarks and group theory. How were quarks discovered? Around the middle of the 20th century scientists started discovering hadrons. Murray Gell-Mann then classified these hadrons as an $$ SU(3) $$ group.
 
-In group theory a group a set with properties.
+In group theory a group is the following.
+
+A group is a set $$ G $$ together with a law of composition that has the following properties:
+
+1. The law of composition is associative: $$ (ab)c = a(bc) \forall a, b, c \in G $$
+
+2. $$ G $$ contains an identity element 1 such that $$ 1a = a  and a1 = a \forall a \in G $$
+
+3. Every element $$ a $$ of $$ G $$ has an inverse, an element $$ b $$ such that $$ ab=1 $$ and $$ ba=1 $$
+
+The $$ SU(3) $$ is such a group that consists of 8 matrices.
 
 The beauty of mathematics that I see is the realization that quarks were deduced and discovered from this mathematical structure. How can this be? How can it be that a mathematical structure was used to discover something physical? Mathematical objects are abstract objects after all which are causally inert; so how can this be? This question is part of the beauty of mathematics.
 
@@ -40,7 +50,6 @@ I am not an expert in math but I have studied the basics of group theory and it 
 
 The correspondence between math and physics and studying this correspondence is also a way for us to think about what it means to be human.
 
-For me this level of appreciation and all the emotional effects it has on me leads me to believe that this is  what it means to be human; to be able to grasp the laws of the universe and see the mathematical structure is a uniquely human ability. 
+For me this level of appreciation and all the emotional effects it has on me leads me to believe that this is  what it means to be human. In her book `Lost in Thought`, Zena Hitz argues that intellectual life cultivates a place of retreat within a human being – you retreat into a place where reflection about fundamental questions about what it means to be human. Intellectual life enables us to withdraw from world-status, wealth, prestige-and enable us to deepen our humanity. Pure mathematics raises such questions because to be able to grasp the laws of physics and the mathematical structure of the universe is a uniquely human trait. As a consequence, when we study pure mathematics we explore our human nature.
 
-Anyways, thanks for reading.
 
