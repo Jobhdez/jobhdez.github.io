@@ -18,13 +18,13 @@ In group theory a group is the following.
 
 A group is a set G together with a law of composition that has the following properties:
 
-1. The law of composition is associative: $(ab)c = a(bc) for all $a$, $b$, and $c$ $\in G$.
+1. The law of composition is associative: $$(ab)c = a(bc) for\\ all\\ a, b, c \in G$$
    
-2. $G$ contains an identity element 1 such that $1a = a$ and $a1 = a$ for all $a \in G$.
+2. $G$ contains an identity element 1 such that $$1a = a, a1 = a for\\ all\\ a \in G$$
    
-3. Every element $a$ of $G$ has an inverse, an element $b$ such that $ab=1$ and $ba=1$
+3. Every element $a$ of $G$ has an inverse, an element $$b\\ such\\ that\\ ab=1, ba=1$$
 
-The $SU(3)$ is such a group that consists of 8 matrices.
+The $$SU(3)$$ is such a group that consists of 8 matrices.
 
 The beauty of mathematics that I see is the realization that quarks were deduced and discovered from this mathematical structure. How can this be? How can it be that a mathematical structure was used to discover something physical? Mathematical objects are abstract objects after all which are causally inert; so how can this be? This question is part of the beauty of mathematics.
 
