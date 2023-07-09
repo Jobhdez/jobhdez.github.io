@@ -8,11 +8,11 @@ author: Job Hernandez
 
 ## Introduction
 
-In High School I was a horrible student and it was not until I dropped out of university that I started paying attention to mathematics; my first exposure was a comment by Richard Feynman in one of his interviews. In this interview he said that to appreciate nature one needs mathematics. This was the start of my mathematical journey. Subsequently, I read `A Mathematicians Delight` by Sawyer and this book helped helped me realize that mathematics could be learned and taught me about the importance of abstraction. I remember this book had an immense impact on my mathematical development. Eventually, I stumbled with the essay by Eugene Wigner `The Unreasomable Effectiveness of Mathematics`. When I read the `Unreasonable Effectiveness of Mathematics` by Eugene Wigner I started marveling about the beauty of mathematics. After I read this article I became aware of the hidden world of mathematics.
+In High School I was a horrible student and it was not until I dropped out of university that I started paying attention to mathematics; my first exposure was a comment by Richard Feynman in one of his interviews. In this interview he said that to appreciate nature one needs mathematics. This was the start of my mathematical journey. Subsequently, I read "A Mathematicians Delight" by Sawyer and this book helped me realize that mathematics could be learned and taught me about the importance of abstraction. I remember this book had an immense impact on my mathematical development. Eventually, I stumbled with the essay by Eugene Wigner "The Unreasomable Effectiveness of Mathematics". When I read the "Unreasonable Effectiveness of Mathematics" by Eugene Wigner I started marveling about the beauty of mathematics. After I read this article I became aware of the hidden beauty of mathematics.
 
-I find mathematics  deep and beautiful. Mathematics is not only a tool to calculate. As Einstein said:
+I find mathematics deep and beautiful. Mathematics is not only a tool to calculate. As Einstein said:
 
-> the universe has mathematical structure
+> the universe has mathematical structure.
 
 So, math is beautiful because the universe has mathematical structure.
 
@@ -35,7 +35,7 @@ A group is a set $$ G $$ together with a law of composition that has the followi
 
 3. Every element $$ a $$ of $$ G $$ has an inverse, an element $$ b $$ such that $$ ab=1 $$ and $$ ba=1 $$
 
-The $$ SU(3) $$ is such a group that consists of 8 matrices.
+The $$ SU(3) $$ is such a group.
 
 The beauty of mathematics that I see is the realization that quarks were deduced and discovered from this mathematical structure. How can this be? How can it be that a mathematical structure was used to discover something physical? Mathematical objects are abstract objects after all which are causally inert; so how can this be? This question is part of the beauty of mathematics.
 
@@ -44,7 +44,7 @@ Another example is the theory of general relativity; this theory also has mathem
 
 ## Mathematics is full of profound mystery
 
-As Wigner pointed out in the above essay, how can mathematical structures that were created with no application in mind become a necessity for the formulation of theories in physics. Why is this? Consider that mathematical objects, if you are a platonist, are abstract objects that in their own realm. As a consequence, mathematical objects are causally inert. So, how can it be that the universe has mathematical structure? 
+As Wigner pointed out in the above essay, how can mathematical structures that were created with no application in mind become a necessity for the formulation of theories in physics? Why is this? Consider that mathematical objects, if you are a platonist, are abstract objects that exist in their own realm. As a consequence, mathematical objects are causally inert. So, how can it be that the universe has mathematical structure? 
 
 Could it be like Dirac believed that pure mathematics and theoretical physics will converge?
 
@@ -58,7 +58,7 @@ This is the beauty of mathematics as I see it. Mathematics is full of profound m
 
 As Richard Feynman said:
 
-> to appreciate nature you need mathematics
+> to appreciate nature you need mathematics.
 
 I am not an expert in math but I have studied the basics of group theory and it gave me tremendous power to appreciate nature. Of course, this is not to say that math is the only way to appreciate nature. But physics is the most fundamental of the sciences and to be able to appreciate the universe from a physics point of view you need mathematics.
 
@@ -66,6 +66,6 @@ I am not an expert in math but I have studied the basics of group theory and it 
 
 The correspondence between math and physics and studying this correspondence is also a way for us to think about what it means to be human.
 
-For me this level of appreciation and all the emotional effects it has on me leads me to believe that this is  what it means to be human. In her book `Lost in Thought`, Zena Hitz argues that intellectual life cultivates a place of retreat within a human being – you retreat into a place where reflection about fundamental questions about what it means to be human. Intellectual life enables us to withdraw from world-status, wealth, prestige-and enable us to deepen our humanity. Pure mathematics raises such questions because to be able to grasp the laws of physics and the mathematical structure of the universe is a uniquely human trait. As a consequence, when we study pure mathematics we explore our human nature.
+For me this level of appreciation and all the emotional effects it has on me leads me to believe that this is  what it means to be human. In her book "Lost in Thought", Zena Hitz argues that intellectual life cultivates a place of retreat within a human being – you retreat into a place where reflection about fundamental questions about what it means to be human. Intellectual life enables us to withdraw from the world-status, wealth, prestige-and enable us to deepen our humanity. Pure mathematics raises such questions because to be able to grasp the laws of physics and grasp the mathematical structure of the universe is a uniquely human trait. As a consequence, when we study pure mathematics we explore our human nature.
 
 
