@@ -5,7 +5,7 @@ author: Job Hernandez
 ---
 
 *version 1*: initial version
-----
+
 
 ## Distributed key-value store at facebook
 
