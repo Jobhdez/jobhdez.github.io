@@ -5,6 +5,7 @@ author: Job Hernandez
 ---
 
 *version 1.1*: rephrased a few parts and added my interpretation, 7/20/23
+
 *version 1*: initial version, 7/17/23
 
 
