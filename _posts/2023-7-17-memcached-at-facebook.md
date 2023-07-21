@@ -43,7 +43,7 @@ An interesting connection I made between TCP and my studies of computer systems 
 
 ### How did they handle replication in a given region?
 
-A region consists of multiple frontend clusters and a storage cluster. Each frontend cluster consists of web server and memcached servers. Multiple frontend clusters share a backend storage cluster. If multiple frontend clusters, wich consist of a server and hundreds of memcache servers, share the same backend storage then I wonder how multiple clusters coordinate with the same storage. The backend storage cluster is responsible for invalidating cached data to keep frontend clusters consistent. How does this system accomplish this? Invalidating daemons – each daemon inspects the SQL statements and extracts deletes and broadcasts these deletes to the memcached deployment (frontend clusters) in a given region. This is done so the deletes  from the database get invalidated  in memcached.
+A region consists of multiple frontend clusters and a storage cluster. Each frontend cluster consists of web server and memcached servers. Multiple frontend clusters share a backend storage cluster. If multiple frontend clusters, which consist of a server and hundreds of memcache servers, share the same backend storage then I wonder how multiple clusters coordinate with the same storage. The backend storage cluster is responsible for invalidating cached data to keep frontend clusters consistent. How does this system accomplish this? Invalidating daemons – each daemon inspects the SQL statements and extracts deletes and broadcasts these deletes to the memcached deployment (frontend clusters) in a given region. This is done so the deletes  from the database get invalidated  in memcached.
 
 ### Deployment accross multiple regions
 
