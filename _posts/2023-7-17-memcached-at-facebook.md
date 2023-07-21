@@ -47,7 +47,7 @@ A region consists of multiple frontend clusters and a storage cluster. Each fron
 
 ### Deployment accross multiple regions
 
-To further scale the Facebook site, the engineers deployed in multpiple regions -- i.e., different geographic areas. Some benefits of this include:
+To further scale the Facebook site, the engineers deployed in multiple regions -- i.e., different geographic areas. Some benefits of this include:
 
 - Reduce latency, latency is reduced because servers that are closer to the end user can significantly reduce latency; and
 
@@ -55,7 +55,7 @@ To further scale the Facebook site, the engineers deployed in multpiple regions 
 
 - Cheaper power and economic incentives.
 
-FB deployed  multiple regions to gain benefits. A region consists of a storage backend cluster and several frontend clusters (web servers, memcached servers). One region is designated to hold the master databases and the other regions are designated the replicas. What is the primary challenge of this architecture? Maintaining consistency. Maintaining consistency in memcached and persistent storage is the primary challenge when scaling across multiple regions. How did they solve this challenge where the challenge is the this. Replicas may lag behind the master database and as result replicas could have stale data.
+FB deployed accross  multiple regions to gain the above benefits. A region consists of a storage backend cluster and several frontend clusters (web servers, memcached servers). One region is designated to hold the master databases and the other regions are designated the replicas. What is the primary challenge of this architecture? Maintaining consistency. Maintaining consistency in memcached and persistent storage is the primary challenge when scaling across multiple regions. How did they solve this challenge where the challenge is the this. Replicas may lag behind the master database and as result replicas could have stale data.
 
 Interestingly, The way they invalidate deletes by using daemons avoids race conditions in which an invalidation arrives before the data has been replicated from the master region.
 
