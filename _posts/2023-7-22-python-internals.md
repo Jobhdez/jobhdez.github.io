@@ -136,7 +136,9 @@ The function `d` yields an Int or Bool depending on the input. This is not possi
 
 Now that I have explained what dynamic typing is, what guarantees does Python offer? Python is *strongly typed* and dynamically typed. In a strongly typed language the expression `2 + “hello”` will yield an error. The Python interpreter is smart enough to know that an integer and a string cannot be added together. In contrast, for example in Javascript the expression `2 + “hello”` evaluates to `2hello`. Python respects the semantics of the language but Javascript does not. Robert Smith puts it like this:
 
->The strong-typedness of Common Lisp ensures that a program which has a type error cannot descend into a state that no longer respects the predictable semantics of the language. Python also offers static guarantees if you use `mypy` and given that Python has a garbage collector it guarantees that there will not be a certain class of memory error.
+>The strong-typedness of Common Lisp ensures that a program which has a type error cannot descend into a state that no longer respects the predictable semantics of the language.
+
+Python also offers static guarantees if you use `mypy` and given that Python has a garbage collector it guarantees that there will not be a certain class of memory error.
 
 Given that Python offers dynamic and static guarantees and memory guarantees but especially because it offers static guarantees with mypy I think Python can be used to build large systems. As Robert said:
 
