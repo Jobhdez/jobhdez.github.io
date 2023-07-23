@@ -1,21 +1,29 @@
 ---
 layout: post
-title: "Python Internals and important Python features"
+title: "A semi deep dive into Python"
 author: Job Hernandez
 ---
 
+*version 1.1*: fix typos, change title, change headings, 7/23/23
+
+*version 1*: initial version, 7/22/23
+
 ## Introduction
-I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages that I have some experience with, better. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.
+I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages that I have some experience with better. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.
 
-After writing this blog post I have come to realize that Python is indeed a powerful language. Python3 is strongly typed with dynamic and static guarantees. This is similar to Lisp which is what made it so much better back in the day; moreover, Python has first class functions so you can build powerful abstractions using higher order functions. It allows incremental development, perhaps not as interactive as Common Lisp + SLIME but it does offer a repl nonetheless which enables you to experiment with your programming ideas, get feedback and develop programs that have little bugs (since you have already tested your ideas on the repl). Python also has a great community and has a great library ecosystem.
+After writing this blog post I have realized that Python is indeed a powerful language. Python3 is strongly typed with dynamic and static guarantees (with mypy). This is similar to Lisp which is what made it so much better back in the day; moreover, Python has first class functions so you can build powerful abstractions using higher order functions. It allows incremental development, perhaps not as interactive as Common Lisp + SLIME but it does offer a repl nonetheless which enables you to experiment with your programming ideas, get feedback and develop programs that have little bugs (since you have already tested your ideas on the repl). Python also has a great community and has a great library ecosystem.
 
+Consider what Peter Norvig [said](https://norvig.com/python-lisp.html) about Python. He considers Python to be a dialect of Lisp:
 
-## How does a Python3 program get executed?
+>Basically, Python can be seen as a dialect of Lisp with "traditional" syntax (what Lisp people call "infix" or "m-lisp" syntax). One message on comp.lang.python said "I never understood why LISP was a good idea until I started playing with python." Python supports all of Lisp's essential features except macros, and you don't miss macros all that much because it does have eval, and operator overloading, and regular expression parsing, so some--but not all--of the use cases for macros are covered.
+
+## A quick dive into Python's exection model
+
 According to the Python [CPython internal docs](https://devguide.python.org/internals/compiler/) Python3 consists of a compiler and stack based virtual machine. So, as any other compiler architecture it consists of a frontend and backend. The frontend consists of a parser that generates the abstract syntax tree which in turn gets converted into a control flow graph which in turn gets compiled into bytecode, but unlike a native compiler, this bytecode gets executed by a stack based virtual machine. Java also consists of a similar architecture including a stack based virtual machine.
 
-To illustrate the above points I will provide some concrete examples. I  have been working on a compiler for a language that has Python syntax. Although this compiler generates x86 assembly it consists of a parser that generates an abstract syntax tree.
+To illustrate the above points I will provide some concrete examples. I  have been working on a compiler for a language that has Python syntax. Although this compiler generates x86 assembly it consists of a parser that generates an abstract syntax tree. 
 
-An abstract syntax tree (AST) is a tree whose nodes consist of operators and whose childs consist of operands. An AST is a tree representation of the program. You can represent nodes in a tree with objects; for example, the `if` statement node can be represented by the following Python object:
+An abstract syntax tree (AST) is a tree that represents a given program. You can represent nodes in a tree with objects; for example, the `if` statement node can be represented by the following Python object:
 
 ```
 Class IfStmt:
@@ -27,7 +35,7 @@ Class IfStmt:
      def __repr__(self):
          f’(IF {self.condition} {self.then} {self.else})’
 ```
-Once you have your node objects you recursively go through the parse tree and, for example, when you hit a `if` statement node you construct the AST node using the `IfStmt` object.
+Once you have your node objects you recursively go through the parse tree and, for example, when you hit an `if` statement you construct the AST node using the `IfStmt` object.
 
 Consider the following program:
 
@@ -40,7 +48,7 @@ else:
     print(y)
 ```
 
-The parser will generate the following abstract syntax tree:
+The parser will generate the an abstract sysntax tree that looks *similar* but not exact to the following:
 
 ```
 #S(PY-MODULE
@@ -93,30 +101,28 @@ x = 30 + -10
 print(x+10)
 ```
 
-into an intermediate language that is closer to the bytecode but the Cpython internals article does not talk about this; moreover, it is also not as straightforward because expressions such as `if expressions` generate more blocks and to generate the blocks in the most efficient way possible you also need to use graphs.
+into an intermediate language that is closer to the bytecode but the CPython internals article does not talk about this; moreover, it is also not as straightforward because expressions such as `if expressions` generate more blocks and to generate the blocks in the most efficient way possible you also need to use graphs.
 
-After the control flow graph is generated then the Python3 system lowers this control flow graph to bytecode. Since the Pythons virtual machine is stack based then it pushes constructs to the stacks and pops them; for example, suppose you are adding two numbers: `2+2`. Then `2`, `2`, and the addition operator `+` will be pushed to the stack; to execute the virtual machine will pop those and push `4` to the stack.
+After the control flow graph is generated then the Python3 system lowers this control flow graph to bytecode. Since the Pythons virtual machine is stack based it pushes constructs to the stack and pops them; for example, suppose you are adding two numbers: `2+2`. Then `2`, `2`, and the addition operator `+` will be pushed to the stack; to execute the virtual machine will pop those and push `4` to the stack.
 
-## Important Python3 constructs for building large systems
+## A quick dive into some of Python's programming constructs
 
 I don’t have experience with building large systems as I have not started my career in software engineering so I don’t have first hand experience with this topic; nevertheless, I would like to explore this topic because I want to improve my understanding of the Python3 programming language. As a result I have decided to use as a guide a few points that Robert Smith made in one of his [writings](https://github.com/stylewarning/deprecated-coalton-prototype/blob/master/thoughts.md) where he explains what it takes to build large systems. Robert is very experienced – he has built state of the art compilers and linear algebra systems, and a programming language (and many more things) that are used in production at a couple quantum computing companies. So, yes his metric is worth considering. Anyways, these are the points he makes:
 
 ```
-- Does the language manage names well?
-- Are there ways of creating new namespaces that won't likely collide with others'?
-- Does the languages' implementation offer any static or dynamic guarantees of correctness?
-- Do we know that certain classes of errors are not possible?
+- Does the language manage names well? Are there ways of creating new namespaces that won't likely collide with others'?
+- Does the languages' implementation offer any static or dynamic guarantees of correctness? Do we know that certain classes of errors are not possible?
 - Does the language intrinsically, or the implementation explicitly, permit one to incrementally change programs?
 - Does the language offer or allow to be expressed re-usable abstractions? What kinds?
 ```
 
-Although I am not in a position to evaluate Python using Robert’s guide, I do want to explain how the above features work in Python3.
+I will briefly explain a little bit about the above points and try to use what I have learned from my computer science studies to evaluate. I am mostly doing this as a reflection.
 
 ### Namespaces
 
 In Python3 a namespace is a mapping from names to objects. They are implemented as dictionaries. According to the Python3 [docs](https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces) there are three types of namespaces: built in namespaces, module (global names) namespaces and local namespaces. There are no relationship between the names in different modules so you can have a function named `square` in two modules and there will be no name conflicts; nevertheless, each respective `square` name has to be prefixed by the name of the module. The namespace consisting of the built in names is created when the interpreter starts up. On the other hand, the namespace consisting of global names of a given module is created when you import the module. And finally the namespace consisting of local names is created when a given function is called and deleted when the function returns.
 
-From an elementary point of view that is based on the classic introductory textbook “Structure and Interpretation of Computer Programs  (SICP)”, Python's organization of namespace, especially the module namespace, is conducive to building large software systems. In SICP the authors explain that by isolating different parts of the system as packages, multiple developers can work independently on different parts of the system without introducing name conflicts. So, namespaces in Python are conducive for building large systems or at least it is at a basic level. But as I said, I do not have first hand experience building large systems (in Python) so take my evaluation with a grain of salt.
+From an elementary point of view  based on the classic introductory textbook “Structure and Interpretation of Computer Programs  (SICP)”, Python's organization of namespaces, especially the module namespace, is conducive to building large software systems. In SICP the authors explain that by isolating different parts of the system as packages, multiple developers can work independently on different parts of the system without introducing name conflicts. And it makes a system modular. So, namespaces in Python are conducive for building large systems or at least it is at a basic level. But as I said, I do not have first hand experience building large systems (in Python) so take my evaluation with a grain of salt.
 
 ### Does Python3 offer any static or dynamic guarantees of correctness?
 
@@ -132,7 +138,7 @@ d(3) ## -> 6
 d(4) ## -> False
 ```
 
-The function `d` yields an Int or Bool depending on the input. This is not possible in a statically typed language. This means that the function `d` is polymorphic which is not to be confused with subtype polymorphism or parametric polymorphism. 
+The function `d` yields an `Int` or `Bool` depending on the input. This is not possible in a statically typed language. This means that the function `d` is polymorphic which is not to be confused with subtype polymorphism or parametric polymorphism. 
 
 Now that I have explained what dynamic typing is, what guarantees does Python offer? Python is *strongly typed* and dynamically typed. In a strongly typed language the expression `2 + “hello”` will yield an error. The Python interpreter is smart enough to know that an integer and a string cannot be added together. In contrast, for example in Javascript the expression `2 + “hello”` evaluates to `2hello`. Python respects the semantics of the language but Javascript does not. Robert Smith puts it like this:
 
