@@ -17,7 +17,7 @@ Consider what Peter Norvig [said](https://norvig.com/python-lisp.html) about Pyt
 
 >Basically, Python can be seen as a dialect of Lisp with "traditional" syntax (what Lisp people call "infix" or "m-lisp" syntax). One message on comp.lang.python said "I never understood why LISP was a good idea until I started playing with python." Python supports all of Lisp's essential features except macros, and you don't miss macros all that much because it does have eval, and operator overloading, and regular expression parsing, so some--but not all--of the use cases for macros are covered.
 
-## A quick dive into Python's exection model
+## A quick dive into Python's execution model
 
 According to the Python [CPython internal docs](https://devguide.python.org/internals/compiler/) Python3 consists of a compiler and stack based virtual machine. So, as any other compiler architecture it consists of a frontend and backend. The frontend consists of a parser that generates the abstract syntax tree which in turn gets converted into a control flow graph which in turn gets compiled into bytecode, but unlike a native compiler, this bytecode gets executed by a stack based virtual machine. Java also consists of a similar architecture including a stack based virtual machine.
 
