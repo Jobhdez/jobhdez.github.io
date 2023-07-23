@@ -4,7 +4,7 @@ title: "A semi deep dive into Python"
 author: Job Hernandez
 ---
 
-*version 1.1*: fix typos, change title, change headings, 7/23/23
+*version 1.1*: fix typos, change title, change headings, 7/22/23
 
 *version 1*: initial version, 7/22/23
 
