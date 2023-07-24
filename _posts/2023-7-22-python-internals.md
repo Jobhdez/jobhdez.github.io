@@ -4,14 +4,16 @@ title: "A semi deep dive into Python"
 author: Job Hernandez
 ---
 
+*version 1.2*: add conclusion, fix typos, 7/23/23
+
 *version 1.1*: fix typos, change title, change headings, 7/22/23
 
 *version 1*: initial version, 7/22/23
 
 ## Introduction
-I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages that I have some experience with better. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.
+I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages I use. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.
 
-After writing this blog post I have realized that Python is indeed a powerful language. Python3 is strongly typed with dynamic and static guarantees (with mypy). This is similar to Lisp which is what made it so much better back in the day; moreover, Python has first class functions so you can build powerful abstractions using higher order functions. It allows incremental development, perhaps not as interactive as Common Lisp + SLIME but it does offer a repl nonetheless which enables you to experiment with your programming ideas, get feedback and develop programs that have little bugs (since you have already tested your ideas on the repl). Python also has a great community and has a great library ecosystem.
+After writing this blog post I have realized that Python is indeed a powerful language. Python3 is strongly typed with dynamic and static guarantees (with mypy). This is similar to Lisp which is what made it so much better back in the day; moreover, Python has first class functions so you can build powerful abstractions using higher order functions. It allows incremental development, perhaps not as interactive as Common Lisp + SLIME but it does offer a REPL nonetheless which enables you to experiment with your programming ideas, get feedback and develop programs that have few bugs (since you have already tested your ideas on the REPL). Python also has a great community and has a great library ecosystem.
 
 Consider what Peter Norvig [said](https://norvig.com/python-lisp.html) about Python. He considers Python to be a dialect of Lisp:
 
@@ -19,7 +21,7 @@ Consider what Peter Norvig [said](https://norvig.com/python-lisp.html) about Pyt
 
 ## A quick dive into Python's execution model
 
-According to the Python [CPython internal docs](https://devguide.python.org/internals/compiler/) Python3 consists of a compiler and stack based virtual machine. So, as any other compiler architecture it consists of a frontend and backend. The frontend consists of a parser that generates the abstract syntax tree which in turn gets converted into a control flow graph which in turn gets compiled into bytecode, but unlike a native compiler, this bytecode gets executed by a stack based virtual machine. Java also consists of a similar architecture including a stack based virtual machine.
+According to the Python [CPython internal docs](https://devguide.python.org/internals/compiler/) Python3 consists of a compiler and stack-based virtual machine. So, as any other compiler architecture it consists of a frontend and backend. The frontend consists of a parser that generates the abstract syntax tree which in turn gets converted into a control flow graph which in turn gets compiled into bytecode, but unlike a native compiler, this bytecode gets executed by a stack-based virtual machine. Java also consists of a similar architecture including a stack-based virtual machine.
 
 To illustrate the above points I will provide some concrete examples. I  have been working on a compiler for a language that has Python syntax. Although this compiler generates x86 assembly it consists of a parser that generates an abstract syntax tree. 
 
@@ -80,12 +82,13 @@ The parser will generate the an abstract sysntax tree that looks *similar* but n
                                        :EXP #S(PY-VAR :NAME ZETTA-VAR::Y))))))
 ```
 
+Thhe above example was taken from my compiler project but it should give you a concrete idea of what an AST is.
                                       
 After the AST is generated the Python system creates a control flow graph. A control flow graph is a directed graph. It takes the above Python AST and creates a graph similar to the following.
 ```
-ff 2==2:
-   Goto block1
-   Goto block2
+if 2==2:
+   goto block1
+   goto block2
 block1:
     x = 30 + -10 
     print(x + 10)
@@ -103,7 +106,7 @@ print(x+10)
 
 into an intermediate language that is closer to the bytecode but the CPython internals article does not talk about this; moreover, it is also not as straightforward because expressions such as `if expressions` generate more blocks and to generate the blocks in the most efficient way possible you also need to use graphs.
 
-After the control flow graph is generated then the Python3 system lowers this control flow graph to bytecode. Since the Pythons virtual machine is stack based it pushes constructs to the stack and pops them; for example, suppose you are adding two numbers: `2+2`. Then `2`, `2`, and the addition operator `+` will be pushed to the stack; to execute the virtual machine will pop those and push `4` to the stack.
+After the control flow graph is generated then the Python3 system lowers this control flow graph to bytecode. Since the Python's virtual machine is stack-based it pushes constructs to the stack and pops them; for example, suppose you are adding two numbers: `2+2`. Then `2`, `2`, and the addition operator `+` will be pushed to the stack; to execute the virtual machine will pop those and push `4` to the stack.
 
 ## A quick dive into some of Python's programming constructs
 
@@ -158,3 +161,6 @@ I think the answer here is that yes it does. Since functions are first class obj
 
 Python also allows the programmer to incrementally develop a program because it has a repl.
 
+## Conclusion
+
+Well, there you have it. We can still go deeper. If we want to understand Python deeper then we can build compiler and implement features such as tuples, arrays, lexical scoped functions, first class functions, object system. In addition we can implement a type checker, efficient tail calls, generics to get a much better understanding of programming in general.
