@@ -11,6 +11,7 @@ I write software as a hobby but for me programming is a serious hobby. Some of m
 
 - [zettapy](https://github.com/jobhdez/zettapy), a compiler that lowers the core of an imperative language to an x86 AST.
 
+#### Open Source contributions
 - [coalton](https://github.com/coalton-lang/coalton), a statically typed programming language embedded in Common Lisp. Coalton is used in production for the development of a quantum compiler. My biggest contribution to Coalton and in open source in general is a library for automatic differentiation via dual numbers. You can see the original PR [here](https://github.com/coalton-lang/coalton/pull/890). It was merged by a core developer [here](https://github.com/coalton-lang/coalton/pull/926).
 
 ### Some fascinating quotes about programming
