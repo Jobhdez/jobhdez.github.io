@@ -14,7 +14,7 @@ minima:
 
   # generate social links in footer
   social_links:
-    #twitter: sphere_in_space
+    twitter: sphere_in_space
     github:  jobhdez
     # devto: jekyll
     # dribbble: jekyll
