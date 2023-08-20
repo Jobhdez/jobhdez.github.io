@@ -3,7 +3,7 @@ author:
   name: Job Hernandez
   email: hj93@protonmail.com
 description: > # this means to ignore newlines until "show_excerpts:"
-  I write about the objects of study I am focused on. 
+  A technical blog about things I find interesting :)
 
 show_excerpts: false # set to true to show excerpts on the homepage
 
