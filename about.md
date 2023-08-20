@@ -4,14 +4,14 @@ title: About
 permalink: /about/
 ---
 
-Hello, I am Job Hernandez and I am a programmer from Seattle, WA. Some of my interests include compilers, functional programming, and pure mathematics; in addition, I also enjoy thinking about operating systems and distributed systems.
+Hello, I am Job Hernandez and I am a programmer from Seattle, WA. Some of my interests include compilers, functional programming, and pure mathematics; in addition, I also enjoy thinking about operating systems and distributed systems. But I also enjoy making Django backends. Fortunately, I have learned that programming is fun irrespective of the what you're building or which programming language you are using. Personally, I get a kick out of solving problems and debugging -- i.e., making a program run after spending some time debugging it.
 
 ### Software Projects
 I write software as a hobby but for me programming is a serious hobby. Some of my projects include:
 
-#### Independent porjects
+#### Independent projects
 
-Here is my favorite compiler I have written based on "Essentials of Compilation" by Dr. Siek. This compiler is loosly based on this book and I used a different but similar language.
+Here is my favorite compiler I have written based on "Essentials of Compilation" by Dr. Siek. This compiler is loosely based on this book but I used a different but similar language.
 
 - [zettapy](https://github.com/jobhdez/zettapy), a compiler that lowers the core of an imperative language to an x86 AST.
 
@@ -19,7 +19,10 @@ Here is my favorite compiler I have written based on "Essentials of Compilation"
 
 I have also contributed to open source in non trivial ways; for example, Coalton is used in production for the development of a quantum compiler. My biggest contribution to Coalton and in open source in general is a library for automatic differentiation via dual numbers. You can see the original PR [here](https://github.com/coalton-lang/coalton/pull/890). It was merged by a core developer [here](https://github.com/coalton-lang/coalton/pull/926).
 
+
 - [coalton](https://github.com/coalton-lang/coalton), a statically typed programming language embedded in Common Lisp.
+
+In addition I have also fixed some typos for TVM which is a compiler for deep learning. You can see my PRs [here](https://github.com/apache/tvm/commits?author=jobhdez). I chose to say something about these contributions despite these PRs being simple because the last typo I noticed and fixed was as a result of trying to figure out how a deep learning compiler such as TVM extracts the computational graph of a neural network model. What I learned was that for Pytorch models, TVM uses torchscript. From the torchscript representation I think you make the AST and continue from there.
 
 ### Some fascinating quotes about programming
 
