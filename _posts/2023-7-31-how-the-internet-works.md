@@ -102,10 +102,10 @@ Here is a key point about why web servers that are thread or process based such 
 We have discussed that the Internet can be seen as a network of LAN networks whose hosts, through their protocol implementations, communicate with other hosts. We also briefly discussed how data packets flow from the application HTTP protocol, to the TCP protocol, which in turn sends data to the IP protocol which in turn sends data to the network adapter through a LAN.
 
 ### References
-[1][Cloudflare - What is a LAN](https://www.cloudflare.com/learning/network-layer/what-is-a-lan/)
+[1] [Cloudflare - What is a LAN](https://www.cloudflare.com/learning/network-layer/what-is-a-lan/)
 
-[2][Computer Systems - A Programmer's Perspective](https://csapp.cs.cmu.edu/)
+[2] [Computer Systems - A Programmer's Perspective](https://csapp.cs.cmu.edu/)
 
-[3][A TCP/IP tutorial](https://www.rfc-editor.org/rfc/pdfrfc/rfc1180.txt.pdf)
+[3] [A TCP/IP tutorial](https://www.rfc-editor.org/rfc/pdfrfc/rfc1180.txt.pdf)
 
-[4][An Overview of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
+[4] [An Overview of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
