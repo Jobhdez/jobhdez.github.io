@@ -2,6 +2,7 @@
 layout: post
 title: "DSLs can lead to better systems"
 author: Job Hernandez
+tags: compiler backend internet
 ---
 *draft*
 

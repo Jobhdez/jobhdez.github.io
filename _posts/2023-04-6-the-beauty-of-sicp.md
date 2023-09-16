@@ -2,6 +2,7 @@
 layout: post
 title: "SICP's important computing and programming lessons"
 author: Job Hernandez
+tags: programming cs
 ---
 ### Personal experience with SICP
 The book “Structure and Interpretation of Computer Programs” was one of my favorite experiences I have had in the past 10 years. My copy of SICP is also very special because my mom gave it to me. The way it was written and how it uses mathematics made a huge impression on me. I got my mind blown a few times and I cried of joy while reading a few parts. It was such an amazing experience. SICP also made me love mathematics more and it helped me realize how deep computer science is. The way the authors of SICP described higher order procedures – e.g., how higher order procedures elevate the conceptual level of a given program – was a tremendously meaningful experience for me. So, in other words Scheme and SICP helped me appreciate computer science. In addition, my SICP studies helped me understand that interpreters/DSLs and compilers are the ultimate abstraction which is key for controlling complexity.

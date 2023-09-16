@@ -2,6 +2,7 @@
 layout: post
 title: Web System Architecture
 author: Job Hernandez
+tags: internet backend architecture
 ---
 *version 1.1*: June 16 2023, added more detail, and diagrams
 

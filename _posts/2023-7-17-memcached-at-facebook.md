@@ -2,6 +2,7 @@
 layout: post
 title: "How facebook scaled memcached"
 author: Job Hernandez
+tags: internals internet backend
 ---
 
 *version 1.1*: rephrased a few parts and added my interpretation, 7/20/23

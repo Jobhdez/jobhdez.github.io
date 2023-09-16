@@ -2,6 +2,7 @@
 layout: post
 title: "How the Internet Works"
 author: Job Hernandez
+tags: internet internals backend
 ---
 
 *version 1*: initial version, 7/31/23
