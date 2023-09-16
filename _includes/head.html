@@ -9,6 +9,10 @@
     {%- include google-analytics.html -%}
   {%- endif -%}
 
+  {% if site.tags != "" %}
+    {% include collecttags.html %}
+  {% endif %}
+
   {%- include custom-head.html -%}
   
 </head>
