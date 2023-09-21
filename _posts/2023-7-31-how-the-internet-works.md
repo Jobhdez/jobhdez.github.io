@@ -20,9 +20,9 @@ Here is quote by Alan Kay:
 
 Network applications are ubiquitous; everytime you browse the web, and send an email you are interacting with network applications.
 
-The Internet can be seen as a network of networks; for example, your home Wifi connects multiple computers to form a Local Area Network (LAN)[1]. The Internet can then be seen as a network of LANs whose hosts use routers and protocol software to communicate with other hosts.
+The Internet can be seen as a network of networks; for example, your home Wifi connects multiple computers to form a Local Area Network (LAN)[^1]. The Internet can then be seen as a network of LANs whose hosts use routers and protocol software to communicate with other hosts.
 
-The Internet can also be seen as a collection of hosts with the following properties[2]:
+The Internet can also be seen as a collection of hosts with the following properties[^2]:
 
 - the given hosts correspond to 32-bit IP addresses
 
@@ -39,7 +39,7 @@ Interestingly, the kernel and networking are related. First, there is a network 
 
 #### The network stack
 At the lowest level of the Internet stack there's Local Area Networks (LAN) which essentially is your Wifi network at home. Each host in a LAN is connected to other LANs through routers. What happens when one computer connects with another computer?
-To see how computers connect with one another one has to be aware of the protocol stack. The protocol stack consists of the following structure[3]:
+To see how computers connect with one another one has to be aware of the protocol stack. The protocol stack consists of the following structure[^3]:
 
  ```
 —---------                      —-------------
@@ -65,7 +65,7 @@ To see how computers connect with one another one has to be aware of the protoco
 Given a connection between computers there are two protocol stacks involved. When one is using the browser the data travels from the Application protocol to the hardware. In other words, the packets would travel from the application layer – e.g., HTTP – to the TCP layer where a port will be attached and then these packets will continue onto the IP layers where the destination IP address and from here the packets move onto the LAN networks which can be created with Wifi or the Ethernet. At the receiving protocol stack a router sends the packets to the correct computer and the packets start getting processed from the IP protocol to the application protocol. 
 
 ##### Internet Protocol (IP)
-The IP is essential to the Global Internet. The essence is a route table. IP routes the IP packet to the destination hosts[3].
+The IP is essential to the Global Internet. The essence is a route table. IP routes the IP packet to the destination hosts[^3].
 With respect to IP there are two types of routing: direct routing and indirect routing. Direct routing happens when two hosts on the same IP network communicate whereas in contrast indirect routing happens when two hosts on different IP networks connect. When IP mediates the communication between two hosts the header will consist of the source and destination IP addresses.
 
 When an IP packet travels over the Internet it can go from one IP-router to another while its route table determines where to direct the IP packet.
@@ -82,7 +82,7 @@ The connection or virtual circuits between the two TCP implementations on the re
 
 ##### Hypertext Transfer Protocol (HTTP)
 
-HTTP is an application protocol that mediates the exchange of HTML documents between a web browser and a server[4]. HTTP is stateless which means that there is no relationship between requests happening one after another; nevertheless, via sessions you can provide some state.
+HTTP is an application protocol that mediates the exchange of HTML documents between a web browser and a server[^4]. HTTP is stateless which means that there is no relationship between requests happening one after another; nevertheless, via sessions you can provide some state.
 
 
 
@@ -103,10 +103,10 @@ Here is a key point about why web servers that are thread or process based such 
 We have discussed that the Internet can be seen as a network of LAN networks whose hosts, through their protocol implementations, communicate with other hosts. We also briefly discussed how data packets flow from the application HTTP protocol, to the TCP protocol, which in turn sends data to the IP protocol which in turn sends data to the network adapter through a LAN.
 
 ### References
-[1] [Cloudflare - What is a LAN](https://www.cloudflare.com/learning/network-layer/what-is-a-lan/)
+[^1]: [Cloudflare - What is a LAN](https://www.cloudflare.com/learning/network-layer/what-is-a-lan/)
 
-[2] [Computer Systems - A Programmer's Perspective](https://csapp.cs.cmu.edu/)
+[^2]: [Computer Systems - A Programmer's Perspective](https://csapp.cs.cmu.edu/)
 
-[3] [A TCP/IP tutorial](https://www.rfc-editor.org/rfc/pdfrfc/rfc1180.txt.pdf)
+[^3]: [A TCP/IP tutorial](https://www.rfc-editor.org/rfc/pdfrfc/rfc1180.txt.pdf)
 
-[4] [An Overview of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
+[^4]: [An Overview of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
