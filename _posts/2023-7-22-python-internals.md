@@ -84,7 +84,7 @@ The parser will generate the an abstract sysntax tree that looks *similar* but n
                                        :EXP #S(PY-VAR :NAME ZETTA-VAR::Y))))))
 ```
 
-Thhe above example was taken from my compiler project but it should give you a concrete idea of what an AST is.
+The above example was taken from my compiler project but it should give you a concrete idea of what an AST is.
                                       
 After the AST is generated the Python system creates a control flow graph. A control flow graph is a directed graph. It takes the above Python AST and creates a graph similar to the following.
 ```
