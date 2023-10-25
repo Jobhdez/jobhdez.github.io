@@ -1,6 +1,6 @@
 ---
 layout: post
-title: “Reflecting on my open source experience"
+title: Reflecting on my open source experience
 author: Job Hernandez
 ---
 
@@ -71,7 +71,7 @@ Recall that a $$ w $$-bit number is stored as consecutive addressable bytes. So,
 
 Given a bit vector $$ \vec{x} $$ one converts a bit vector into a decimal number as follows:
 
-$$ B2U_{w} $$ $$ \vec{x} $$ $$ = $$ \sum_{i=0}^{w-1} x_{i}2^i $$
+$$ B2U_{w} $$ $$ \vec{x} $$ $$ = $$ $$ \sum_{i=0}^{w-1} x_{i}2^i $$
 
 So, I learned a lot thinking about this github issue.
 
