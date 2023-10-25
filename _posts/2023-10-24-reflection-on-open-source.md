@@ -26,7 +26,7 @@ One of the things I also learned was about the importance of code review. I lear
 
 In addition I also learned that PRs should be a series of sensible and well crafted commits. Or as Robert Smith says:
 
-> Commits should cover an atomic amount of useful change, and be well described by the short and long commit message. Most ideal scenario: what I described above less ideal scenario: you squash everything into a single commit and describe your changes less^2 ideal scenario: I squash them all for you and write a message for you less^infinity idea scenario: I merge something with whatever unpolished commit history.
+> Commits should cover an atomic amount of useful change, and be well described by the short and long commit message. Most ideal scenario: what I described above. Less ideal scenario: you squash everything into a single commit and describe your changes. Less^2 ideal scenario: I squash them all for you and write a message for you. Less^infinity idea scenario: I merge something with whatever unpolished commit history.
 
 Finally, I learned about the amazing feeling you get when you contribute code to a codebase that gets used. I felt excited when my first non trivial pr got merged because I felt I did something useful.
 
@@ -38,7 +38,7 @@ Now, I will say a little bit about my contributions to Coalton.
 
 I started fixing typos but after a conversation I had with Robert, he suggested that I work on a dual number library.
 
-A dual number has the form $$ a + b\epsilon $$ where $$ a $$ and $$ b $$ are real numbers and $$ \epsilon $$ is a symbol that satisfies $$ \epsilon^2 = 0 $$  and $$ \epsilon != 0 $$. One application of dual numbers is automatic differentiation.
+A dual number has the form $$ a + b\epsilon $$ where $$ a $$ and $$ b $$ are real numbers and $$ \epsilon $$ is a symbol that satisfies $$ \epsilon^2 = 0 $$  and $$ \epsilon \neq 0 $$. One application of dual numbers is automatic differentiation.
 
 Consider the function $$ f(x) = 5x+3 $$ and you want to calculate $$ f(3) $$ and $$ f'(x) $$.
 
@@ -46,7 +46,7 @@ We can rewrite $$ f(x) $$ as a dual number as follows:
 
 $$ f(3 + \epsilon) = 5(3 + \epsilon) + 3 = 18 + 5\epsilon $$.
 
-Here $$ 18 $$ is $$ f(3) $$ and 5 is the derivative of $$ f’(x) $$.
+Here $$ 18 $$ is $$ f(3) $$ and 5 is the derivative of $$ f’(3) $$.
 
 So, this is what I did. I wrote this library in Coalton for Coalton’s standard library. The code I wrote supports **Number** such as addition, subtraction, and multiplication and division, **Radical**, **Exponentiable** and **Trigonometric** data types.
 
@@ -63,7 +63,7 @@ In the textbook “Computer Systems, A Programmer's Perspective” the authors c
 In response to reading the above quote, which was after I started working on this issue, I appreciated taking the time and researching what an unsigned value is and the arithmetic properties such as when it overflows and underflows.
 
 
-So, as I mentioned above, I picked up an issue that involved signaling an underflow error for unsigned values. Unsigned values are numbers in the range $$ 0 $$ to $$ 2^{w-1} $$ where $$ w $$ is the the size of the unsigned number; for example, an 8 bit unsigned number. In other words, a bit vector $$ \vec{x} $$ of $$ w $$ bits can represent a decimal number in the range  $$ 0 $$ to $$ 2^{w-1} $$.
+So, as I mentioned above, I picked up an issue that involved signaling an underflow error for unsigned values. Unsigned values are numbers in the range $$ 0 $$ to $$ 2^{w} - 1 $$ where $$ w $$ is the the size of the unsigned number; for example, an 8 bit unsigned number. In other words, a bit vector $$ \vec{x} $$ of $$ w $$ bits can represent a decimal number in the range  $$ 0 $$ to $$ 2^{w} - 1 $$.
 
 This is saying that the set of decimal numbers that the computer represents is contingent on the bit size of the number and whether it is an unsigned or signed number; for example, an 8 bit unsigned number can represent values ranging from $$ 0 $$ to $$ 255 $$, a 16 bit unsigned number can can represent values ranging from $$ 0 $$ to $$ 65535 $$, a 32 bit unsigned number can represent values ranging from $$ 0 $$ to $$ 4294967295 $$ and a 64 bit unsigned value can represent values ranging from $$ 0 $$ to $$ 18446744073709551615 $$. 
 
