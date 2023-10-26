@@ -144,7 +144,7 @@ CL-USER> (compile-comp '(comp x (for x from 1 to 10) (for y from 1 to 10)))
    	(string= "WHEN" (first form))))
 
 (defun list-comprehension-form? (form)
-  (and (< 2 (length form))
+  (and (= 2 (length form))
    	(string= "COMP" (first form))))
 
 
