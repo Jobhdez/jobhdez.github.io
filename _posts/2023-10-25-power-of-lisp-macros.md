@@ -34,39 +34,14 @@ Here is how I would write it:
  	(progn (setq vec3 (make-array ,(length vec) :element-type ',type))
     	(dotimes (i ,(length vec))
       	(setf (aref vec3 i)
-   	 	(+ (aref ,vec i)
-   	    	    (aref ,vec2 i)))))))
+   	 	(+ (aref vec i)
+   	    	    (aref vec2 i)))))))
 
 (addition-handler single-float addition-vector-single-float)
 (addition-handler double-float addition-vector-double-float)
 ```
 
 You can continue this pattern and implement more vector operations and more types.
-
-Now in something like Haskell how would you write this? I do not have much experience with Haskell but in my mind you would need to implement a type class and implement $$ n $$ instances of this class. So you will end up with two vector addition functions that look exactly like one another.
-
-Here is how I would write it:
-
-```haskell
-class Vector a where
-  add :: a -> a -> a
-
-instance Vector  [Float] where
-  add = addVectorsF
-  
-instance Vector [Double] where
-  add = addVectorsD
-
-addVectorsF :: [Float] -> [Float] -> [Float]
-addVectorsF v v2 =
-  zipWith (+) v v2
-
-addVectorsD :: [Double] -> [Double] -> [Double]
-addVectorsD v v2 =
-  zipWith (+) v v2
-```
-
-In the above `addVectorsF` and `addVectorsD` look exactly the same. Now imagine if you want to implement a linear algebra library? In Haskell you will end up with more repetition whereas in contrast with macros you can cope with more complexity and capture more of the overall pattern.
 
 So, in Lisp you can get more done with less code. In turn, this leads to smaller systems due to the abstraction and since smaller systems are easier to make sense of the ease of maintenance increases.
 
@@ -169,7 +144,7 @@ CL-USER> (compile-comp '(comp x (for x from 1 to 10) (for y from 1 to 10)))
    	(string= "WHEN" (first form))))
 
 (defun list-comprehension-form? (form)
-  (and (&lt;= 2 (length form))
+  (and (< 2 (length form))
    	(string= "COMP" (first form))))
 
 
