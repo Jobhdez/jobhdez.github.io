@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Reflecting on my open source experience
-author: Job Hernandez
+author: Job Hernandez Lara
 ---
 
 *version*: 0.9.0, draft
