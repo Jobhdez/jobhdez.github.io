@@ -50,20 +50,18 @@ Here is how I would write it:
 ```haskell
 class Vector a where
   add :: a -> a -> a
-  sub :: a -> a -> a
-  – ….
 
 instance Vector  [Float] where
   add = addVectorsF
-  – …
+  
 instance Vector [Double] where
   add = addVectorsD
 
-– implementation of vector addition for floats
+addVectorsF :: [Float] -> [Float] -> [Float]
 addVectorF v v2 =
   zipWith (+) v v2
 
-– implementation of vector addition for doubles
+addVectorsF [Double] -> [Double] -> [Double]
 addVectorsD v v2 =
   zipWith (+) v v2
 ```
