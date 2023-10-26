@@ -61,7 +61,7 @@ addVectorsF :: [Float] -> [Float] -> [Float]
 addVectorF v v2 =
   zipWith (+) v v2
 
-addVectorsF [Double] -> [Double] -> [Double]
+addVectorsD :: [Double] -> [Double] -> [Double]
 addVectorsD v v2 =
   zipWith (+) v v2
 ```
