@@ -58,7 +58,7 @@ instance Vector [Double] where
   add = addVectorsD
 
 addVectorsF :: [Float] -> [Float] -> [Float]
-addVectorF v v2 =
+addVectorsF v v2 =
   zipWith (+) v v2
 
 addVectorsD :: [Double] -> [Double] -> [Double]
