@@ -47,7 +47,7 @@ Now in something like Haskell how would you write this? I do not have much exper
 
 Here is how I would write it:
 
-```
+```haskell
 class Vector a where
   add :: a -> a -> a
   sub :: a -> a -> a
@@ -211,6 +211,7 @@ CL-USER> (compile-comp '(comp x (for x from 1 to 10) (for y from 1 to 10)))
 
 Here is the interaction in the REPL:
 
+```lisp
 * (defmacro comp (expr &rest clauses) (compile-comp `(comp ,expr ,@clauses))) 
 
 * (comp (* x x) (for x from 1 to 10)) 
