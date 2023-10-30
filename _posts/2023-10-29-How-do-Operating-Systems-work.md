@@ -72,7 +72,7 @@ Since there are multiple processors, for a given line of code, multiple processo
 
 The reason why we need locks is to prevent *race conditions*. Race conditions result from the ordering of execution of two or more processors that invalidates a data structure. A processor S may be operating on A but then processor T may work on A which will result in processor S working on a modified version of A, let's call it B.
 
-#### deadlock
+#### Deadlock
 
 Deadlocks involve the ordering of locks. Suppose a code path require to take out several locks. When this happens it is important that all code paths acquire the locks in the same order. Suppose there's to code paths and both paths need locks A and B. If code path 1 acquires locks in the order A, B and the other path acquires locks in the order B, A. This can result in a deadlock because when path 1 acquires lock A, path 2 will acquire B. As a result path 1 will wait for and path 2 will wait for A. Both path are waiting. In other words, a deadlock happens when two processors hold the lock that each of them needs.
 
@@ -83,7 +83,7 @@ The file system exists to organize and store data; it is an abstraction of disk.
 
 The buffer cache has two jobs: 1) ensures that only one copy of a disk block is in memory; 2) cache popular blocks so they do not have to be re-read from the slow disk. The buffer cache has an interface; in xv6 the interface is `bread` and `bwrite`. The former gets a buffer consisting of a block that can be read or modified and the latter writes a modified block to disk. In other words, there is a transition between memory and disk. A block can first be in memory and it can be read and modified in memory. `bread` gets a copy of such block. `bwrite` writes this modified block to disk. So, there seems to be a transition between memory and disk. How does the buffer cache synchronize access to each block? It only allows at most one kernel thread to reference to the block's buffer. While one kernel thread is referring to a block buffer other threads will have to wait until the thread releases the buffer block.
 
-##### Loggi ng
+##### Logging
 
 Logging solves the problem of crashes during file system operations.
 
