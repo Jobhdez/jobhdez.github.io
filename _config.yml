@@ -6,7 +6,7 @@ description: > # this means to ignore newlines until "show_excerpts:"
   A technical blog about things I find interesting :)
 
 show_excerpts: false # set to true to show excerpts on the homepage
-google_analytics: G-ECCJ1WV11X
+# google_analytics: G-ECCJ1WV11X
 # Minima date format
 # refer to https://shopify.github.io/liquid/filters/date/ if you want to customize this
 minima:
