@@ -10,7 +10,7 @@ author: Job Hernandez Lara
 
 Last two years or so I have been on a journey to study computer science fundamentals. Over the course of the last two years I have studied algorithms, distributed systems and compilers among other topics but operating systems is one of my favorite topics.
 
-In what follows I will explain how an operating system works based on my studies of the MIT [xv6[(https://pdos.csail.mit.edu/6.828/2023/xv6/book-riscv-rev3.pdf) and “Operating System Concepts”.
+In what follows I will explain how an operating system works based on my studies of the MIT [xv6](https://pdos.csail.mit.edu/6.828/2023/xv6/book-riscv-rev3.pdf) and “Operating System Concepts”.
 
 Obviously, I am not an expert. But I enjoy this topic a lot and wrote this to learn.
 
