@@ -5,12 +5,13 @@ author: Job Hernandez Lara
 ---
 
 *version*: 0.9.1, fix formatting
+
 *version*: 0.9.0, draft
 
 
 ### Real Numbers
 
- Dr. Hardy claimed in his book "A Mathematical Apology" that the theorem that states that $\sqrt{2}$ is irrational is a beautiful theorem.
+ Dr. Hardy claimed in his book "A Mathematical Apology" that the theorem that states that $$ \sqrt{2} $$ is irrational is a beautiful theorem.
 
 **Theorem**
 There is no rational number whose square is 2.
