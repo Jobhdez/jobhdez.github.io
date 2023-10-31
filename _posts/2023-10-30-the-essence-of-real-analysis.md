@@ -4,6 +4,7 @@ title: The essence of real analysis
 author: Job Hernandez Lara
 ---
 
+*version*: 0.9.1, fix formatting
 *version*: 0.9.0, draft
 
 
@@ -13,7 +14,7 @@ author: Job Hernandez Lara
 
 **Theorem**
 There is no rational number whose square is 2.
-*Proof* Suppose there is a rational number $$ n $ whose square is 2. Then $$ n $$ can be represented as $$ p/q $$. Consequently, this means that $$ (p/q)^2 = 2 $$. We assume that $$ p $$ and $$ q $$ have no common factors; consequently, $$ p^2 = 2q^2 $$. This means that  $$ p^2 $$ is even so $$ p $$ is even. Given this we can rewrite $$ p $$ as $$ 2r $$. If we then substitute $$ p $$ for $$ 2r $$ we end up with: $$ 2r^2 = q^2 $$ which means that $$ q $$ is even which in turn means that this can be reduced further which is a contradiction because there were suppose to be no common factors.
+*Proof* Suppose there is a rational number $$ n $$ whose square is 2. Then $$ n $$ can be represented as $$ p/q $$. Consequently, this means that $$ (p/q)^2 = 2 $$. We assume that $$ p $$ and $$ q $$ have no common factors; consequently, $$ p^2 = 2q^2 $$. This means that  $$ p^2 $$ is even so $$ p $$ is even. Given this we can rewrite $$ p $$ as $$ 2r $$. If we then substitute $$ p $$ for $$ 2r $$ we end up with: $$ 2r^2 = q^2 $$ which means that $$ q $$ is even which in turn means that this can be reduced further which is a contradiction because there were suppose to be no common factors.
 
 To understand the main concepts of analysis, namely, continuity, convergence, differentiation and integration we must think hard about the real numbers. As a result, we start with the natural numbers which are denoted as $$ \mathbb{N} = \{ 1,2,3,4, \dots \} $$. Leopold Kronecker said 
 >The natural numbers are the work of God. The rest is the work of mankind.
@@ -22,8 +23,8 @@ Given the natural numbers we can perform addition but we must extend our system 
 
 A set $$ A \in \mathbb{R} $$ is bounded from above if there exists a  $$ b \in \mathbb{R} $$ such that $$ a \le b $$ for all $$ a $$ in $$ A $$. Similarly, a set $$ A $$ is bounded from below if there exists an $$ l $$ such that $$ l \le a $$ for all $$ a \in A $$. A real number $$ s $$ is the **least upper bound** for a set $$ A \in R $$ if it meets two conditions: 1) s is an upper bound for A; 2) let b be any upper bound for A then $$ s \le b $$. There isn’t a least upper bound in the rational numbers because you can always reduce a given rational number; but there is a least upper bound in a subset of the real numbers. The least upper bound is denoted as $$ s = sup A $$.
 
-*lemma*
-Assume s in R is an upper bound for a set $A \in R$. Then $s = sup A$ if and only if for  every choice $\epsilon > 0$ there exists an element $a \in A$ such that $s - \epsilon < a$. Here is a quote from the textbook:
+*Lemma*
+Assume s in R is an upper bound for a set $$ A \in R $$. Then $$ s = sup A $$ if and only if for  every choice $$ \epsilon > 0 $$ there exists an element $$ a \in A $$ such that $$ s - \epsilon < a $$. Here is a quote from the textbook:
 	
 > Given that s is an upper bound is the least upper bound if and only if any number smaller than s is not  an upper bound.
 	
@@ -68,7 +69,7 @@ In short, a function $$ f $$ is continuous at $$ c \in A $$ if $$ \lim_{x\to c} 
 Characterization of continuity.
 Let $$ f \colon A \to \mathbb{R} $$ and let $$ c \in A $$. The function $$ f $$ is continuous at $$ c $$ if and only if anyone of the following three conditions is met:
 
-* For all $$ \epsilon > 0 $$ there exists a $$ \delta > 0 $$ such that $$ \left|x-c\right| < \delta $$ and $$ x \in A $$ implies $$ \left|f\left(x\right) - f\left(c\right)\right| < \epsilon $$.
+* For all $$ \epsilon > 0 $$ there exists a $$ \delta > 0 $$ such that |$$ x-c $$| $$ < \delta $$ and $$ x \in A $$ implies | $$ f(x) - f(c) $$ $$ < \epsilon $$.
 * For all $$ V_{\epsilon}\left(f\left(c\right)\right) $$ there exists a $$ V_{\delta}\left(c\right) $$ with the property that $$ x \in V_{\delta}\left(c\right) and x \in A $$ implies $$ f\left(x\right) \in V_{\epsilon}\left(f\left(c\right)\right) $$.
 *  if $$ x_{n} \to c $$ with $$ x_{n} \in A $$ then $$ f\left(x_{n}\right) \to f\left(c\right). $$
 
