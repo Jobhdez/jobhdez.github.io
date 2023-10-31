@@ -70,7 +70,7 @@ In short, a function $$ f $$ is continuous at $$ c \in A $$ if $$ \lim_{x\to c} 
 Characterization of continuity.
 Let $$ f \colon A \to \mathbb{R} $$ and let $$ c \in A $$. The function $$ f $$ is continuous at $$ c $$ if and only if anyone of the following three conditions is met:
 
-* For all $$ \epsilon > 0 $$ there exists a $$ \delta > 0 $$ such that |$$ x-c $$| $$ < \delta $$ and $$ x \in A $$ implies | $$ f(x) - f(c) $$ $$ < \epsilon $$.
+* For all $$ \epsilon > 0 $$ there exists a $$ \delta > 0 $$ such that the abosolute value of $$ x-c $$ $$ < \delta $$ and $$ x \in A $$ implies the absolute value of  $$ f(x) - f(c) $$ $$ < \epsilon $$.
 * For all $$ V_{\epsilon}\left(f\left(c\right)\right) $$ there exists a $$ V_{\delta}\left(c\right) $$ with the property that $$ x \in V_{\delta}\left(c\right) and x \in A $$ implies $$ f\left(x\right) \in V_{\epsilon}\left(f\left(c\right)\right) $$.
 *  if $$ x_{n} \to c $$ with $$ x_{n} \in A $$ then $$ f\left(x_{n}\right) \to f\left(c\right). $$
 
