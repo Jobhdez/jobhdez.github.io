@@ -26,7 +26,7 @@ One of the things I also learned was about the importance of code review. I lear
 
 In addition I also learned that PRs should be a series of sensible and well crafted commits. Or as Robert Smith says:
 
-> Commits should cover an atomic amount of useful change, and be well described by the short and long commit message. Most ideal scenario: what I described above. Less ideal scenario: you squash everything into a single commit and describe your changes. Less^2 ideal scenario: I squash them all for you and write a message for you. Less^infinity idea scenario: I merge something with whatever unpolished commit history.
+> Commits should cover an atomic amount of useful change, and be well described by the short and long commit message. Most ideal scenario: what I described above. Less ideal scenario: you squash everything into a single commit and describe your changes. Less^2 ideal scenario: I squash them all for you and write a message for you. Less^infinity ideal scenario: I merge something with whatever unpolished commit history.
 
 Finally, I learned about the amazing feeling you get when you contribute code to a codebase that gets used. I felt excited when my first non trivial pr got merged because I felt I did something useful.
 
