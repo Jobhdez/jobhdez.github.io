@@ -33,41 +33,41 @@ else:
 
 Lets expose `if statements` and stack locations. Remember one of the operands in x86 instructions are stack locations.
 
-```
+```asm
 .globl main
 
 main:
-    pushq %rbp
-    movq %rsp, %rbp
-    subq $16, %rsp
-    movq $3, -8(%rbp)  // move 5 into stack location 1
-    cmp  $3, -8(%rbp)  // compare: 3 is not equal to 5
-    je block_1
-    jmp block_2
+      pushq %rbp
+      movq %rsp, %rbp
+      subq $16, %rsp
+      movq $3, -8(%rbp)  // move 5 into stack location 1
+      cmp  $3, -8(%rbp)  // compare: 3 is not equal to 5
+      je block_1
+      jmp block_2
 
 block_1:
-    	movq $5, -8(%rbp)
-    	negq -8(%rbp)
-    	movq -8(%rbp), %rax
-    	movq $30, -16(%rbp)
-     addq -16(%rbp), %rax
-    	movq %rax, %rdi
-    	callq print_int
-     addq $16, %rsp
-     popq %rbp
-     retq
+      movq $5, -8(%rbp)
+      negq -8(%rbp)
+      movq -8(%rbp), %rax
+      movq $30, -16(%rbp)
+      addq -16(%rbp), %rax
+      movq %rax, %rdi
+      callq print_int
+      addq $16, %rsp
+      popq %rbp
+      retq
 
 block_2:
-     movq $10, -8(%rbp)
-    	negq -8(%rbp)
-    	movq -8(%rbp), %rax
-    	movq $25, -16(%rbp)
-     addq -16(%rbp), %rax
-    	movq %rax, %rdi
-    	callq print_int
-     addq $16, %rsp
-     popq %rbp
-     retq
+      movq $10, -8(%rbp)
+      negq -8(%rbp)
+      movq -8(%rbp), %rax
+      movq $25, -16(%rbp)
+      addq -16(%rbp), %rax
+      movq %rax, %rdi
+      callq print_int
+      addq $16, %rsp
+      popq %rbp
+      retq
 
 ```
 
@@ -95,7 +95,7 @@ for i in array:
 
 The x86 assembly for this code would look something like this:
 
-```assembly
+```asm
 .section .data
 
 array:
