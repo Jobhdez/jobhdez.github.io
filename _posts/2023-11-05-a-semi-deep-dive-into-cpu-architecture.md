@@ -14,7 +14,19 @@ Hopefully, you enjoy this!
 
 ### Exposing the x86 architecture
 
-x86 assembly exposes the registers of the x86 architecture and the program counter. The program counter is the address of the next instruction to be executed. When using memory addresses instead of registers these memory addresses are actually part of the virtual memory address space. The program counter is called %rip in x86-64. The register file of x86-64 consists of 16 named locations storing 64 bit values i.e., registers. The register %rsp is the stack pointer, which indicates the end position of the run time stack. The operands of the instructions defined by the isa consist of immediates, stack locations, and registers. Immediate is data such as numbers, stack locations are memory locations and registers are locations that can be accessed by the processor in a few cycles.
+x86 assembly exposes the registers of the x86 architecture and the program counter. The program counter is the address of the next instruction to be executed. When using memory addresses instead of registers these memory addresses are actually part of the virtual memory address space.
+
+The program counter is called `%rip` in x86-64. The register file of x86-64 consists of 16 named locations storing 64 bit values i.e., registers.
+
+The register `%rsp` is the stack pointer, which indicates the end position of the run time stack. The top of the stack contains the lowest addresses. The `pushq` instruction pushes values to the stack and `popq` pops them. The stack follows a last in, first out operation; for example, suppose you have two variables each of which are a byte in size (i.e., quad word values). Pushing these values to the stack would consist of decrementing the stack pointer by 16:
+
+```
+ pushq %rbp
+ movq %rsp, %rbp
+ subq $16, %rsp
+ ```
+
+The operands of the instructions defined by the ISA consist of immediates, stack locations, and registers. Immediates are data such as numbers, stack locations are memory locations and registers are locations that can be accessed by the processor in a few cycles.
 
 
 To get to know the x86-64 architecture a little bit more I will talk about how core imperative programming features get implemented in x86-64 assembly where core features include arrays, loops, and if statements.
@@ -31,7 +43,7 @@ else:
   y = 25 + -10
 ```
 
-Lets expose `if statements` and stack locations. Remember one of the operands in x86 instructions are stack locations.
+Lets expose immediates and stack locations and the stack pointer register `%rsp` by lowering the above program to x86 assembly. Remember some of the operands in x86 instructions are stack locations and immediates.
 
 ```asm
 .globl main
@@ -39,7 +51,7 @@ Lets expose `if statements` and stack locations. Remember one of the operands in
 main:
       pushq %rbp
       movq %rsp, %rbp
-      subq $16, %rsp
+      subq $16, %rsp     // the stack grows by decrementing the stack
       movq $3, -8(%rbp)  // move 5 into stack location 1
       cmp  $3, -8(%rbp)  // compare: 3 is not equal to 5
       je block_1
@@ -160,7 +172,15 @@ But in practice there's instruction parallelism.
 
 #### Instruction parallelism 
 
-$$ \textbf{Instruction level parallelism} $$ is a process whereby the processor executes more instructions per second; it does this by implementing pipelining whereby more stuff gets done in less processor cycles. Instruction level parallelism is exploited in compilers. The main idea of instruction level parallelism is to pre-fetch instructions from memory and put them in a set of special registers called the pre-fetch buffer and as a result of this the processor would not have to read from memory which takes hundreds of cycles. In a pipeline, execution is divided into stages in which each stage is carried out by a different type of hardware in parallel. Suppose you divide the execution into five stages. Stage 1 fetches instructions from memory and are stored in the prefetch buffer. Stage 2  determines the type and determines which operands it needs. Stage 3 fetches the operands; stage 4 carries out the execution and stage 5 writes the output to a register. Since these stages can be carried out in parallel it is fast; for example during the first clock cycle  Stage 1 does its job; during the second clock cycle Stage 2 does its job but also Stage 1 does its job for the next instruction. And during the third clock cycle Stage 3 does its job for the first instruction, stage 2 does its job for the second instruction, and stage 1 does its job for the third instruction and so on. Now, suppose that each clock cycle takes 2ns to complete; so one instruction takes 10ns to get processed by each stage so there 500 million instructions per second get executed.
+$$ \textbf{Instruction level parallelism} $$ is a process whereby the processor executes more instructions per second; it does this by implementing pipelining whereby more stuff gets done in less processor cycles.
+
+Instruction level parallelism is exploited in compilers.
+
+The main idea of instruction level parallelism is to pre-fetch instructions from memory and put them in a set of special registers called the pre-fetch buffer and as a result of this the processor would not have to read from memory which takes hundreds of cycles. In a pipeline, execution is divided into stages in which each stage is carried out by a different type of hardware in parallel.
+
+Suppose you divide the execution into five stages.
+
+Stage 1 fetches instructions from memory and are stored in the prefetch buffer. Stage 2  determines the type and determines which operands it needs. Stage 3 fetches the operands; stage 4 carries out the execution and stage 5 writes the output to a register. Since these stages can be carried out in parallel it is fast; for example during the first clock cycle  Stage 1 does its job; during the second clock cycle Stage 2 does its job but also Stage 1 does its job for the next instruction. And during the third clock cycle Stage 3 does its job for the first instruction, stage 2 does its job for the second instruction, and stage 1 does its job for the third instruction and so on. Now, suppose that each clock cycle takes 2ns to complete; so one instruction takes 10ns to get processed by each stage so there 500 million instructions per second get executed.
 
 
 ### Conclusion
