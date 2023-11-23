@@ -4,23 +4,24 @@ title: Reflecting on my open source experience
 author: Job Hernandez Lara
 ---
 
-*version*: 0.9.0, draft
+*version*: 1.0, 11/22/23
+*version*: 0.9.0, draft, 10/24/23
 
 ### Introduction
 
 I have been reading “Rebel Code”, a book about the early days of Linux and open source and I just find the stories in this book amazing. So, I am really excited about contributing to Coalton, a programming language written in Common Lisp that is embedded in Common Lisp. Coalton is a statically typed language, similar to Haskell, with type inference.
 
-In [14 Grand Challenges for Engineering in the 21st Century](https://www.engineeringchallenges.org/challenges.aspx) the experts who got together to determine the grand engineering challenges of the 21st century concluded that one of these challenges was to build the tools the will enable scientific discovery.
+In [14 Grand Challenges for Engineering in the 21st Century](https://www.engineeringchallenges.org/challenges.aspx) some experts got together and determined 14 grand engineering challenges for the 21st century. Among these challenges was to build the tools for scientific discovery.
 
-It happens that Coalton is a language that is used in production at a quantum computing company to build a quantum compiler. So, Coalton is a tool to advance science. So, I think the team at HRL labs is doing great work. So, I would like to contribute to Coalton.
+It happens that Coalton is a language that is used in production at a quantum computing company to build a quantum compiler. So, Coalton is a tool for advancing science. So, I think the peope at HRL labs are doing great work. So, I would like to contribute to Coalton.
 
 ### Lessons I learned from contributing to open source
 
 Contributing to open source is like doing an internship. If the system is being used in production then by contributing you are essentially doing an internship because you get to work on a production system and with other engineers.
 
-One of the things I learned from contributing to Coalton is how to independently investigate the codebase, identify the relevant code I need to understand to make my changes; moreover, I learned that often you can make a contribution by following the patterns of the surrounding code. In addition, working on a github issue is also just like working on some project. That is, you still need to research the problem and understand the problem.
+One of the things I learned from contributing to Coalton is how to independently investigate the codebase, identify the relevant code I need to understand to make my changes; moreover, I learned that often you can make a contribution by following the patterns of the surrounding code. In addition, working on a github issue is also just like working on some personal project. That is, you still need to research the problem and understand the problem.
 
-One of the things I also learned was about the importance of code review. I learned that software is improved iteratively through code review. As the lead, Robert and very good software engineer, said:
+One of the things I also learned was about the importance of code review. I learned that software is improved iteratively through code reviews. As the lead, Robert and very good software engineer, said:
 
 > It [the PR] started as a humble initial piece of code with the basic structure, and now it's being "chiseled" and refined. It's turning into a higher and higher quality contribution with each pass. This iteration is the essence of good software.
 
@@ -58,6 +59,7 @@ Another contribution that I am currently working on, which has not been merged, 
 This pull request has taught me a lot and taught me a good lesson. Namely, it is good to gain some practical experience and then read a textbook to learn some theory. Practice and theory go together.
 
 In the textbook “Computer Systems, A Programmer's Perspective” the authors claim the following:
+
 > By studying the actual number representations, we can understand the ranges of values that can be represented and the properties of the different arithmetic operations. This understanding is critical to writing programs that work correctly over the full range of numeric values and that are portable across different combinations of machine, operating system, and compiler
 
 In response to reading the above quote, which was after I started working on this issue, I appreciated taking the time and researching what an unsigned value is and the arithmetic properties such as when it overflows and underflows.
