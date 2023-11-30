@@ -4,7 +4,7 @@ title: Expository Writing
 permalink: /expository-writing/
 ---
 
-These are lecture notes I have written in LaTeX as a way to learn the material better.
+These are lecture notes I have written in LaTeX as a way to learn the material better. These notes are horrible though but writing these helped me understand the material better :-)
 
 - [Real Analysis](https://jobhdez.github.io/analysis.pdf). Lecture notes for Abbott's "Understanding Analysis".
 
