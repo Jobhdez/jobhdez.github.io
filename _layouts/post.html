@@ -25,14 +25,12 @@ layout: default
       {% endfor %}
       {%- endif -%}</p>
   </header>
-
-  <span class="post-meta" style="padding-left: 20px;">
-    {%- for tag in post.tags -%}
-    <a href="/t/{{ tag | downcase | replace: ' ', '-' }}">
-      #{{ tag }}
-    </a>&nbsp;
-    {%- endfor -%}
-  </span>
+  <div class="tags">
+  Tags:
+  {% for tag in page.tags %}
+    <a href="/t/{{ tag | slugify }}/">{{ tag }}</a>
+  {% endfor %}
+</div>
 
 
   <div class="post-content e-content" itemprop="articleBody">

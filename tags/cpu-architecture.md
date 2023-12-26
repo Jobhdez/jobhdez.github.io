@@ -1,6 +1,5 @@
 ---
 layout: tag
-title: "Tag: cpu-architecture"
 permalink: /t/cpu-architecture
 ---
 
