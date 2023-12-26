@@ -25,12 +25,6 @@ layout: default
       {% endfor %}
       {%- endif -%}</p>
   </header>
-  <div class="tags">
-  Tags:
-  {% for tag in page.tags %}
-    <a href="/t/{{ tag | slugify }}/">{{ tag }}</a>
-  {% endfor %}
-</div>
 
 
   <div class="post-content e-content" itemprop="articleBody">
