@@ -32,10 +32,13 @@ layout: default
         </a>
       </h3>
       <div class="tags">
+	Tags:
 	{% for tag in page.tags %}
-	<a href="/tags/{{ tag | downcase | url_encode }}/">{{ tag }}</a>
+	<a href="/tags/{{ tag | slugify }}/">{{ tag }}</a>
 	{% endfor %}
       </div>
+
+
 
       {%- if site.show_excerpts -%}
       {{ post.excerpt }}
