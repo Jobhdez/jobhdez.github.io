@@ -11,26 +11,28 @@ layout: default
         {{ page.date | date: date_format }}
       </time>
       {%- if page.modified_date -%}
-        ~ 
-        {%- assign mdate = page.modified_date | date_to_xmlschema -%}
-        <time class="dt-modified" datetime="{{ mdate }}" itemprop="dateModified">
-          {{ mdate | date: date_format }}
-        </time>
+      ~ 
+      {%- assign mdate = page.modified_date | date_to_xmlschema -%}
+      <time class="dt-modified" datetime="{{ mdate }}" itemprop="dateModified">
+        {{ mdate | date: date_format }}
+      </time>
       {%- endif -%}
       {%- if page.author -%}
-        • {% for author in page.author %}
-          <span itemprop="author" itemscope itemtype="http://schema.org/Person">
-            <span class="p-author h-card" itemprop="name">{{ author }}</span></span>
-            {%- if forloop.last == false %}, {% endif -%}
-        {% endfor %}
+      • {% for author in page.author %}
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">{{ author }}</span></span>
+      {%- if forloop.last == false %}, {% endif -%}
+      {% endfor %}
       {%- endif -%}</p>
   </header>
 
-  <div class="tags">
-  {% for tag in page.tags %}
-    <a href="/tags/{{ tag | downcase | url_encode }}/">{{ tag }}</a>
-  {% endfor %}
-</div>
+  <span class="post-meta" style="padding-left: 20px;">
+    {%- for tag in post.tags -%}
+    <a href="/t/{{ tag | downcase | replace: ' ', '-' }}">
+      #{{ tag }}
+    </a>&nbsp;
+    {%- endfor -%}
+  </span>
 
 
   <div class="post-content e-content" itemprop="articleBody">
@@ -39,7 +41,7 @@ layout: default
   </div>
 
   {%- if site.disqus.shortname -%}
-    {%- include disqus_comments.html -%}
+  {%- include disqus_comments.html -%}
   {%- endif -%}
 
   <a class="u-url" href="{{ page.url | relative_url }}" hidden></a>
