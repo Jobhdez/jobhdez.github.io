@@ -4,7 +4,9 @@ title: A semi deep dive into CPU architecture
 author: Job Hernandez
 ---
 
-### Introduction
+$$ \tableofcontents $$
+
+$$ \section{Introduction} $$
 
 My compiler journey has made me curious about computer architecture; for example, I would like to know the x86 processor better. A great way to get close to the machine is by writing compilers because you get to lower high level programs to assembly. Assembly exposes the CPU and as a consequence you get to know the CPU better. 
 
@@ -12,7 +14,7 @@ I am not an expert but in what follows I try to give you an idea of how the arch
 
 Hopefully, you enjoy this!
 
-### Exposing the x86 architecture
+$$ \section {Exposing the x86 architecture} $$
 
 x86 assembly exposes the registers of the x86 architecture and the program counter. The program counter is the address of the next instruction to be executed. When using memory addresses instead of registers these memory addresses are actually part of the virtual memory address space.
 
@@ -143,7 +145,7 @@ The instruction `leaq array(%rip), %rbx` uses the stack pointer to get the addre
 
 On the other hand the instruction `movq (%rbx, %r15, 8), %rdi` uses the address of the array, the initialization of i which is in register `%r15` and the size of the data in bits. Each element of the array is a byte in size. With this instruction you are getting `array[i]`. This essentially is equivalent to `xA + L * i` where `xA` is a pointer to the starting location of the array, L is the size of data type L.
 
-### How the processor executes instructions
+$$ \section{How the processor executes instructions}
 
 Now, lets talk about how the cpu executes instructions.
 
@@ -164,13 +166,13 @@ How do instructions get executed? $$ \textbf{Fetch-decode-execute} $$ cycle. Ins
 7. Go to step 1 to begin executing the following instruction
 ```
 
-#### Clock cycles
+$$ \subsection{Clock cycles}
 
 A clock is a circuit that emits pulses with a precise pulse width and a time interval between consecutive pulses. The time interval between two consecutive pulses is called the clock cycle time; pulse frequencies range from 100Mhz and 4Ghz corresponding to 10 nsec to 250 psec. This pulse frequency falls in the range of 4ghz. A lot of events happen during a given clock cycle; for example, the program counter is  loaded with an instruction address every clock cycle, the registers get updated every clock cycle and memory locations get written when a `mov`, `push` and `call` instruction get executed. The control of  the memory and registers by the clock cycle is  what allows the instructions to get executed in a sequence.
 
 But in practice there's instruction parallelism.
 
-#### Instruction parallelism 
+$$ \subsection{Instruction parallelism}
 
 $$ \textbf{Instruction level parallelism} $$ is a process whereby the processor executes more instructions per second; it does this by implementing pipelining whereby more stuff gets done in less processor cycles.
 
@@ -183,7 +185,7 @@ Suppose you divide the execution into five stages.
 Stage 1 fetches instructions from memory and are stored in the prefetch buffer. Stage 2  determines the type and determines which operands it needs. Stage 3 fetches the operands; stage 4 carries out the execution and stage 5 writes the output to a register. Since these stages can be carried out in parallel it is fast; for example during the first clock cycle  Stage 1 does its job; during the second clock cycle Stage 2 does its job but also Stage 1 does its job for the next instruction. And during the third clock cycle Stage 3 does its job for the first instruction, stage 2 does its job for the second instruction, and stage 1 does its job for the third instruction and so on. Now, suppose that each clock cycle takes 2ns to complete; so one instruction takes 10ns to get processed by each stage so there 500 million instructions per second get executed.
 
 
-### Conclusion
+$$ \section{Conclusion}
 As you can see there is a whole world as to how computers work. Getting to know architecture is a very interesting thing. Obviously, I have a lot to learn and what I wrote above is just the very basics. 
 
 Well, I have briefly discussed the cpu architecture and have exposed the x86 architecture through some basic high level programs. Hopefully, you enjoyed it. 
