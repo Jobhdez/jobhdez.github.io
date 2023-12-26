@@ -6,6 +6,11 @@ author: Job Hernandez Lara
 
 *version*: 0.9.0, initial version, draft
 
+### Contents
+
+* Table of Contents
+{:toc}
+
 ### Introduction
 
 Last two years or so I have been on a journey to study computer science fundamentals. Over the course of the last two years I have studied algorithms, distributed systems and compilers among other topics but operating systems is one of my favorite topics.
