@@ -28,9 +28,10 @@ layout: default
 
   <div class="tags">
   {% for tag in page.tags %}
-    <a href="/tags/{{ tag | slugify }}/">{{ tag }}</a>
+    <a href="/tags/{{ tag | downcase | url_encode }}/">{{ tag }}</a>
   {% endfor %}
- </div>
+</div>
+
 
   <div class="post-content e-content" itemprop="articleBody">
     {{ content }}
