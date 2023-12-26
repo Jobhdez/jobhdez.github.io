@@ -6,7 +6,6 @@ author: Job Hernandez Lara
 
 *version*: 0.9.0, initial version, draft
 
-### Contents
 
 * Table of Contents
 {:toc}

@@ -4,8 +4,6 @@ title: A semi deep dive into CPU architecture
 author: Job Hernandez
 ---
 
-### Contents
-
 * Table of Contents
 {:toc}
 
