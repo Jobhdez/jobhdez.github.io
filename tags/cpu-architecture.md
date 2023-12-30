@@ -1,5 +1,5 @@
 ---
-layout: tag
+layout: default
 permalink: /t/cpu-architecture
 ---
 
