@@ -2,7 +2,7 @@
 layout: post
 title: How do operating systems work?
 author: Job Hernandez Lara
-tags: [x86-64, operating-systems]
+tags: [x86-64, operating-systems, computer-science]
 ---
 
 *version*: 0.9.0, initial version, draft

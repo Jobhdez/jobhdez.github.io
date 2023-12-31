@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>A semi deep dive into CPU architecture | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="A semi deep dive into CPU architecture" />
+<meta name="author" content="Job Hernandez Lara" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A technical blog about things I find interesting :)" />
+<meta property="og:description" content="A technical blog about things I find interesting :)" />
+<link rel="canonical" href="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html" />
+<meta property="og:url" content="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-11-05T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="A semi deep dive into CPU architecture" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2023-11-05T00:00:00-07:00","datePublished":"2023-11-05T00:00:00-07:00","description":"A technical blog about things I find interesting :)","headline":"A semi deep dive into CPU architecture","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html"},"url":"http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">A semi deep dive into CPU architecture</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-11-05T00:00:00-07:00" itemprop="datePublished">
+        Nov 5, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#exposing-the-x86-architecture" id="markdown-toc-exposing-the-x86-architecture">Exposing the x86 architecture</a></li>
+  <li><a href="#how-the-processor-executes-instructions" id="markdown-toc-how-the-processor-executes-instructions">How the processor executes instructions</a>    <ul>
+      <li><a href="#clock-cycles" id="markdown-toc-clock-cycles">Clock cycles</a></li>
+      <li><a href="#instruction-parallelism" id="markdown-toc-instruction-parallelism">Instruction parallelism</a></li>
+    </ul>
+  </li>
+  <li><a href="#conclusion" id="markdown-toc-conclusion">Conclusion</a></li>
+</ul>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>My compiler journey has made me curious about computer architecture; for example, I would like to know the x86 processor better. A great way to get close to the machine is by writing compilers because you get to lower high level programs to assembly. Assembly exposes the CPU and as a consequence you get to know the CPU better.</p>
+
+<p>I am not an expert but in what follows I try to give you an idea of how the architecture of a CPU. I first try to expose the x86 architecture by demonstrating how core imperative constructs such as loops and arrays and if statements get represented in x86 assembly. Subsequently, I talk about the low level details.</p>
+
+<p>Hopefully, you enjoy this!</p>
+
+<h3 id="exposing-the-x86-architecture">Exposing the x86 architecture</h3>
+
+<p>x86 assembly exposes the registers of the x86 architecture and the program counter. The program counter is the address of the next instruction to be executed. When using memory addresses instead of registers these memory addresses are actually part of the virtual memory address space.</p>
+
+<p>The program counter is called <code class="language-plaintext highlighter-rouge">%rip</code> in x86-64. The register file of x86-64 consists of 16 named locations storing 64 bit values i.e., registers.</p>
+
+<p>The register <code class="language-plaintext highlighter-rouge">%rsp</code> is the stack pointer, which indicates the end position of the run time stack. The top of the stack contains the lowest addresses. The <code class="language-plaintext highlighter-rouge">pushq</code> instruction pushes values to the stack and <code class="language-plaintext highlighter-rouge">popq</code> pops them. The stack follows a last in, first out operation; for example, suppose you have two variables each of which are a byte in size (i.e., quad word values). Pushing these values to the stack would consist of decrementing the stack pointer by 16:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> pushq %rbp
+ movq %rsp, %rbp
+ subq $16, %rsp
+</code></pre></div></div>
+
+<p>The operands of the instructions defined by the ISA consist of immediates, stack locations, and registers. Immediates are data such as numbers, stack locations are memory locations and registers are locations that can be accessed by the processor in a few cycles.</p>
+
+<p>To get to know the x86-64 architecture a little bit more I will talk about how core imperative programming features get implemented in x86-64 assembly where core features include arrays, loops, and if statements.</p>
+
+<p>First, lets expose the x86 architecture when its executing <code class="language-plaintext highlighter-rouge">if statements</code>.</p>
+
+<p>Consider the following program:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="mi">3</span><span class="o">=</span><span class="mi">3</span><span class="p">:</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">+</span> <span class="o">-</span><span class="mi">5</span>
+  <span class="nf">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+  <span class="n">y</span> <span class="o">=</span> <span class="mi">25</span> <span class="o">+</span> <span class="o">-</span><span class="mi">10</span>
+</code></pre></div></div>
+
+<p>Lets expose immediates and stack locations and the stack pointer register <code class="language-plaintext highlighter-rouge">%rsp</code> by lowering the above program to x86 assembly. Remember some of the operands in x86 instructions are stack locations and immediates.</p>
+
+<pre><code class="language-asm">.globl main
+
+main:
+      pushq %rbp
+      movq %rsp, %rbp
+      subq $16, %rsp     // the stack grows by decrementing the stack
+      movq $3, -8(%rbp)  // move 5 into stack location 1
+      cmp  $3, -8(%rbp)  // compare: 3 is not equal to 5
+      je block_1
+      jmp block_2
+
+block_1:
+      movq $5, -8(%rbp)
+      negq -8(%rbp)
+      movq -8(%rbp), %rax
+      movq $30, -16(%rbp)
+      addq -16(%rbp), %rax
+      movq %rax, %rdi
+      callq print_int
+      addq $16, %rsp
+      popq %rbp
+      retq
+
+block_2:
+      movq $10, -8(%rbp)
+      negq -8(%rbp)
+      movq -8(%rbp), %rax
+      movq $25, -16(%rbp)
+      addq -16(%rbp), %rax
+      movq %rax, %rdi
+      callq print_int
+      addq $16, %rsp
+      popq %rbp
+      retq
+
+</code></pre>
+
+<p>The first three instructions in the <code class="language-plaintext highlighter-rouge">main</code> block sets up the stack. It prepares the stack for the two variables and corresponding two stack locations.</p>
+
+<p>In the background the compiler lowers the <code class="language-plaintext highlighter-rouge">x = 30 + -5</code> into</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tmp = -5
+x = 30 + tmp
+</code></pre></div></div>
+
+<p>So it first needs to move 5 to a stack location, make it negative, move 30 to stack location 2 and then add them together and put the result in <code class="language-plaintext highlighter-rouge">%rax</code>.</p>
+
+<p>It does the same thing for block 2.</p>
+
+<p>Now, lets expose the registers and arrays and loops.</p>
+
+<p>Suppose you have the following program:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">array</span><span class="p">:</span>
+   <span class="nf">print</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The x86 assembly for this code would look something like this:</p>
+
+<pre><code class="language-asm">.section .data
+
+array:
+	.quad 1,2,3,4,5
+	.section .text
+    
+	.globl main
+    
+main:
+	leaq array(%rip), %rbx 
+	movq $0, %r15   	// initializes i to 0
+	jmp test
+
+body:
+    
+	movq (%rbx, %r15, 8), %rdi     
+	addq $2, %rdi // this adds two to a[i]    
+	callq print_int // it prints a[i] + 2
+	incq %r15 // increments i by 1
+	jmp test
+
+test:
+	cmpq $5, %r15 // if i &gt; 5 (size of array) go to body; otherwise exit
+	jne body
+	jmp exit
+
+exit:
+	retq
+	
+</code></pre>
+
+<p>The instruction <code class="language-plaintext highlighter-rouge">leaq array(%rip), %rbx</code> uses the stack pointer to get the address of the array and stores it in the register <code class="language-plaintext highlighter-rouge">rbx</code>.</p>
+
+<p>On the other hand the instruction <code class="language-plaintext highlighter-rouge">movq (%rbx, %r15, 8), %rdi</code> uses the address of the array, the initialization of i which is in register <code class="language-plaintext highlighter-rouge">%r15</code> and the size of the data in bits. Each element of the array is a byte in size. With this instruction you are getting <code class="language-plaintext highlighter-rouge">array[i]</code>. This essentially is equivalent to <code class="language-plaintext highlighter-rouge">xA + L * i</code> where <code class="language-plaintext highlighter-rouge">xA</code> is a pointer to the starting location of the array, L is the size of data type L.</p>
+
+<h3 id="how-the-processor-executes-instructions">How the processor executes instructions</h3>
+
+<p>Now, lets talk about how the cpu executes instructions.</p>
+
+<p>The processor consists of the control unit, the arithmetic logic unit, and a set of registers; the control unit is responsible for fetching instructions from main memory, the ALU is responsible for doing arithmetic and the registers hold the ALU input. The registers feed into ALU input registers which hold the ALU input while the ALU is performing some computation. There are also the ALU output registers which hold the output of the ALU and whose data can be sent to registers again or written to memory. How does the cpu carry out the instructions? The most important registers are the program counter and instruction register. The program counter points to the next instruction and the instruction register holds the current instruction that is being executed. The \(\textit{data path}\) consists of the ALU and registers; the registers feed into two input registers that hold the ALU input while the ALU is carrying out some computation; in turn these input registers are connected to the ALU. After the ALU finishes the computation it yields the output that gets stored in an ALU output register which in turn can go back to a register or later on stored in memory; the layered structure is as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>registers -&gt; ALU input registers -&gt; ALU -&gt; output register -&gt; registers or memory
+</code></pre></div></div>
+<p>How do instructions get executed? \(\textbf{Fetch-decode-execute}\) cycle. Instructions get executed as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1. Fetch the next instruction from memory into the instruction register.
+2. Change the program counter to point to the following instruction.
+3. Determine the type of instruction just fetched.
+4. If the instruction uses a word in memory, determine where it is.
+5. Fetch the word, if needed, into a CPU register.
+6. Execute the instruction.
+7. Go to step 1 to begin executing the following instruction
+</code></pre></div></div>
+
+<h4 id="clock-cycles">Clock cycles</h4>
+
+<p>A clock is a circuit that emits pulses with a precise pulse width and a time interval between consecutive pulses. The time interval between two consecutive pulses is called the clock cycle time; pulse frequencies range from 100Mhz and 4Ghz corresponding to 10 nsec to 250 psec. This pulse frequency falls in the range of 4ghz. A lot of events happen during a given clock cycle; for example, the program counter is  loaded with an instruction address every clock cycle, the registers get updated every clock cycle and memory locations get written when a <code class="language-plaintext highlighter-rouge">mov</code>, <code class="language-plaintext highlighter-rouge">push</code> and <code class="language-plaintext highlighter-rouge">call</code> instruction get executed. The control of  the memory and registers by the clock cycle is  what allows the instructions to get executed in a sequence.</p>
+
+<p>But in practice there’s instruction parallelism.</p>
+
+<h4 id="instruction-parallelism">Instruction parallelism</h4>
+
+<p>\(\textbf{Instruction level parallelism}\) is a process whereby the processor executes more instructions per second; it does this by implementing pipelining whereby more stuff gets done in less processor cycles.</p>
+
+<p>Instruction level parallelism is exploited in compilers.</p>
+
+<p>The main idea of instruction level parallelism is to pre-fetch instructions from memory and put them in a set of special registers called the pre-fetch buffer and as a result of this the processor would not have to read from memory which takes hundreds of cycles. In a pipeline, execution is divided into stages in which each stage is carried out by a different type of hardware in parallel.</p>
+
+<p>Suppose you divide the execution into five stages.</p>
+
+<p>Stage 1 fetches instructions from memory and are stored in the prefetch buffer. Stage 2  determines the type and determines which operands it needs. Stage 3 fetches the operands; stage 4 carries out the execution and stage 5 writes the output to a register. Since these stages can be carried out in parallel it is fast; for example during the first clock cycle  Stage 1 does its job; during the second clock cycle Stage 2 does its job but also Stage 1 does its job for the next instruction. And during the third clock cycle Stage 3 does its job for the first instruction, stage 2 does its job for the second instruction, and stage 1 does its job for the third instruction and so on. Now, suppose that each clock cycle takes 2ns to complete; so one instruction takes 10ns to get processed by each stage so there 500 million instructions per second get executed.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+<p>As you can see there is a whole world as to how computers work. Getting to know architecture is a very interesting thing. Obviously, I have a lot to learn and what I wrote above is just the very basics.</p>
+
+<p>Well, I have briefly discussed the cpu architecture and have exposed the x86 architecture through some basic high level programs. Hopefully, you enjoyed it.</p>
+
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

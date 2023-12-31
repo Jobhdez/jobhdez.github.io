@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>How to setup PostgreSQL on Arch Linux | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="How to setup PostgreSQL on Arch Linux" />
+<meta name="author" content="Job Hernandez" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Arch Linux is great; you should check it out. This how-to exists mainly as an external memory for me. I hope this could be useful for someone else." />
+<meta property="og:description" content="Arch Linux is great; you should check it out. This how-to exists mainly as an external memory for me. I hope this could be useful for someone else." />
+<link rel="canonical" href="http://localhost:4000/2023/02/22/postgresql.html" />
+<meta property="og:url" content="http://localhost:4000/2023/02/22/postgresql.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-02-22T00:00:00-08:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How to setup PostgreSQL on Arch Linux" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-02-22T00:00:00-08:00","datePublished":"2023-02-22T00:00:00-08:00","description":"Arch Linux is great; you should check it out. This how-to exists mainly as an external memory for me. I hope this could be useful for someone else.","headline":"How to setup PostgreSQL on Arch Linux","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/02/22/postgresql.html"},"url":"http://localhost:4000/2023/02/22/postgresql.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">How to setup PostgreSQL on Arch Linux</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-02-22T00:00:00-08:00" itemprop="datePublished">
+        Feb 22, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Arch Linux is great; you should check it out. This <code class="language-plaintext highlighter-rouge">how-to</code> exists mainly as an external memory for me. I hope this could be useful for someone else.</p>
+
+<p>Suppose you are trying to set up PostgreSQL for a Django project you are working on. Setting up PostgreSQL on Arch linux can be a little tricky.</p>
+
+<p>To set up follow the following:</p>
+
+<ol>
+  <li>
+    <p>Upgrade your system: <code class="language-plaintext highlighter-rouge">sudo pacman -Syu</code></p>
+  </li>
+  <li>
+    <p>Install PostgreSQL: <code class="language-plaintext highlighter-rouge">sudo pacman -S postgresql</code></p>
+  </li>
+  <li>
+    <p>Create the data directory: <code class="language-plaintext highlighter-rouge">sudo mkdir /var/lib/postgres/data</code></p>
+  </li>
+  <li>
+    <p>Set ownership to user <code class="language-plaintext highlighter-rouge">postgres</code>: <code class="language-plaintext highlighter-rouge">chown postgres /var/lib/postgres/data</code></p>
+  </li>
+  <li>
+    <p>As the user <code class="language-plaintext highlighter-rouge">postgres</code> start the database: <code class="language-plaintext highlighter-rouge">sudo -i -u postgres &amp;&amp; initdb  -D '/var/lib/postgres/data'</code></p>
+  </li>
+  <li>
+    <p>Start the server: <code class="language-plaintext highlighter-rouge">sudo systemctl start postgresql &amp;&amp; sudo systemctl status postgresql</code></p>
+  </li>
+  <li>
+    <p>Enable postgres: <code class="language-plaintext highlighter-rouge">sudo systemctl enable postgresql</code></p>
+  </li>
+  <li>
+    <p>Trigger PostgreSQL’s shell: <code class="language-plaintext highlighter-rouge">sudo -u postgres psql</code></p>
+  </li>
+</ol>
+
+<p>And that is all; at this point you can create your database for your given project.</p>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/02/22/postgresql.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

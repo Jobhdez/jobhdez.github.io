@@ -2,6 +2,7 @@
 layout: post
 title: Power of Lisp macros
 author: Job Hernandez Lara
+tags: lisp
 ---
 
 *version*: 1.0, initial version

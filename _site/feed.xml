@@ -1,138 +1,1166 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.1">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2022-02-11T15:56:10-08:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Programs in Manifolds</title><subtitle>I write about the objects of study I am focused on. 
-</subtitle><author><name>Job Hernandez</name><email>hj93@protonmail.com</email></author><entry><title type="html">The Mergesort Algorithm</title><link href="http://localhost:4000/2022/02/11/merge-sort.html" rel="alternate" type="text/html" title="The Mergesort Algorithm" /><published>2022-02-11T00:00:00-08:00</published><updated>2022-02-11T00:00:00-08:00</updated><id>http://localhost:4000/2022/02/11/merge-sort</id><content type="html" xml:base="http://localhost:4000/2022/02/11/merge-sort.html"><![CDATA[<h1 id="mergesort-work">Mergesort work</h1>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-12-30T15:48:18-08:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Job Hernandez Lara’s Blog</title><subtitle>A technical blog about things I find interesting :)
+</subtitle><author><name>Job Hernandez</name><email>hj93@protonmail.com</email></author><entry><title type="html">A semi deep dive into CPU architecture</title><link href="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html" rel="alternate" type="text/html" title="A semi deep dive into CPU architecture" /><published>2023-11-05T00:00:00-07:00</published><updated>2023-11-05T00:00:00-07:00</updated><id>http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture</id><content type="html" xml:base="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#exposing-the-x86-architecture" id="markdown-toc-exposing-the-x86-architecture">Exposing the x86 architecture</a></li>
+  <li><a href="#how-the-processor-executes-instructions" id="markdown-toc-how-the-processor-executes-instructions">How the processor executes instructions</a>    <ul>
+      <li><a href="#clock-cycles" id="markdown-toc-clock-cycles">Clock cycles</a></li>
+      <li><a href="#instruction-parallelism" id="markdown-toc-instruction-parallelism">Instruction parallelism</a></li>
+    </ul>
+  </li>
+  <li><a href="#conclusion" id="markdown-toc-conclusion">Conclusion</a></li>
+</ul>
 
-<h2 id="how-does-mergesort-work">How does mergesort work?</h2>
+<h3 id="introduction">Introduction</h3>
 
-<p>Mergesort is implemented using a technique called Divide and Conquer. In the mergesort algorithm you Divide the problem by creating two sub-arrays and you Conquer by sorting both of these sub-arrays with mergesort and, finally, you combine these two sorted sub-arrays. Divide and Conquer is recursive in nature.</p>
+<p>My compiler journey has made me curious about computer architecture; for example, I would like to know the x86 processor better. A great way to get close to the machine is by writing compilers because you get to lower high level programs to assembly. Assembly exposes the CPU and as a consequence you get to know the CPU better.</p>
 
-<p>Suppose you have two piles of cards both of which are sorted. In both piles of cards the smallest cards are on the top. The auxiliary procedure \(merge\) works by placing the smallest card from these two piles into the output pile until one pile is empty and then placing the remaining cards from the other pile on top of faced down.</p>
+<p>I am not an expert but in what follows I try to give you an idea of how the architecture of a CPU. I first try to expose the x86 architecture by demonstrating how core imperative constructs such as loops and arrays and if statements get represented in x86 assembly. Subsequently, I talk about the low level details.</p>
 
-<h2 id="loop-invariant">Loop Invariant</h2>
-<p>The loop invariant for the mergesort algorithm is the following.</p>
+<p>Hopefully, you enjoy this!</p>
 
-<p>At each iteration the sub-array \(A[\) p…k - 1 \(]\) consists of the \(k - p\) smallest elements from the sub-arrays \(L[\) 1 … n1 + 1 \(]\) and \(R[\) 1 … n2 + 1 \(]\). Furthermore, \(L[\) i \(]\) and \(R[\) i \(]\) are the smallest elements that have not been placed in the output pile.</p>
+<h3 id="exposing-the-x86-architecture">Exposing the x86 architecture</h3>
 
-<h2 id="initialization">Initialization</h2>
-<p>Prior to the first iteration the sub-array \(A[\) p … k-1 \(]\) contains the first \(k - p\) smallest elements of the sub-array \(L\) and \(R\). Since prior to the first iteration of the loop \(k = p = 0\) then it contains the 0th smallest elements – trivially, of course. And since \(i = j = 0\) the the \(L[\)i\(]\) and \(R[\)j\(]\) are the smallest elements – i.e., cards have not been placed in the output pile.</p>
+<p>x86 assembly exposes the registers of the x86 architecture and the program counter. The program counter is the address of the next instruction to be executed. When using memory addresses instead of registers these memory addresses are actually part of the virtual memory address space.</p>
 
-<h2 id="maintenance">Maintenance</h2>
-<p>Suppose that \(L[\) i \(]\) is less than or equal to \(R[\) j \(]\). Then this element is the smallest element of the two piles. We know that the sub-array \(A[\) p…k - 1 \(]\) contains the smallest \(k - p\) elements of the two sub-arrays. So when we \(L[\) i \(] = A[\) k \(]\) then \(A[\) p…k \(]\) consists of \(k - p + 1\) of the two sub-arrays. Incrementing \(i\) and \(k\) restablishes the loop invariant.</p>
+<p>The program counter is called <code class="language-plaintext highlighter-rouge">%rip</code> in x86-64. The register file of x86-64 consists of 16 named locations storing 64 bit values i.e., registers.</p>
 
-<h2 id="termination">Termination</h2>
-<p>By the loop invariant the sub-array \(A[\) p…k - 1 \(]\) which is  \(A[\) p … r \(]\) contains the smallest \(k - p\) elements of the two sub-arrays.</p>
+<p>The register <code class="language-plaintext highlighter-rouge">%rsp</code> is the stack pointer, which indicates the end position of the run time stack. The top of the stack contains the lowest addresses. The <code class="language-plaintext highlighter-rouge">pushq</code> instruction pushes values to the stack and <code class="language-plaintext highlighter-rouge">popq</code> pops them. The stack follows a last in, first out operation; for example, suppose you have two variables each of which are a byte in size (i.e., quad word values). Pushing these values to the stack would consist of decrementing the stack pointer by 16:</p>
 
-<h1 id="code">Code</h1>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> pushq %rbp
+ movq %rsp, %rbp
+ subq $16, %rsp
+</code></pre></div></div>
 
-<p>Here is the implementation of the mergesort algorithm in CLRS:</p>
+<p>The operands of the instructions defined by the ISA consist of immediates, stack locations, and registers. Immediates are data such as numbers, stack locations are memory locations and registers are locations that can be accessed by the processor in a few cycles.</p>
 
-<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">math</span>
+<p>To get to know the x86-64 architecture a little bit more I will talk about how core imperative programming features get implemented in x86-64 assembly where core features include arrays, loops, and if statements.</p>
 
-<span class="k">def</span> <span class="nf">merge_sort</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
-    <span class="s">"""
-    Divides the lst into two sublists and sorts them recursively and then
-    merges the two sublists.
-   
-    @param lst: then given list that needs to be sorted
-    @param start: the start of the first sublist 
-    @param end: the end of the second sublist 
-    @return: a sorted list
+<p>First, lets expose the x86 architecture when its executing <code class="language-plaintext highlighter-rouge">if statements</code>.</p>
 
-    """</span>
-    <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">:</span>
-        <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">end</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-        <span class="n">merge_sort</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">mid</span><span class="p">)</span>
-        <span class="n">merge_sort</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">mid</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
-        <span class="n">merge</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+<p>Consider the following program:</p>
 
-    <span class="k">return</span> <span class="n">lst</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="mi">3</span><span class="o">=</span><span class="mi">3</span><span class="p">:</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">+</span> <span class="o">-</span><span class="mi">5</span>
+  <span class="nf">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+  <span class="n">y</span> <span class="o">=</span> <span class="mi">25</span> <span class="o">+</span> <span class="o">-</span><span class="mi">10</span>
+</code></pre></div></div>
+
+<p>Lets expose immediates and stack locations and the stack pointer register <code class="language-plaintext highlighter-rouge">%rsp</code> by lowering the above program to x86 assembly. Remember some of the operands in x86 instructions are stack locations and immediates.</p>
+
+<pre><code class="language-asm">.globl main
+
+main:
+      pushq %rbp
+      movq %rsp, %rbp
+      subq $16, %rsp     // the stack grows by decrementing the stack
+      movq $3, -8(%rbp)  // move 5 into stack location 1
+      cmp  $3, -8(%rbp)  // compare: 3 is not equal to 5
+      je block_1
+      jmp block_2
+
+block_1:
+      movq $5, -8(%rbp)
+      negq -8(%rbp)
+      movq -8(%rbp), %rax
+      movq $30, -16(%rbp)
+      addq -16(%rbp), %rax
+      movq %rax, %rdi
+      callq print_int
+      addq $16, %rsp
+      popq %rbp
+      retq
+
+block_2:
+      movq $10, -8(%rbp)
+      negq -8(%rbp)
+      movq -8(%rbp), %rax
+      movq $25, -16(%rbp)
+      addq -16(%rbp), %rax
+      movq %rax, %rdi
+      callq print_int
+      addq $16, %rsp
+      popq %rbp
+      retq
+
+</code></pre>
+
+<p>The first three instructions in the <code class="language-plaintext highlighter-rouge">main</code> block sets up the stack. It prepares the stack for the two variables and corresponding two stack locations.</p>
+
+<p>In the background the compiler lowers the <code class="language-plaintext highlighter-rouge">x = 30 + -5</code> into</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tmp = -5
+x = 30 + tmp
+</code></pre></div></div>
+
+<p>So it first needs to move 5 to a stack location, make it negative, move 30 to stack location 2 and then add them together and put the result in <code class="language-plaintext highlighter-rouge">%rax</code>.</p>
+
+<p>It does the same thing for block 2.</p>
+
+<p>Now, lets expose the registers and arrays and loops.</p>
+
+<p>Suppose you have the following program:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">array</span><span class="p">:</span>
+   <span class="nf">print</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The x86 assembly for this code would look something like this:</p>
+
+<pre><code class="language-asm">.section .data
+
+array:
+	.quad 1,2,3,4,5
+	.section .text
     
-<span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
-    <span class="s">"""
-    Combines two sorted lists
+	.globl main
     
-    @param lst: the list to be sorted
-    @param left: the left start of the first sublist
-    @param middle: the mid point of the two sublists
-    @param right: the end of the second sublist 
-    @return: a sorted list
-    """</span>
-    <span class="n">n1</span> <span class="o">=</span> <span class="n">middle</span> <span class="o">-</span> <span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="n">n2</span> <span class="o">=</span> <span class="n">right</span> <span class="o">-</span> <span class="n">middle</span>
+main:
+	leaq array(%rip), %rbx 
+	movq $0, %r15   	// initializes i to 0
+	jmp test
 
-    <span class="n">l_lst</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">r_lst</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n1</span><span class="p">):</span>
-        <span class="n">l_lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="n">left</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
-
-    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n2</span><span class="p">):</span>
-        <span class="n">r_lst</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="n">middle</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">j</span><span class="p">]</span>
-
-    <span class="n">l_lst</span><span class="p">[</span><span class="n">n1</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="p">.</span><span class="n">inf</span>
-    <span class="n">r_lst</span><span class="p">[</span><span class="n">n2</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="p">.</span><span class="n">inf</span>
-
-    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">l_lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">r_lst</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
-            <span class="n">lst</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">l_lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">lst</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_lst</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-            <span class="n">j</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span>
-
+body:
     
-        
-<span class="n">lst</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">]</span>
-<span class="k">print</span><span class="p">(</span><span class="n">merge_sort</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span></code></pre></figure>]]></content><author><name>Job Hernandez</name></author><summary type="html"><![CDATA[Mergesort work]]></summary></entry><entry><title type="html">The Insertion Sort Algorithm</title><link href="http://localhost:4000/2022/01/07/insertion-sort.html" rel="alternate" type="text/html" title="The Insertion Sort Algorithm" /><published>2022-01-07T00:00:00-08:00</published><updated>2022-01-07T00:00:00-08:00</updated><id>http://localhost:4000/2022/01/07/insertion-sort</id><content type="html" xml:base="http://localhost:4000/2022/01/07/insertion-sort.html"><![CDATA[<h1 id="how-does-the-insertion-sort-algorithm-works">How does the insertion sort algorithm works?</h1>
+	movq (%rbx, %r15, 8), %rdi     
+	addq $2, %rdi // this adds two to a[i]    
+	callq print_int // it prints a[i] + 2
+	incq %r15 // increments i by 1
+	jmp test
 
-<p>As you can see in the below insertion sort implementation the list INTEGERS is sorted in place; that is, without creating an additional list which would require additional space.</p>
+test:
+	cmpq $5, %r15 // if i &gt; 5 (size of array) go to body; otherwise exit
+	jne body
+	jmp exit
 
-<p>At each iteration of the for loop \(key\) holds the current value which in the beginning is initialized to \(i = 1\); moreover, in the beginning \(j = i - 1\).</p>
+exit:
+	retq
+	
+</code></pre>
 
-<p>Essentially, this algorithm sorts the input by shifting, through the while loop, \(integers[i-1]\) , \(integers[i-2]\), \(integers[i-3]\) and so one by one position to the right until \(key\) is inserted in the correct position.</p>
+<p>The instruction <code class="language-plaintext highlighter-rouge">leaq array(%rip), %rbx</code> uses the stack pointer to get the address of the array and stores it in the register <code class="language-plaintext highlighter-rouge">rbx</code>.</p>
 
-<h3 id="loop-invariant">Loop Invariant</h3>
-<p>A loop invariant is a pattern that holds before the first iteration, is maintained at each iteration and it holds when the loop terminates. In this case, the loop invariant is the observation that in the beginning of each iteration the subarray \(integers[\) 0 … i - 1 \(]\) is sorted comprised of the original elements i.e., \(0 ... i - 1\) in the list \(integers\).</p>
+<p>On the other hand the instruction <code class="language-plaintext highlighter-rouge">movq (%rbx, %r15, 8), %rdi</code> uses the address of the array, the initialization of i which is in register <code class="language-plaintext highlighter-rouge">%r15</code> and the size of the data in bits. Each element of the array is a byte in size. With this instruction you are getting <code class="language-plaintext highlighter-rouge">array[i]</code>. This essentially is equivalent to <code class="language-plaintext highlighter-rouge">xA + L * i</code> where <code class="language-plaintext highlighter-rouge">xA</code> is a pointer to the starting location of the array, L is the size of data type L.</p>
 
-<h4 id="initialization">Initialization</h4>
-<p>Before the first iteration \(i = 1\); consequently, the subarray \(integers[0 ...i - 1]\) is sorted since \(0 ... i - 1 = 0\) so the subarray \(integers[0]\) is sorted.</p>
+<h3 id="how-the-processor-executes-instructions">How the processor executes instructions</h3>
 
-<h4 id="maintenance">Maintenance</h4>
-<p>As I said above, the algorithm works by shifting the elements \(i - 1\), \(i - 2\), \(i - 3\) and so on by one position to the right until it finds the correct position of \(i\); so, the subarray comprised of \(1 ... i\) is sorted.</p>
+<p>Now, lets talk about how the cpu executes instructions.</p>
 
-<h4 id="termination">Termination</h4>
-<p>The sublist comprised of the original elements \(0 ... n\) is now sorted. Where \(n\) is the length of \(integers\).</p>
+<p>The processor consists of the control unit, the arithmetic logic unit, and a set of registers; the control unit is responsible for fetching instructions from main memory, the ALU is responsible for doing arithmetic and the registers hold the ALU input. The registers feed into ALU input registers which hold the ALU input while the ALU is performing some computation. There are also the ALU output registers which hold the output of the ALU and whose data can be sent to registers again or written to memory. How does the cpu carry out the instructions? The most important registers are the program counter and instruction register. The program counter points to the next instruction and the instruction register holds the current instruction that is being executed. The \(\textit{data path}\) consists of the ALU and registers; the registers feed into two input registers that hold the ALU input while the ALU is carrying out some computation; in turn these input registers are connected to the ALU. After the ALU finishes the computation it yields the output that gets stored in an ALU output register which in turn can go back to a register or later on stored in memory; the layered structure is as follows:</p>
 
-<h3 id="here-is-the-implementation-in-python">Here is the implementation in Python</h3>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>registers -&gt; ALU input registers -&gt; ALU -&gt; output register -&gt; registers or memory
+</code></pre></div></div>
+<p>How do instructions get executed? \(\textbf{Fetch-decode-execute}\) cycle. Instructions get executed as follows:</p>
 
-<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">unittest2</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1. Fetch the next instruction from memory into the instruction register.
+2. Change the program counter to point to the following instruction.
+3. Determine the type of instruction just fetched.
+4. If the instruction uses a word in memory, determine where it is.
+5. Fetch the word, if needed, into a CPU register.
+6. Execute the instruction.
+7. Go to step 1 to begin executing the following instruction
+</code></pre></div></div>
 
-<span class="k">def</span> <span class="nf">insertion_sort</span><span class="p">(</span><span class="n">integers</span><span class="p">):</span>
-    <span class="s">"""
-    Sorts the list INTEGERS.
+<h4 id="clock-cycles">Clock cycles</h4>
 
-    :param integers: list of integers
-    :returns: sorted list of integers
-    """</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">integers</span><span class="p">)):</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">integers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="k">while</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">key</span><span class="p">:</span>
-            <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
-        <span class="n">integers</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+<p>A clock is a circuit that emits pulses with a precise pulse width and a time interval between consecutive pulses. The time interval between two consecutive pulses is called the clock cycle time; pulse frequencies range from 100Mhz and 4Ghz corresponding to 10 nsec to 250 psec. This pulse frequency falls in the range of 4ghz. A lot of events happen during a given clock cycle; for example, the program counter is  loaded with an instruction address every clock cycle, the registers get updated every clock cycle and memory locations get written when a <code class="language-plaintext highlighter-rouge">mov</code>, <code class="language-plaintext highlighter-rouge">push</code> and <code class="language-plaintext highlighter-rouge">call</code> instruction get executed. The control of  the memory and registers by the clock cycle is  what allows the instructions to get executed in a sequence.</p>
 
-    <span class="k">return</span> <span class="n">integers</span>
+<p>But in practice there’s instruction parallelism.</p>
 
-<span class="k">class</span> <span class="nc">test_insertion_sort</span><span class="p">(</span><span class="n">unittest2</span><span class="p">.</span><span class="n">TestCase</span><span class="p">):</span>
+<h4 id="instruction-parallelism">Instruction parallelism</h4>
 
-    <span class="k">def</span> <span class="nf">test_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">"""
-        Test if the insertion sort algorithm works.
-        """</span>
-        <span class="bp">self</span><span class="p">.</span><span class="n">assertEqual</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+<p>\(\textbf{Instruction level parallelism}\) is a process whereby the processor executes more instructions per second; it does this by implementing pipelining whereby more stuff gets done in less processor cycles.</p>
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span><span class="s">'__main__'</span><span class="p">:</span>
-    <span class="n">unittest2</span><span class="p">.</span><span class="n">main</span><span class="p">()</span></code></pre></figure>]]></content><author><name>Job Hernandez</name></author><summary type="html"><![CDATA[How does the insertion sort algorithm works?]]></summary></entry></feed>
+<p>Instruction level parallelism is exploited in compilers.</p>
+
+<p>The main idea of instruction level parallelism is to pre-fetch instructions from memory and put them in a set of special registers called the pre-fetch buffer and as a result of this the processor would not have to read from memory which takes hundreds of cycles. In a pipeline, execution is divided into stages in which each stage is carried out by a different type of hardware in parallel.</p>
+
+<p>Suppose you divide the execution into five stages.</p>
+
+<p>Stage 1 fetches instructions from memory and are stored in the prefetch buffer. Stage 2  determines the type and determines which operands it needs. Stage 3 fetches the operands; stage 4 carries out the execution and stage 5 writes the output to a register. Since these stages can be carried out in parallel it is fast; for example during the first clock cycle  Stage 1 does its job; during the second clock cycle Stage 2 does its job but also Stage 1 does its job for the next instruction. And during the third clock cycle Stage 3 does its job for the first instruction, stage 2 does its job for the second instruction, and stage 1 does its job for the third instruction and so on. Now, suppose that each clock cycle takes 2ns to complete; so one instruction takes 10ns to get processed by each stage so there 500 million instructions per second get executed.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+<p>As you can see there is a whole world as to how computers work. Getting to know architecture is a very interesting thing. Obviously, I have a lot to learn and what I wrote above is just the very basics.</p>
+
+<p>Well, I have briefly discussed the cpu architecture and have exposed the x86 architecture through some basic high level programs. Hopefully, you enjoyed it.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="cpu-architecture" /><category term="x86-64" /><category term="computer-science" /></entry><entry><title type="html">How do operating systems work?</title><link href="http://localhost:4000/2023/10/29/How-do-Operating-Systems-work.html" rel="alternate" type="text/html" title="How do operating systems work?" /><published>2023-10-29T00:00:00-07:00</published><updated>2023-10-29T00:00:00-07:00</updated><id>http://localhost:4000/2023/10/29/How-do-Operating-Systems-work</id><content type="html" xml:base="http://localhost:4000/2023/10/29/How-do-Operating-Systems-work.html"><![CDATA[<p><em>version</em>: 0.9.0, initial version, draft</p>
+
+<ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#what-is-an-operating-system" id="markdown-toc-what-is-an-operating-system">What is an operating system?</a>    <ul>
+      <li><a href="#processes-and-threads" id="markdown-toc-processes-and-threads">Processes and threads</a></li>
+      <li><a href="#cpu-scheduling" id="markdown-toc-cpu-scheduling">CPU Scheduling</a></li>
+      <li><a href="#interprocess-communication" id="markdown-toc-interprocess-communication">Interprocess communication</a></li>
+      <li><a href="#memory-management" id="markdown-toc-memory-management">Memory Management</a></li>
+      <li><a href="#traps-interrupts-and-drivers" id="markdown-toc-traps-interrupts-and-drivers">Traps, interrupts, and drivers</a></li>
+      <li><a href="#locking" id="markdown-toc-locking">Locking</a></li>
+      <li><a href="#deadlock" id="markdown-toc-deadlock">Deadlock</a></li>
+      <li><a href="#file-system" id="markdown-toc-file-system">File System</a>        <ul>
+          <li><a href="#buffer-cache" id="markdown-toc-buffer-cache">Buffer Cache</a></li>
+          <li><a href="#logging" id="markdown-toc-logging">Logging</a></li>
+          <li><a href="#block-allocator" id="markdown-toc-block-allocator">Block Allocator</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#conclusion" id="markdown-toc-conclusion">Conclusion</a></li>
+</ul>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>Last two years or so I have been on a journey to study computer science fundamentals. Over the course of the last two years I have studied algorithms, distributed systems and compilers among other topics but operating systems is one of my favorite topics.</p>
+
+<p>In what follows I will explain how an operating system works based on my studies of the MIT <a href="https://pdos.csail.mit.edu/6.828/2023/xv6/book-riscv-rev3.pdf">xv6</a> and “Operating System Concepts”.</p>
+
+<p>Obviously, I am not an expert. But I enjoy this topic a lot and wrote this to learn.</p>
+
+<h3 id="what-is-an-operating-system">What is an operating system?</h3>
+
+<p>The operating system provides resources to the apps that you use. These resources include memory, CPU time, files, and I/O. Since a process is an abstraction for a running program then we can say the process is the main character in an OS. The OS allocates CPU time, memory, files and I/O to processes.</p>
+
+<p>The OS provides services to user programs through an interface. What is the Unix philosophy for designing interfaces? The Unix interface, i.e., system calls, is simple and narrow which allows ease of implementation. Unix has a simple and narrow interface but this set of system calls allow combinations to make more complex and general functionality.</p>
+
+<p>xv6 and modern operating systems such as MacOS and Linux offers <em>time sharing</em> transparently switches the CPUs among the processes.</p>
+
+<h4 id="processes-and-threads">Processes and threads</h4>
+
+<p>A process needs resources – namely, CPU time, memory, files, and I/O devices. These resources are allocated to the process while it is running. How is the process concept related to web programming? Suppose there is a process running on the web browser and it is trying to send a request to the server. The process will take an URL as an input and it will then carry out the appropriate instructions and system calls to display the response (web page).</p>
+
+<p>A process is an abstraction for a program in execution; each process has its own address space and its memory is laid out as follows: text section, data section, heap and stack. The text section consists of the executable code, the data section consists of global variables, the stack consists of data storage associated with invocations of functions such as parameters, return address, and the heap is associated with dynamically memory storage such as when you allocate memory in C with malloc; for example, in an x86-64 if you were to loop over an array and print each element you would divide the program into <em>.data</em> and <em>.text</em> sections. In the <em>.data</em> section you would declare and initialize the array and in the <em>.text</em> section you would have the instructions. But to clarify, a program by itself is not a process; a program is a passive entity. In contrast a process is an active entity consisting of a program counter that points to the subsequent instruction and consisting of the contents of the registers. A thread is the execution control center of a given process. “A thread represents the basic unit of CPU utilization.” There could be multiple threads per process. A <em>thread</em> has its own stack but shares the same address space with other threads. This makes sense because threads need to be aware of the same program. Ultimately, user level threads need to be mapped to kernel threads for the CPU to execute. There are several models of this, namely, many-to-one, one-to-one and many-to-many. As you might expect, when the model is many-to-one, many user threads get mapped to one kernel thread.</p>
+
+<h4 id="cpu-scheduling">CPU Scheduling</h4>
+
+<p>The kernel time shares processes - it switches the CPUs among the processes. What happens when a process is not executing? The kernel saves the process’ CPU registers and restores them once the process runs again. Multiplexing means switching a CPU from one process to another. Context switching means multiplexing. Why is scheduling important? Scheduling is important because operating systems run with more processes than the computer has CPUs. How does scheduling happen? In response to system calls or interrupts the kernel switches from one process to another by the following way. First, there’s a user-kernel transition to the old process’ kernel thread, a context switch to the current CPU’s scheduler thread, a context switch to a new (the one the kernel is switching to) process kernel thread and a trap return to the user level processes the kernel was switching to. Each CPU has its own scheduler thread which makes sense since when switching from user process A to user process B there is a transition to the process’ A kernel thread via a system call, a context switch to the scheduler thread, and a context switch to process’ B kernel thread. So, this means that scheduling involves alternating from thread to thread. And remember a thread is what executes the given process’ instructions. Threads share memory with other threads but have their own stack. What happens when a process gives up the CPU? The process’ kernel thread calls switch to save its own context and return the scheduler context. I think this is why the kernel switches from the old user process kernel thread to the scheduler thread. Switching from one thread to a new one involves saving the registers on the old thread and restoring the registers of the new one. A scheduler is essentially a thread in the CPU. There is one scheduler thread per CPU. Each schedule thread has the scheduler function.</p>
+
+<p>A timer interrupt drives context switching, i.e., the switch from one process to another process.</p>
+
+<p>The kernel maintains a page table for each process. Page tables enable the kernel to isolate the different process’ address space and multiplex them into a single memory system. When the kernel context switches it also switches page tables. The page table for each given process describes the user address space; moreover, the kernel provides a page table that describes the kernel address space.</p>
+
+<p>The CPU scheduler is responsible for deciding which processes to allocate to the CPU. There are several algorithms for CPU scheduling; the simplest is a first come, first served algorithm in which the first process that requests the CPU gets allocated to the CPU; this is accomplished with the FIFO queue data structure; the first process that enters the queue it is the first out of the queue. What is tremendously amazing about scheduling is that the user does not notice when the CPU switches from one process to another process. So, it is interesting to think how one would build this. Why does the cpu scheduler exist? In most operating systems there will be more processes than there are CPUs so there needs to be a way for the CPUs to work on all of these programs.</p>
+
+<h4 id="interprocess-communication">Interprocess communication</h4>
+
+<p>Often processes need to communicate with other processes because they may need to access main memory. This can lead to race conditions. A race condition happens when two or more processes are sharing data (from main memory for instance) and the final result depends on the order of the processes. If one process runs before another process it may change the result because the order is off. How do we avoid race conditions? The answer is mutual exclusion; mutual exclusion dictates that when two or more processes share memory the processes that are not using the shared data are excluded from accessing the data. Mutual exclusion is achieved by semaphores, mutexes. A semaphore is initialized to the number of resources; when a process wants to use a resource it calls the wait() function thereby decrementing the count. When the process releases a resource it performs a signal() thereby incrementing the count. When the count is 0 processes are blocked until it increments again. When a process modifies a semaphore value another process cannot access the same semaphore value – i.e., cannot access the same resource.</p>
+
+<h4 id="memory-management">Memory Management</h4>
+
+<p>The job of the memory manager is to keep track of the parts of memory that are being used, to allocate memory to processes and to deallocate memory when the processes are done with it. How does the memory manager accomplish this? It does this through an abstraction mechanism known as virtual memory. As discussed above a process is an abstraction for a program; likewise, a virtual address space is an abstraction of main memory – it gives the illusion that each process has its own main memory. The set of addresses that a process can use to address memory is called the virtual address space. The basic idea behind main memory is that a process has its own virtual address space which is laid out as pages where a page is a contiguous range of memory addresses. The given processor’s instructions manipulate virtual addresses; for example when you write, in assembly, <code class="language-plaintext highlighter-rouge">movq immediate, address1</code>, the operating system translates the virtual address <code class="language-plaintext highlighter-rouge">address1</code> into a physical address. The operating system maps virtual addresses to physical addresses using <em>page tables</em>.</p>
+<blockquote>
+  <p>… virtual memory is not a physical object, but refers to the collection of abstractions and mechanisms the kernel provides to manage physical memory and virtual addresses.</p>
+</blockquote>
+
+<p>And it is also important to note that the given operating system maintains one page table per process; and the root of the given page table is written to a register before the page table gets processed. Consider the <em>xv6</em> Unix kernel programmed by MIT. <em>xv6</em> is tailored to the Sv39 RISC-V processor - the top 39 bits of a 64 bit virtual address space are used for this; in the Sv39 processor a page table is logically an array of \(2^{27}\) page table entries (PTEs). Each PTE has a 44 bit physical page number. The paging hardware translates the virtual address by using the top 27 bits of the 39 bits to index the page table to find the PTE. The paging hardware also makes 56 bit physical addresses whose top 44  bits come from the physical page number of the page table entry and whose bottom 12 bits come from the virtual address. The page table is stored in physical memory as a tree whose root node consists of a 4096-byte page table. In turn, this page contains 512 PTEs that contain the physical addresses of the page table pages of the next level of the tree and in turn these pages contain the addresses of the page table pages of the final level of the tree. The OS uses the top level 9 bits of the 27 bits to select a PTE from the root page table page and further, it uses the middle 9 bits to select the PTEs from the middle level of the tree and finally it uses the bottom 9 bits to select the PTEs from the final page table page in the final level of the tree. <em>How does the kernel allocate and free memory?</em>The kernel must allocate and free memory at run-time for page tables, user memory, kernel stacks, etc. It allocates and frees 4096 byte pages at a time. The kernel maintains a linked list of free pages. Allocation of a page consists of removing a page from the list and freeing a page consists of adding a page to the list.</p>
+
+<h4 id="traps-interrupts-and-drivers">Traps, interrupts, and drivers</h4>
+
+<p>What goes on with the CPU when a given process is running? The CPU executes the processor loop, namely, read an instruction, advance the program counter, execute the instruction, repeat. Often, however, control must transition from user programs to kernel instead of executing the next instruction. This happens when a user program does something illegal such as dividing by 0, trying to access a page table entry for which there is no virtual address.</p>
+
+<p>An <em>exception</em> triggers an interrupt when there’s an illegal program action. An <em>interrupt</em> is a signal that tells the OS that it needs to pay attention to it; for example, a clock chip may generate an interrupt every 100 msec to allow the kernel implement time sharing. The kernel is responsible for handling the interrupts. When designing an OS/kernel one needs to be aware of how the underlying processor handles system calls, interrupts and exceptions; for example, on the x86 a program triggers a system call by generating an interrupt using the <em>int</em> instruction. Exceptions generate an interrupt too.</p>
+
+<p>How do <em>interrupts</em> work? As mentioned above an interrupt stops the processor loop; once the processor loop stops the interrupt executes a new sequence called an <em>interrupt handler</em>. And of course before starting this new sequence, the processor saves its registers so it can resume after the OS has returned from the interrupt. So, this means that the transition from the processor loop to the interrupt handler involves going from user mode and kernel mode.</p>
+
+<p>Interrupts in UNIX terms are known as <em>traps</em>.</p>
+
+<p>How does xv6 and thus Unix invoke a system call? To invoke a system call a program indexes the interrupt descriptor table (IDT) by invoking the <em>int</em>  instruction where n is the index of the IDT.</p>
+
+<h4 id="locking">Locking</h4>
+
+<p>xv6 runs on multiprocessors; this means that multiple CPUs are executing instructions independently and since there is only one physical address space and shared data structures, xv6 needs a mechanism to keep them from interfering with one another. This is what <em>locking</em> accomplishes. A lock achieves mutual exclusion which makes sure that one CPU at a time can hold the lock. In turn, this allows careful treatment of the data structures.</p>
+
+<p>Since there are multiple processors, for a given line of code, multiple processors can execute the line which will result in problems. Locking allows multiple processors to execute the line of code without introducing unwanted changes to the data structure.</p>
+
+<p>The reason why we need locks is to prevent <em>race conditions</em>. Race conditions result from the ordering of execution of two or more processors that invalidates a data structure. A processor S may be operating on A but then processor T may work on A which will result in processor S working on a modified version of A, let’s call it B.</p>
+
+<h4 id="deadlock">Deadlock</h4>
+
+<p>Deadlocks involve the ordering of locks. Suppose a code path require to take out several locks. When this happens it is important that all code paths acquire the locks in the same order. Suppose there’s to code paths and both paths need locks A and B. If code path 1 acquires locks in the order A, B and the other path acquires locks in the order B, A. This can result in a deadlock because when path 1 acquires lock A, path 2 will acquire B. As a result path 1 will wait for B and path 2 will wait for A. Both path are waiting. In other words, a deadlock happens when two processors hold the lock that each of them needs.</p>
+
+<h4 id="file-system">File System</h4>
+<p>The file system exists to organize and store data; it is an abstraction of disk.</p>
+
+<h5 id="buffer-cache">Buffer Cache</h5>
+
+<p>The buffer cache has two jobs: 1) ensures that only one copy of a disk block is in memory; 2) cache popular blocks so they do not have to be re-read from the slow disk. The buffer cache has an interface; in xv6 the interface is <code class="language-plaintext highlighter-rouge">bread</code> and <code class="language-plaintext highlighter-rouge">bwrite</code>. The former gets a buffer consisting of a block that can be read or modified and the latter writes a modified block to disk. In other words, there is a transition between memory and disk. A block can first be in memory and it can be read and modified in memory. <code class="language-plaintext highlighter-rouge">bread</code> gets a copy of such block. <code class="language-plaintext highlighter-rouge">bwrite</code> writes this modified block to disk. So, there seems to be a transition between memory and disk. How does the buffer cache synchronize access to each block? It only allows at most one kernel thread to reference to the block’s buffer. While one kernel thread is referring to a block buffer other threads will have to wait until the thread releases the buffer block.</p>
+
+<h5 id="logging">Logging</h5>
+
+<p>Logging solves the problem of crashes during file system operations.</p>
+
+<h5 id="block-allocator">Block Allocator</h5>
+<p>File content and directory content are stored in disk blocks which are allocated from a free pool. So, the blocks that the buffer cache synchronizes contain file and directory content. The block allocator consists of a bitmap on the disk. Each bit in this bitmap corresponds to one block. If the bit is 0 then the block is free; otherwise, the block has content. The block allocator has two functions: <code class="language-plaintext highlighter-rouge">balloc</code> and <code class="language-plaintext highlighter-rouge">bfree</code> which allocates a block and frees a block respectively.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+<p>Above I have tried to explain what an operating system is. Operating systems are fascinating systems. It is amazing that anything at all works in operating systems. You should pick up a textbook and study this topic. Enjoy.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="x86-64" /><category term="operating-systems" /><category term="computer-science" /><summary type="html"><![CDATA[version: 0.9.0, initial version, draft]]></summary></entry><entry><title type="html">Power of Lisp macros</title><link href="http://localhost:4000/2023/10/25/power-of-lisp-macros.html" rel="alternate" type="text/html" title="Power of Lisp macros" /><published>2023-10-25T00:00:00-07:00</published><updated>2023-10-25T00:00:00-07:00</updated><id>http://localhost:4000/2023/10/25/power-of-lisp-macros</id><content type="html" xml:base="http://localhost:4000/2023/10/25/power-of-lisp-macros.html"><![CDATA[<p><em>version</em>: 1.0, initial version</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>I find it hard to admit but I spent on average around 2 hours a day programming in Lisp for about 3 years and never touched macros. But fortunately by contributing to open source and seeing how really good programmers program I was able to pick up some macro skills.</p>
+
+<p>As a result, I have more appreciation for Lisp and kind of see how in other languages you end up repeating yourself due to lack of syntactic abstraction; moreover, I have seen how macros enable you to build languages and extend the Lisp language itself.</p>
+
+<p>This is all important because, as the SICP authors claimed, software engineering is about controlling complexity. Using macros allows you to control complexity because by using macros your systems are easier to maintain and by using macros for building DSLs and extending Lisp itself you end up increasing the expressiveness of Lisp.</p>
+
+<p>In what follows I will explain how macros are indeed useful and lead to better systems.</p>
+
+<p>Definitely, I am not an expert but these are my observations from contributing to Coalton and conversing with the creator of Coalton.</p>
+
+<h3 id="macros-allow-you-to-get-more-done-with-less">Macros allow you to get more done with less</h3>
+
+<p>One of the reasons why Lisp macros are powerful is because macros enable syntactic abstraction. Syntactic abstraction leads to shorter code and more modular code and  moreover it leads to code without repeating patterns</p>
+
+<p>Consider building a vector library. Suppose you are trying to implement different types such as single float and double float and so on.</p>
+
+<p>In Common Lisp you can write the pattern of addition once and I apply it \(n\) times where \(N\) is the number of types you are implementing.</p>
+
+<p>Here is how I would write it:</p>
+
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nb">defmacro</span> <span class="nv">addition-handler</span> <span class="p">(</span><span class="k">type</span> <span class="nv">fn-name</span><span class="p">)</span>
+  <span class="o">`</span><span class="p">(</span><span class="nb">defun</span> <span class="o">,</span><span class="nv">fn-name</span> <span class="p">(</span><span class="nv">vec</span> <span class="nv">vec2</span><span class="p">)</span>
+ 	<span class="p">(</span><span class="k">progn</span> <span class="p">(</span><span class="k">setq</span> <span class="nv">vec3</span> <span class="p">(</span><span class="nb">make-array</span> <span class="o">,</span><span class="p">(</span><span class="nb">length</span> <span class="nv">vec</span><span class="p">)</span> <span class="ss">:element-type</span> <span class="ss">',type</span><span class="p">))</span>
+    	<span class="p">(</span><span class="nb">dotimes</span> <span class="p">(</span><span class="nv">i</span> <span class="o">,</span><span class="p">(</span><span class="nb">length</span> <span class="nv">vec</span><span class="p">))</span>
+      	<span class="p">(</span><span class="nb">setf</span> <span class="p">(</span><span class="nb">aref</span> <span class="nv">vec3</span> <span class="nv">i</span><span class="p">)</span>
+   	 	<span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nb">aref</span> <span class="nv">vec</span> <span class="nv">i</span><span class="p">)</span>
+   	    	    <span class="p">(</span><span class="nb">aref</span> <span class="nv">vec2</span> <span class="nv">i</span><span class="p">)))))))</span>
+
+<span class="p">(</span><span class="nv">addition-handler</span> <span class="kt">single-float</span> <span class="nv">addition-vector-single-float</span><span class="p">)</span>
+<span class="p">(</span><span class="nv">addition-handler</span> <span class="kt">double-float</span> <span class="nv">addition-vector-double-float</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>You can continue this pattern and implement more vector operations and more types.</p>
+
+<p>So, in Lisp you can get more done with less code. In turn, this leads to smaller systems due to the abstraction and since smaller systems are easier to make sense of the ease of maintenance increases.</p>
+
+<h3 id="macros-allow-you-to-build-dsls">Macros allow you to build DSLs</h3>
+
+<p>In SICP you learn that DSLs are the ultimate abstraction. Software engineering is about controlling complexity. As we have seen previously macros allow you to control complexity because macros lead to more abstracted systems.</p>
+
+<p>It turns out that the power of macros is about building languages. As Robert, the creator of Coalton and an state of the art quantum computing compiler Quilc said:</p>
+
+<blockquote>
+  <p>The real power of macros is when they’re in the hands of compiler writers and language designers.</p>
+</blockquote>
+
+<p>The idea of building DSLs with macros is closely tied to the idea that software systems should be evolvable and adaptable; for example, in the book “Software Design for Flexibility”, Sussman and Hanson claimed that systems need to be evolvable. According to them, systems should be designed in such a way that they adapt and grow as requirements change.</p>
+
+<blockquote>
+  <p>The best systems are evolvable: they can be adapted to new situations with only minor modifications.</p>
+</blockquote>
+
+<p>When adding a new feature one should be able to add to the system instead of modifying the codebase.</p>
+
+<p>Well Lisp can be seen as an evolvable system. With macros you can adapt the language to new situations and can extend the language with new constructs without modifying the Lisp compiler.</p>
+
+<p>You can see Lisp as an assembly of tiny domain specific languages.</p>
+
+<p>Lisp has a tiny core and the rest of the language can be built by writing macros. As Alan Kay said:</p>
+
+<blockquote>
+  <p>Yes, that was the big revelation to me when I was in graduate school—when I finally understood that the half page of code on the bottom of page 13 of the Lisp 1.5 manual was Lisp in itself. These were “Maxwell’s Equations of Software!” This is the whole world of programming in a few lines that I can put my hand over.</p>
+</blockquote>
+
+<p>So, as I said Lisp is an evolvable system because it has macros; for example, suppose your favorite language doesn’t have list comprehensions. How would you add this construct to your language? The only way you can do this is by modifying the compiler. As a result, your favorite language is not as evolvable as it could be.</p>
+
+<p>In a conversation I had on Twitter with Robert Smith, he demonstrated the power of macros by showing me how a language for list comprehensions could be implemented.</p>
+
+<p>What follows is a summary of his message.</p>
+
+<p>Suppose you want to express this in your language:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[(x, y) for x in range(5) for y = 2*x when isEven(x)] 
+</code></pre></div></div>
+
+<p>How would you add list comprehensions to your favorite language? You cannot.</p>
+
+<p>But in Lisp you can write a macro that allows you to express this.</p>
+
+<p>For example, a macro for list comprehensions is a tiny DSL.</p>
+
+<p>You might say that Python can be used as this because of macros but as Robert Smith says:</p>
+
+<blockquote>
+  <p>(1) Python macros don’t really exist as a defined part of the language, (2) python has no concept of “macroexpansion time”, (3) being able to manipulate ASTs and source code is not the same as having a macro facility built in to the language, even if you can accomplish similar tasks in theory. I would say that python allows metaprogramming (in a very bizarre and difficult way), but NOT that it supports macros. The  language is definitely not homoiconic, which is a key ingredient in making macros facile.</p>
+</blockquote>
+
+<p>I was able to see the power of macros thanks to Robert Smith. He explained this to me by the following implementation of the the loop comprehension DSL:</p>
+
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">;;; A list comprehension will be defined as:</span>
+<span class="c1">;;;</span>
+<span class="c1">;;;    (comp &amp;lt;expr&amp;gt; &amp;lt;clause&amp;gt;*)</span>
+<span class="c1">;;;</span>
+<span class="c1">;;; where &amp;lt;expr&amp;gt; is any Lisp expression, and &amp;lt;clause&amp;gt; can be:</span>
+<span class="c1">;;;</span>
+<span class="c1">;;;    &amp;lt;clause&amp;gt; := (for &amp;lt;var&amp;gt; in &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;              | (for &amp;lt;var&amp;gt; = &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;              | (for &amp;lt;var&amp;gt; from &amp;lt;expr&amp;gt; to &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;              | (when &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;</span>
+<span class="c1">;;; For example,</span>
+<span class="c1">;;;</span>
+<span class="c1">;;;    (comp (list x y) (for x from 1 to 100) (for y = (* x x)) (when (evenp y)))</span>
+<span class="c1">;;;</span>
+<span class="c1">;;; would generate a list of numbers and their squares, only when the</span>
+<span class="c1">;;; square is even.</span>
+
+<span class="nv">CL-USER&gt;</span> <span class="p">(</span><span class="nv">compile-comp</span> <span class="o">'</span><span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">list</span> <span class="nv">x</span> <span class="nv">y</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">100</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nb">=</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">x</span> <span class="nv">x</span><span class="p">))</span> <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nb">evenp</span> <span class="nv">y</span><span class="p">))))</span>
+
+ <span class="p">(</span><span class="nv">LET</span> <span class="p">((</span><span class="ss">#:RESULT1639</span> <span class="nv">NIL</span><span class="p">))</span> <span class="p">(</span><span class="nv">LOOP</span> <span class="ss">:FOR</span> <span class="nv">X</span> <span class="ss">:FROM</span> <span class="mi">1</span> <span class="ss">:TO</span> <span class="mi">100</span> <span class="ss">:DO</span> <span class="p">(</span><span class="nv">LET</span> <span class="p">((</span><span class="nv">Y</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">X</span> <span class="nv">X</span><span class="p">)))</span> <span class="p">(</span><span class="nv">WHEN</span> <span class="p">(</span><span class="nv">EVENP</span> <span class="nv">Y</span><span class="p">)</span> <span class="p">(</span><span class="nv">PUSH</span> <span class="p">(</span><span class="nv">LIST</span> <span class="nv">X</span> <span class="nv">Y</span><span class="p">)</span> <span class="ss">#:RESULT1639</span><span class="p">))))</span> <span class="p">(</span><span class="nv">NREVERSE</span> <span class="ss">#:RESULT1639</span><span class="p">))</span>
+
+<span class="nv">CL-USER&gt;</span> <span class="p">(</span><span class="nv">compile-comp</span> <span class="o">'</span><span class="p">(</span><span class="nv">comp</span> <span class="nv">x</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="nv">LET</span> <span class="p">((</span><span class="ss">#:RESULT1640</span> <span class="nv">NIL</span><span class="p">))</span>
+  <span class="p">(</span><span class="nv">LOOP</span> <span class="ss">:FOR</span> <span class="nv">X</span> <span class="ss">:FROM</span> <span class="mi">1</span> <span class="ss">:TO</span> <span class="mi">10</span>
+    	<span class="ss">:DO</span> <span class="p">(</span><span class="nv">LOOP</span> <span class="ss">:FOR</span> <span class="nv">Y</span> <span class="ss">:FROM</span> <span class="mi">1</span> <span class="ss">:TO</span> <span class="mi">10</span>
+              	<span class="ss">:DO</span> <span class="p">(</span><span class="nv">PUSH</span> <span class="nv">X</span> <span class="ss">#:RESULT1640</span><span class="p">)))</span>
+  <span class="p">(</span><span class="nv">NREVERSE</span> <span class="ss">#:RESULT1640</span><span class="p">))</span>
+
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">for-in-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">4</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FOR"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"IN"</span> <span class="p">(</span><span class="nb">third</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">for-=-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">4</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FOR"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"="</span> <span class="p">(</span><span class="nb">third</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">for-range-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">6</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FOR"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FROM"</span> <span class="p">(</span><span class="nb">third</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"TO"</span> <span class="p">(</span><span class="nb">fifth</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">when-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">2</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"WHEN"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">list-comprehension-form?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">2</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"COMP"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))))</span>
+
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">compile-clause</span> <span class="p">(</span><span class="nv">build-expr</span> <span class="nv">clause</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">cond</span>
+	<span class="p">((</span><span class="nv">for-in-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="nb">loop</span> <span class="ss">:for</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span> <span class="ss">:in</span> <span class="o">,</span><span class="p">(</span><span class="nb">fourth</span> <span class="nv">clause</span><span class="p">)</span>
+        	<span class="ss">:do</span> <span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">((</span><span class="nv">for-=-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="k">let</span> <span class="p">((</span><span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span> <span class="o">,</span><span class="p">(</span><span class="nb">fourth</span> <span class="nv">clause</span><span class="p">)))</span>
+    	<span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">((</span><span class="nv">for-range-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="nb">loop</span> <span class="ss">:for</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span> <span class="ss">:from</span> <span class="o">,</span><span class="p">(</span><span class="nb">fourth</span> <span class="nv">clause</span><span class="p">)</span> <span class="ss">:to</span> <span class="o">,</span><span class="p">(</span><span class="nb">sixth</span> <span class="nv">clause</span><span class="p">)</span>
+        	<span class="ss">:do</span> <span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">((</span><span class="nv">when-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="nb">when</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span>
+    	<span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">(</span><span class="no">t</span>
+ 	<span class="p">(</span><span class="nb">error</span> <span class="s">"Invalid clause: ~S"</span> <span class="nv">clause</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">compile-clauses</span> <span class="p">(</span><span class="nv">build-expr</span> <span class="nv">clauses</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">null</span> <span class="nv">clauses</span><span class="p">)</span>
+  	<span class="nv">build-expr</span>
+  	<span class="p">(</span><span class="nv">compile-clauses</span>
+   	<span class="p">(</span><span class="nv">compile-clause</span> <span class="nv">build-expr</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">clauses</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">rest</span> <span class="nv">clauses</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">compile-comp</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">assert</span> <span class="p">(</span><span class="nv">list-comprehension-form?</span> <span class="nv">form</span><span class="p">))</span>
+  <span class="p">(</span><span class="k">let*</span> <span class="p">((</span><span class="nv">clauses</span>	<span class="p">(</span><span class="nb">nthcdr</span> <span class="mi">2</span> <span class="nv">form</span><span class="p">))</span>
+     	<span class="p">(</span><span class="nv">result</span> 	<span class="p">(</span><span class="nb">gensym</span> <span class="s">"RESULT"</span><span class="p">))</span>
+     	<span class="p">(</span><span class="nv">build-expr</span> <span class="o">`</span><span class="p">(</span><span class="nb">push</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">form</span><span class="p">)</span> <span class="o">,</span><span class="nv">result</span><span class="p">)))</span>
+	<span class="o">`</span><span class="p">(</span><span class="k">let</span> <span class="p">((</span><span class="o">,</span><span class="nv">result</span> <span class="no">nil</span><span class="p">))</span>
+   	<span class="o">,</span><span class="p">(</span><span class="nv">compile-clauses</span> <span class="nv">build-expr</span> <span class="p">(</span><span class="nb">reverse</span> <span class="nv">clauses</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">nreverse</span> <span class="o">,</span><span class="nv">result</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>Here is the interaction in the REPL:</p>
+
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">*</span> <span class="p">(</span><span class="nb">defmacro</span> <span class="nv">comp</span> <span class="p">(</span><span class="nv">expr</span> <span class="k">&amp;rest</span> <span class="nv">clauses</span><span class="p">)</span> <span class="p">(</span><span class="nv">compile-comp</span> <span class="o">`</span><span class="p">(</span><span class="nv">comp</span> <span class="o">,</span><span class="nv">expr</span> <span class="o">,@</span><span class="nv">clauses</span><span class="p">)))</span> 
+
+<span class="nb">*</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">x</span> <span class="nv">x</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">))</span> 
+  <span class="p">(</span><span class="mi">1</span> <span class="mi">4</span> <span class="mi">9</span> <span class="mi">16</span> <span class="mi">25</span> <span class="mi">36</span> <span class="mi">49</span> <span class="mi">64</span> <span class="mi">81</span> <span class="mi">100</span><span class="p">)</span> 
+
+<span class="nb">*</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">x</span> <span class="nv">x</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">in</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">sin</span> <span class="nv">y</span><span class="p">)</span> <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nb">evenp</span> <span class="nv">y</span><span class="p">)))))</span> 
+<span class="p">(</span><span class="mf">0.82682174</span> <span class="mf">0.57275003</span> <span class="mf">0.07807302</span> <span class="mf">0.97882974</span> <span class="mf">0.295959</span><span class="p">)</span> 
+
+<span class="nb">*</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">list</span> <span class="nv">x</span> <span class="nv">y</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nb">&lt;</span> <span class="nv">x</span> <span class="nv">y</span><span class="p">)))</span> 
+<span class="p">((</span><span class="mi">1</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">8</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">8</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">9</span> <span class="mi">10</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>As you can see you can extend Lisp, which does not support list comprehensions, with the ability to express comprehensions. This is indeed the power of macros.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>So, there you go. Based on my observations and conversations I have had I have tried to show the power of macros. Firstly, I showed how you can do more with less code by using macros which in turn leads to systems without repeating patterns. If you consider that Lisp also has higher order functions you can see how Lisp is a great language to build modular code. In addition, I shared how macros can help the programmer extend the Lisp language itself which is the ultimate way to conquer complexity.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="lisp" /><summary type="html"><![CDATA[version: 1.0, initial version]]></summary></entry><entry><title type="html">Reflecting on my open source experience</title><link href="http://localhost:4000/2023/10/24/reflection-on-open-source.html" rel="alternate" type="text/html" title="Reflecting on my open source experience" /><published>2023-10-24T00:00:00-07:00</published><updated>2023-10-24T00:00:00-07:00</updated><id>http://localhost:4000/2023/10/24/reflection-on-open-source</id><content type="html" xml:base="http://localhost:4000/2023/10/24/reflection-on-open-source.html"><![CDATA[<p><em>version</em>: 1.0, 11/22/23</p>
+
+<p><em>version</em>: 0.9.0, draft, 10/24/23</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>I have been reading “Rebel Code”, a book about the early days of Linux and open source and I just find the stories in this book amazing. So, I am really excited about contributing to Coalton, a programming language written in Common Lisp that is embedded in Common Lisp. Coalton is a statically typed language, similar to Haskell, with type inference.</p>
+
+<p>In <a href="https://www.engineeringchallenges.org/challenges.aspx">14 Grand Challenges for Engineering in the 21st Century</a> some experts got together and determined 14 grand engineering challenges for the 21st century. Among these challenges was to build the tools for scientific discovery.</p>
+
+<p>It happens that Coalton is a language that is used in production at a quantum computing company to build a quantum compiler. So, Coalton is a tool for advancing science. So, I think the peope at HRL labs are doing great work. So, I would like to contribute to Coalton.</p>
+
+<h3 id="lessons-i-learned-from-contributing-to-open-source">Lessons I learned from contributing to open source</h3>
+
+<p>Contributing to open source is like doing an internship. If the system is being used in production then by contributing you are essentially doing an internship because you get to work on a production system and with other engineers.</p>
+
+<p>One of the things I learned from contributing to Coalton is how to independently investigate the codebase, identify the relevant code I need to understand to make my changes; moreover, I learned that often you can make a contribution by following the patterns of the surrounding code. In addition, working on a github issue is also just like working on some personal project. That is, you still need to research the problem and understand the problem.</p>
+
+<p>One of the things I also learned was about the importance of code review. I learned that software is improved iteratively through code reviews. As the lead, Robert and very good software engineer, said:</p>
+
+<blockquote>
+  <p>It [the PR] started as a humble initial piece of code with the basic structure, and now it’s being “chiseled” and refined. It’s turning into a higher and higher quality contribution with each pass. This iteration is the essence of good software.</p>
+</blockquote>
+
+<p>In addition I also learned that PRs should be a series of sensible and well crafted commits. Or as Robert Smith says:</p>
+
+<blockquote>
+  <p>Commits should cover an atomic amount of useful change, and be well described by the short and long commit message. Most ideal scenario: what I described above. Less ideal scenario: you squash everything into a single commit and describe your changes. Less^2 ideal scenario: I squash them all for you and write a message for you. Less^infinity ideal scenario: I merge something with whatever unpolished commit history.</p>
+</blockquote>
+
+<p>Finally, I learned about the amazing feeling you get when you contribute code to a codebase that gets used. I felt excited when my first non trivial pr got merged because I felt I did something useful.</p>
+
+<p>Now, I will say a little bit about my contributions to Coalton.</p>
+
+<h3 id="my-contributions">My contributions</h3>
+
+<h4 id="dual-numbers-and-automatic-differentiation">Dual numbers and automatic differentiation</h4>
+
+<p>I started fixing typos but after a conversation I had with Robert, he suggested that I work on a dual number library.</p>
+
+<p>A dual number has the form \(a + b\epsilon\) where \(a\) and \(b\) are real numbers and \(\epsilon\) is a symbol that satisfies \(\epsilon^2 = 0\)  and \(\epsilon \neq 0\). One application of dual numbers is automatic differentiation.</p>
+
+<p>Consider the function \(f(x) = 5x+3\) and you want to calculate \(f(3)\) and \(f'(x)\).</p>
+
+<p>We can rewrite \(f(x)\) as a dual number as follows:</p>
+
+<p>\(f(3 + \epsilon) = 5(3 + \epsilon) + 3 = 18 + 5\epsilon\).</p>
+
+<p>Here \(18\) is \(f(3)\) and 5 is the derivative of \(f’(3)\).</p>
+
+<p>So, this is what I did. I wrote this library in Coalton for Coalton’s standard library. The code I wrote supports <strong>Number</strong> such as addition, subtraction, and multiplication and division, <strong>Radical</strong>, <strong>Exponentiable</strong> and <strong>Trigonometric</strong> data types.</p>
+
+<h4 id="signaling-when-an-unsigned-value-underflows">Signaling when an unsigned value underflows</h4>
+
+<p>Another contribution that I am currently working on, which has not been merged, but has been approved, is detecting underflow of unsigned integers and signaling an error.</p>
+
+<p>This pull request has taught me a lot and taught me a good lesson. Namely, it is good to gain some practical experience and then read a textbook to learn some theory. Practice and theory go together.</p>
+
+<p>In the textbook “Computer Systems, A Programmer’s Perspective” the authors claim the following:</p>
+
+<blockquote>
+  <p>By studying the actual number representations, we can understand the ranges of values that can be represented and the properties of the different arithmetic operations. This understanding is critical to writing programs that work correctly over the full range of numeric values and that are portable across different combinations of machine, operating system, and compiler</p>
+</blockquote>
+
+<p>In response to reading the above quote, which was after I started working on this issue, I appreciated taking the time and researching what an unsigned value is and the arithmetic properties such as when it overflows and underflows.</p>
+
+<p>So, as I mentioned above, I picked up an issue that involved signaling an underflow error for unsigned values. Unsigned values are numbers in the range \(0\) to \(2^{w} - 1\) where \(w\) is the the size of the unsigned number; for example, an 8 bit unsigned number. In other words, a bit vector \(\vec{x}\) of \(w\) bits can represent a decimal number in the range  \(0\) to \(2^{w} - 1\).</p>
+
+<p>This is saying that the set of decimal numbers that the computer represents is contingent on the bit size of the number and whether it is an unsigned or signed number; for example, an 8 bit unsigned number can represent values ranging from \(0\) to \(255\), a 16 bit unsigned number can can represent values ranging from \(0\) to \(65535\), a 32 bit unsigned number can represent values ranging from \(0\) to \(4294967295\) and a 64 bit unsigned value can represent values ranging from \(0\) to \(18446744073709551615\).</p>
+
+<p>Recall that a \(w\)-bit number is stored as consecutive addressable bytes. So, a \(8\)-bit unsigned integer gets stored in one byte whose address could be 0x100. In contrast, a \(32\)-bit unsigned number is stored in 4 bytes whose address locations may be 0x100, 0x101, 0x102, 0x103.</p>
+
+<p>Given a bit vector \(\vec{x}\) one converts a bit vector into a decimal number as follows:</p>
+
+<p>\(B2U_{w}\) \(\vec{x}\) \(=\) \(\sum_{i=0}^{w-1} x_{i}2^i\)</p>
+
+<p>So, I learned a lot thinking about this github issue.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>Above I have said a little bit about the lessons I have learned from contributing to Coalton. I learned how to investigate a codebase – e.g., identifying the relevant source code/files – and how code review leads to an iterative process for improving software. I also wrote about my contributions which consisted of building a dual number library, and on a current PR involving detecting unsigned number underflow.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="open-source" /><summary type="html"><![CDATA[version: 1.0, 11/22/23]]></summary></entry><entry><title type="html">How the Internet Works</title><link href="http://localhost:4000/2023/07/31/how-the-internet-works.html" rel="alternate" type="text/html" title="How the Internet Works" /><published>2023-07-31T00:00:00-07:00</published><updated>2023-07-31T00:00:00-07:00</updated><id>http://localhost:4000/2023/07/31/how-the-internet-works</id><content type="html" xml:base="http://localhost:4000/2023/07/31/how-the-internet-works.html"><![CDATA[<p><em>version 1</em>: initial version, 7/31/23</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>I am on a journey to learn more about backend software engineering fundamentals. In his YouTube video <a href="https://www.youtube.com/watch?v=V3ZPPPKEipA&amp;t">How to become a good backend engineer</a> Hussein Nasser argues that a good backend engineer is someone who knows the fundamentals. Some fundamentals include communication protocols such as HTTP, and TCP; cache systems; message queues, web servers. In this article I touch upon the Internet and communication protocols such as TCP, IP, and HTTP and web servers. I have also written about cache systems which you can read <a href="https://jobhdez.github.io/2023/07/17/memcached-at-facebook.html">here</a> and I have also written a little bit about message queues and web architecture which you can read <a href="https://jobhdez.github.io/2023/06/15/web-system-architecture.html">here</a>. As a disclaimer, be aware that I am not an expert. I write about these topics because I want to consolidate what I study. I love the Internet and the fact that anything works at all is fascinating.</p>
+
+<p>Here is quote by Alan Kay:</p>
+
+<blockquote>
+  <p>The Internet was done so well that most people think of it as a natural resource like the Pacific Ocean, rather than something that was man-made. When was the last time a technology with a scale like that was so error-free?</p>
+</blockquote>
+
+<h2 id="what-is-the-internet">What is the Internet?</h2>
+
+<p>Network applications are ubiquitous; everytime you browse the web, and send an email you are interacting with network applications.</p>
+
+<p>The Internet can be seen as a network of networks; for example, your home Wifi connects multiple computers to form a Local Area Network (LAN)<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>. The Internet can then be seen as a network of LANs whose hosts use routers and protocol software to communicate with other hosts.</p>
+
+<p>The Internet can also be seen as a collection of hosts with the following properties<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>:</p>
+
+<ul>
+  <li>
+    <p>the given hosts correspond to 32-bit IP addresses</p>
+  </li>
+  <li>
+    <p>these 32-bit IP addresses correspond to Internet domain names</p>
+  </li>
+  <li>
+    <p>processes in different hosts can communicate over a connection</p>
+  </li>
+</ul>
+
+<p>Every network application conforms to the client-server architecture. This architecture consists of one server process and multiple client processes. Internet clients and servers communicate by exchanging streams of bytes over a connection. A connection consists of a client socket and server socket. A socket is the endpoint of a connection.  Each socket is associated with an address and a 16 bit port.</p>
+
+<h3 id="how-does-the-internet-work">How does the Internet work?</h3>
+<p>Clients and servers on the Internet use IP addresses to communicate. Domain names, however, are a human readable representation of IP addresses. When you try to go to <code class="language-plaintext highlighter-rouge">https://google.com</code> a domain name server is involved to map the domain name <code class="language-plaintext highlighter-rouge">google.com</code> to an IP address. Subsequently, the source host and destination host will establish a connection over TCP.</p>
+
+<p>Interestingly, the kernel and networking are related. First, there is a network adapter/driver on each host which is connected on the I/O bus of a computer system. When the packets arrive at this network adapter the kernel creates a virtual memory for the processes involved. Subsequently, the virtual memory addresses get mapped to physical addresses and the CPU starts fetching instructions from memory; moreover, the socket interface is a set of system calls. In other words, the socket interface consists of functions that call the underlying TCP/IP implementation in the kernel. Recall that system calls are the interface of user mode and kernel mode. When a user mode process needs resources such as memory it initiates a system call and the kernel allocates the necessary memory. Well, it turns out that the given client’s socket port is assigned by the kernel when the client sends a connection request. In contrast, the given server’s port is already established, it is well known in advance.</p>
+
+<h4 id="the-network-stack">The network stack</h4>
+<p>At the lowest level of the Internet stack there’s Local Area Networks (LAN) which essentially is your Wifi network at home. Each host in a LAN is connected to other LANs through routers. What happens when one computer connects with another computer?
+To see how computers connect with one another one has to be aware of the protocol stack. The protocol stack consists of the following structure<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>—---------                      —-------------
+| http   |                      | HTTP      |
+—--------                        —------------
+    |                               ^
+    V                               |
+—--------                      —-------------
+| TCP   |                      |  TCP
+—-------                       —---------------
+   |                                 ^
+   V                                 |
+—-------                        —------------
+| IP   |                        | IP       |
+—------                         —------------
+   |                                 ^
+   V                                 |
+—----------                     —------------
+| hardware | —----------------&gt; | hardware
+—----------                    —------------
+</code></pre></div></div>
+
+<p>Given a connection between computers there are two protocol stacks involved. When one is using the browser the data travels from the Application protocol to the hardware. In other words, the packets would travel from the application layer – e.g., HTTP – to the TCP layer where a port will be attached and then these packets will continue onto the IP layers where the destination IP address and from here the packets move onto the LAN networks which can be created with Wifi or the Ethernet. At the receiving protocol stack a router sends the packets to the correct computer and the packets start getting processed from the IP protocol to the application protocol.</p>
+
+<h5 id="internet-protocol-ip">Internet Protocol (IP)</h5>
+<p>The IP is essential to the Global Internet. The essence is a route table. IP routes the IP packet to the destination hosts<sup id="fnref:3:1" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>.
+With respect to IP there are two types of routing: direct routing and indirect routing. Direct routing happens when two hosts on the same IP network communicate whereas in contrast indirect routing happens when two hosts on different IP networks connect. When IP mediates the communication between two hosts the header will consist of the source and destination IP addresses.</p>
+
+<p>When an IP packet travels over the Internet it can go from one IP-router to another while its route table determines where to direct the IP packet.</p>
+
+<h5 id="transmission-control-protocol-tcp">Transmission Control Protocol (TCP)</h5>
+
+<p>TCP is used when guarantee delivery is needed. In order to send a request over HTTP the client and server first needs to establish a connection over TCP. This connection over TCP can be seen as a virtual circuit.</p>
+
+<p>In the <a href="https://datatracker.ietf.org/doc/html/rfc1180">RFC 1180</a> is says:</p>
+
+<blockquote>
+  <p>TCP provides a different service than UDP.  TCP offers a connection-oriented byte stream, instead of a connectionless datagram delivery service. TCP guarantees delivery, whereas UDP does not.</p>
+</blockquote>
+
+<p>The connection or virtual circuits between the two TCP implementations on the respective hosts is full duplex. That is, data can flow in both directions.</p>
+
+<h5 id="hypertext-transfer-protocol-http">Hypertext Transfer Protocol (HTTP)</h5>
+
+<p>HTTP is an application protocol that mediates the exchange of HTML documents between a web browser and a server<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup>. HTTP is stateless which means that there is no relationship between requests happening one after another; nevertheless, via sessions you can provide some state.</p>
+
+<h3 id="what-is-the-web">What is the web?</h3>
+<p>The web is also a collection of clients and servers that communicate via a text based protocol called
+HTTP. HTTP is how information gets exchanged. This information or content is represented by HTML. Technically, web servers and clients see content as a pair consisting of a sequence of bytes and a MIME type. Some MIME types include HTML, images and plain text.</p>
+
+<p>To have something concrete I will talk about the Apache and nginx web servers and briefly dive into the differences in the following section.</p>
+
+<h4 id="web-servers">Web Servers</h4>
+<p>Here, I will talk about two http servers, namely, Apache and nginx. Apache spawns a process for each new connection whereas nginx is event driven. If a http server is process based then it will not deal with concurrency well.</p>
+
+<p>Here is a key point about why web servers that are thread or process based such as Apache do not handle concurrency well. Everytime the web server spawns a new process the cpu needs to create virtual memory (stack and heap) for each process. As a result, this leads to poor performance due to excessive context switching (switching the CPU among processes). In contrast, the foundation of nginx consists of an event based, asynchronous, single threaded, non-blocking architecture. Such architecture results in better performance, better use of server resources and enables the dynamic growth of web sites. As mentioned above Apache spawns a new process per connection but in contrast nginx consists of workers; each worker in nginx consists of a loop that handles many connections. This run loop is asynchronous so it does not block like the Apache server. Since nginx does not spawn a process or thread for each connection it does not consume a lot of memory given that it does not need to create virtual memory for a given process. As a result, nginx conserves CPU cycles because the CPU does not need to work on allocating stack and heap memory. In other words, one of the main reasons why nginx is more performant than Apache is because it does not spawn a process or thread for each connection - i.e., nginx is event driven. What nginx does instead is keep track of the network and storage, initializes new connections and adds them to the run loop and process asynchronously until completion. Nginx is algo great for parallelization since it spawns multiple workers to handle many connections and as a result you can have a separate worker for each core.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>We have discussed that the Internet can be seen as a network of LAN networks whose hosts, through their protocol implementations, communicate with other hosts. We also briefly discussed how data packets flow from the application HTTP protocol, to the TCP protocol, which in turn sends data to the IP protocol which in turn sends data to the network adapter through a LAN.</p>
+
+<h3 id="references">References</h3>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p><a href="https://www.cloudflare.com/learning/network-layer/what-is-a-lan/">Cloudflare - What is a LAN</a> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><a href="https://csapp.cs.cmu.edu/">Computer Systems - A Programmer’s Perspective</a> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p><a href="https://www.rfc-editor.org/rfc/pdfrfc/rfc1180.txt.pdf">A TCP/IP tutorial</a> <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a> <a href="#fnref:3:1" class="reversefootnote" role="doc-backlink">&#8617;<sup>2</sup></a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview">An Overview of HTTP</a> <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>]]></content><author><name>Job Hernandez</name></author><category term="internet" /><category term="internals" /><category term="backend" /><summary type="html"><![CDATA[version 1: initial version, 7/31/23]]></summary></entry><entry><title type="html">A semi deep dive into Python</title><link href="http://localhost:4000/2023/07/22/python-internals.html" rel="alternate" type="text/html" title="A semi deep dive into Python" /><published>2023-07-22T00:00:00-07:00</published><updated>2023-07-22T00:00:00-07:00</updated><id>http://localhost:4000/2023/07/22/python-internals</id><content type="html" xml:base="http://localhost:4000/2023/07/22/python-internals.html"><![CDATA[<p><em>version 1.2</em>: add conclusion, fix typos, 7/23/23</p>
+
+<p><em>version 1.1</em>: fix typos, change title, change headings, 7/22/23</p>
+
+<p><em>version 1</em>: initial version, 7/22/23</p>
+
+<h2 id="introduction">Introduction</h2>
+<p>I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages I use. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.</p>
+
+<p>After writing this blog post I have realized that Python is indeed a powerful language. Python3 is strongly typed with dynamic and static guarantees (with mypy). This is similar to Lisp which is what made it so much better back in the day; moreover, Python has first class functions so you can build powerful abstractions using higher order functions. It allows incremental development, perhaps not as interactive as Common Lisp + SLIME but it does offer a REPL nonetheless which enables you to experiment with your programming ideas, get feedback and develop programs that have few bugs (since you have already tested your ideas on the REPL). Python also has a great community and has a great library ecosystem.</p>
+
+<p>Consider what Peter Norvig <a href="https://norvig.com/python-lisp.html">said</a> about Python. He considers Python to be a dialect of Lisp:</p>
+
+<blockquote>
+  <p>Basically, Python can be seen as a dialect of Lisp with “traditional” syntax (what Lisp people call “infix” or “m-lisp” syntax). One message on comp.lang.python said “I never understood why LISP was a good idea until I started playing with python.” Python supports all of Lisp’s essential features except macros, and you don’t miss macros all that much because it does have eval, and operator overloading, and regular expression parsing, so some–but not all–of the use cases for macros are covered.</p>
+</blockquote>
+
+<h2 id="a-quick-dive-into-pythons-execution-model">A quick dive into Python’s execution model</h2>
+
+<p>According to the Python <a href="https://devguide.python.org/internals/compiler/">CPython internal docs</a> Python3 consists of a compiler and stack-based virtual machine. So, as any other compiler architecture it consists of a frontend and backend. The frontend consists of a parser that generates the abstract syntax tree which in turn gets converted into a control flow graph which in turn gets compiled into bytecode, but unlike a native compiler, this bytecode gets executed by a stack-based virtual machine. Java also consists of a similar architecture including a stack-based virtual machine.</p>
+
+<p>To illustrate the above points I will provide some concrete examples. I  have been working on a compiler for a language that has Python syntax. Although this compiler generates x86 assembly it consists of a parser that generates an abstract syntax tree.</p>
+
+<p>An abstract syntax tree (AST) is a tree that represents a given program. You can represent nodes in a tree with objects; for example, the <code class="language-plaintext highlighter-rouge">if</code> statement node can be represented by the following Python object:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Class IfStmt:
+    def __init__(self, condition, then, else):
+        self.condition = condition
+        self.then = then
+        self.else = else
+
+     def __repr__(self):
+         f’(IF {self.condition} {self.then} {self.else})’
+</code></pre></div></div>
+<p>Once you have your node objects you recursively go through the parse tree and, for example, when you hit an <code class="language-plaintext highlighter-rouge">if</code> statement you construct the AST node using the <code class="language-plaintext highlighter-rouge">IfStmt</code> object.</p>
+
+<p>Consider the following program:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if 2==2: 
+    x = 30 + -10 
+    print(x + 10)
+else: 
+    y = 34 + -2 
+    print(y)
+</code></pre></div></div>
+
+<p>The parser will generate the an abstract sysntax tree that looks <em>similar</em> but not exact to the following:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#S(PY-MODULE
+   :STATEMENTS (#S(PY-IF
+                   :EXP #S(PY-CMP
+                           :LEXP #S(PY-CONSTANT :NUM 2)
+                           :CMP :==
+                           :REXP #S(PY-CONSTANT :NUM 2))
+                   :IF-STATEMENT (#S(PY-ASSIGNMENT
+                                     :NAME ZETTA-VAR::X
+                                     :EXP #S(PY-SUM
+                                             :LEXP #S(PY-CONSTANT :NUM 30)
+                                             :REXP #S(PY-NEG-NUM
+                                                      :NUM #S(PY-CONSTANT
+                                                              :NUM 10))))
+                                  #S(PY-PRINT
+                                     :EXP #S(PY-SUM
+                                             :LEXP #S(PY-VAR
+                                                      :NAME ZETTA-VAR::X)
+                                             :REXP #S(PY-CONSTANT :NUM 10))))
+                   :ELSE-STATEMENT (#S(PY-ASSIGNMENT
+                                       :NAME ZETTA-VAR::Y
+                                       :EXP #S(PY-SUM
+                                               :LEXP #S(PY-CONSTANT :NUM 34)
+                                               :REXP #S(PY-NEG-NUM
+                                                        :NUM #S(PY-CONSTANT
+                                                                :NUM 2))))
+                                    #S(PY-PRINT
+                                       :EXP #S(PY-VAR :NAME ZETTA-VAR::Y))))))
+</code></pre></div></div>
+
+<p>The above example was taken from my compiler project but it should give you a concrete idea of what an AST is.</p>
+
+<p>After the AST is generated the Python system creates a control flow graph. A control flow graph is a directed graph. It takes the above Python AST and creates a graph similar to the following.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if 2==2:
+   goto block1
+   goto block2
+block1:
+    x = 30 + -10 
+    print(x + 10)
+block2:
+    y = 34 + -2 
+    print(y)
+</code></pre></div></div>
+
+<p>It is not straightforward as that because you need to convert the block:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>x = 30 + -10
+print(x+10)
+</code></pre></div></div>
+
+<p>into an intermediate language that is closer to the bytecode but the CPython internals article does not talk about this; moreover, it is also not as straightforward because expressions such as <code class="language-plaintext highlighter-rouge">if expressions</code> generate more blocks and to generate the blocks in the most efficient way possible you also need to use graphs.</p>
+
+<p>After the control flow graph is generated then the Python3 system lowers this control flow graph to bytecode. Since the Python’s virtual machine is stack-based it pushes constructs to the stack and pops them; for example, suppose you are adding two numbers: <code class="language-plaintext highlighter-rouge">2+2</code>. Then <code class="language-plaintext highlighter-rouge">2</code>, <code class="language-plaintext highlighter-rouge">2</code>, and the addition operator <code class="language-plaintext highlighter-rouge">+</code> will be pushed to the stack; to execute the virtual machine will pop those and push <code class="language-plaintext highlighter-rouge">4</code> to the stack.</p>
+
+<h2 id="a-quick-dive-into-some-of-pythons-programming-constructs">A quick dive into some of Python’s programming constructs</h2>
+
+<p>I don’t have experience with building large systems as I have not started my career in software engineering so I don’t have first hand experience with this topic; nevertheless, I would like to explore this topic because I want to improve my understanding of the Python3 programming language. As a result I have decided to use as a guide a few points that Robert Smith made in one of his <a href="https://github.com/stylewarning/deprecated-coalton-prototype/blob/master/thoughts.md">writings</a> where he explains what it takes to build large systems. Robert is very experienced – he has built state of the art compilers and linear algebra systems, and a programming language (and many more things) that are used in production at a couple quantum computing companies. So, yes his metric is worth considering. Anyways, these are the points he makes:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- Does the language manage names well? Are there ways of creating new namespaces that won't likely collide with others'?
+- Does the languages' implementation offer any static or dynamic guarantees of correctness? Do we know that certain classes of errors are not possible?
+- Does the language intrinsically, or the implementation explicitly, permit one to incrementally change programs?
+- Does the language offer or allow to be expressed re-usable abstractions? What kinds?
+</code></pre></div></div>
+
+<p>I will briefly explain a little bit about the above points and try to use what I have learned from my computer science studies to evaluate. I am mostly doing this as a reflection.</p>
+
+<h3 id="namespaces">Namespaces</h3>
+
+<p>In Python3 a namespace is a mapping from names to objects. They are implemented as dictionaries. According to the Python3 <a href="https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces">docs</a> there are three types of namespaces: built in namespaces, module (global names) namespaces and local namespaces. There are no relationship between the names in different modules so you can have a function named <code class="language-plaintext highlighter-rouge">square</code> in two modules and there will be no name conflicts; nevertheless, each respective <code class="language-plaintext highlighter-rouge">square</code> name has to be prefixed by the name of the module. The namespace consisting of the built in names is created when the interpreter starts up. On the other hand, the namespace consisting of global names of a given module is created when you import the module. And finally the namespace consisting of local names is created when a given function is called and deleted when the function returns.</p>
+
+<p>From an elementary point of view  based on the classic introductory textbook “Structure and Interpretation of Computer Programs  (SICP)”, Python’s organization of namespaces, especially the module namespace, is conducive to building large software systems. In SICP the authors explain that by isolating different parts of the system as packages, multiple developers can work independently on different parts of the system without introducing name conflicts. And it makes a system modular. So, namespaces in Python are conducive for building large systems or at least it is at a basic level. But as I said, I do not have first hand experience building large systems (in Python) so take my evaluation with a grain of salt.</p>
+
+<h3 id="does-python3-offer-any-static-or-dynamic-guarantees-of-correctness">Does Python3 offer any static or dynamic guarantees of correctness?</h3>
+
+<p>That is, as Robert points out, does Python offer us any certainty that a whole class or errors will not happen? Well as you know, Python3 is a dynamically typed language so the Python3 implementation does not have a type checker; it consists of tags instead. Dr. Siek, author of a very good compiler textbook called “Essentials of Compilation” explains a dynamically typed language to be:</p>
+
+<blockquote>
+  <p>In dynamically typed languages, …, a particular expression may produce a value of a different type each time it is executed.</p>
+</blockquote>
+
+<p>Consider the following example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d = lambda x: 3 + x if x == 3 else False
+d(3) ## -&gt; 6
+d(4) ## -&gt; False
+</code></pre></div></div>
+
+<p>The function <code class="language-plaintext highlighter-rouge">d</code> yields an <code class="language-plaintext highlighter-rouge">Int</code> or <code class="language-plaintext highlighter-rouge">Bool</code> depending on the input. This is not possible in a statically typed language. This means that the function <code class="language-plaintext highlighter-rouge">d</code> is polymorphic which is not to be confused with subtype polymorphism or parametric polymorphism.</p>
+
+<p>Now that I have explained what dynamic typing is, what guarantees does Python offer? Python is <em>strongly typed</em> and dynamically typed. In a strongly typed language the expression <code class="language-plaintext highlighter-rouge">2 + “hello”</code> will yield an error. The Python interpreter is smart enough to know that an integer and a string cannot be added together. In contrast, for example in Javascript the expression <code class="language-plaintext highlighter-rouge">2 + “hello”</code> evaluates to <code class="language-plaintext highlighter-rouge">2hello</code>. Python respects the semantics of the language but Javascript does not. Robert Smith puts it like this:</p>
+
+<blockquote>
+  <p>The strong-typedness of Common Lisp ensures that a program which has a type error cannot descend into a state that no longer respects the predictable semantics of the language.</p>
+</blockquote>
+
+<p>Python also offers static guarantees if you use <code class="language-plaintext highlighter-rouge">mypy</code> and given that Python has a garbage collector it guarantees that there will not be a certain class of memory error.</p>
+
+<p>Given that Python offers dynamic and static guarantees and memory guarantees but especially because it offers static guarantees with mypy I think Python can be used to build large systems. As Robert said:</p>
+
+<blockquote>
+  <p>Programs can get large. Along with that comes challenges in comprehension, modification, and maintenance.</p>
+</blockquote>
+
+<p>Or as I learned in the mitocw Software Construction course, statically typed languages are more conducive to programs that are easier to understand, safe from bugs, and ready for change. As a result I think Python is a good language to build large software system but of course my answer to this question is theoretical and based on Robert’s thinking.</p>
+
+<h3 id="does-python-allow-the-expression-of-re-usable-abstractions-what-kinds-and-does-it-allow-an-incremental-approach-to-development">Does Python allow the expression of re-usable abstractions? What kinds? And does it allow an incremental approach to development?</h3>
+
+<p>I think the answer here is that yes it does. Since functions are first class objects in Python then you can build higher order functions which lead to a more modular system since you can reuse the higher order function multiple times without repeating yourself. Python also offers an object oriented system which is really good too.</p>
+
+<p>Python also allows the programmer to incrementally develop a program because it has a repl.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Well, there you have it. We can still go deeper. If we want to understand Python deeper then we can build compiler and implement features such as tuples, arrays, lexical scoped functions, first class functions, object system. In addition we can implement a type checker, efficient tail calls, generics to get a much better understanding of programming in general.</p>]]></content><author><name>Job Hernandez</name></author><category term="python" /><category term="compiler" /><category term="internals" /><summary type="html"><![CDATA[a brief description of the Python language]]></summary></entry><entry><title type="html">How facebook scaled memcached</title><link href="http://localhost:4000/2023/07/17/memcached-at-facebook.html" rel="alternate" type="text/html" title="How facebook scaled memcached" /><published>2023-07-17T00:00:00-07:00</published><updated>2023-07-17T00:00:00-07:00</updated><id>http://localhost:4000/2023/07/17/memcached-at-facebook</id><content type="html" xml:base="http://localhost:4000/2023/07/17/memcached-at-facebook.html"><![CDATA[<p><em>version 1.1</em>: rephrased a few parts and added my interpretation, 7/20/23</p>
+
+<p><em>version 1</em>: initial version, 7/17/23</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>The following is my reflection of the paper <a href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf">Scaling Memcached at Facebook</a>. I am not an expert so please read the paper if you find my reflection interesting. In some parts of the following I included my interpretation of what I think is going on. So, again, please read the paper. It is a beautiful paper that will teach you a lot of things. I mainly wrote this to engage with the paper and enhance my understanding. After reading this experience paper I have learned that if I would like to work on similar stuff then I must know computer science fundamentals; for example, in the paper the authors talk about how they used UDP instead of TCP for get requests because UDP is connectionless and as a result each web server thread can communicate directly with memcached servers without establishing a connection thereby reducing latency. In my humble opinion this indicates that it pays to know backend engineering fundamentals such as communicating protocols – e.g., TCP, UDP. Without knowing the fundamentals, someone who is interested in working on distributed key-value stores will be significantly limited; moreover, reading about distributed systems is pretty interesting and expands your mind and arguably you can make better decisions as a backend programmer.</p>
+
+<p>I find this type of infrastructure work really fascinating. I had already listened to an InfoQ Instagram <a href="https://www.youtube.com/watch?v=hnpzNAPiC0E">talk</a> about how Instagram engineers scaled the infrastructure of the respective website I think a lot of interesting problems arise from big websites at the scale of Facebook and Google.</p>
+
+<p>As the paper says: big websites impose computational, network and I/O demands. This makes me think that  Steve Yegge is right – he said that if one wants to be an effective engineer at <em>Big Tech</em> companies then computer science fundamentals are crucial. I can see how understanding how the operating system manages the CPU and memory can give light as to how big websites operate. If one understand operating systems one will be have more ability to work on websites that are massive in scale. But I also understand that most mainstream work does not require CS fundamentals which is unfortunate; nevertheless, personally I want to understand the whole system and I have been in journey to accomplish this.</p>
+
+<h3 id="why-did-fb-use-memcached">Why did FB use memcached?</h3>
+
+<p>To begin with I would like to define a few terms based on the paper. A <em>frontend cluster</em> consists of a web server and multiple memcached servers. A <em>backend storage</em> cluster is the main database, I believe. While a <em>region</em> consists of multiple frontend clusters and a web server.</p>
+
+<p>At Facebook, Memcached was used as a building block to build a distributed key-value store that handles billions of requests and stores trillions of items.</p>
+
+<p>Anyways, in the paper the authors claimed that the design decisions that were factored in were the following. Given that users consume more than they create there are a lot of fetching of data which means that a cache may be beneficial.</p>
+
+<p>The FB engineers used memcached to reduce the read load of the databases. That is, since there are so many user requests there was a lot of data being fetched from the database. As a result, if you then use a cache then you reduce the load because instead of the web server fetching from the database the web server instead checks in the cache thereby reducing the read load.</p>
+
+<h3 id="how-did-the-cache-work">How did the cache work?</h3>
+
+<p>For a given request, the web server will check the cache; if it is not in the cache the web server will look in the database and then the web server will populate the key-value in the cache. In contrast, if user requests consist of writes then the web server writes to the database as usual but to avoid inconsistency between the data in the database and the data in the cache, the web server deletes the corresponding data item on the cache; for instance, suppose a given user request \(k_{1}\) writes data \(d_{1}\) on the database. In turn \(d_{1}\) will be stored in the cache. Suppose further that a subsequent user request updates \(d_{1}\) with \(d_{2}\). If this happen then the data \(d_{1}\) on the cache is inconsistent with the new data \(d_{2}\). Remember, this involves key-value pairs and as a result the value of the given key needs to be consistent accross the cache and database. The Facebook engineers also used memcached as a generic cache – e.g., the engineers stored precomputed ML results that could be used by other applications.</p>
+
+<h3 id="in-a-cluster-how-did-they-reduce-latency">In a cluster how did they reduce latency?</h3>
+
+<p>The quicker the memcached server responds to a given user request, the quicker the response time of a given user request. Interestingly, a single user request may result in hundreds of individual memcached requests. They placed hundreds of memcached servers in a cluster to reduce load on databases and other services. Cache items were distributed across the memcached servers. As a result, web servers need to talk with a lot of memcached servers to handle a user request. How did they reduce latency? First, they focused on the memcached client which runs on each server; the client is responsible for serialization, compression, request routing, error handling and request batching. They also used a graph, a directed acyclic graph to maximize the number of items that can be fetched concurrently. With respect to client-server communication, the engineers embedded the complexity of a system into a stateless client rather than in the memcached servers.</p>
+
+<p>The engineers also reduced latency by using UDP for handling get requests. UDP reduces latency in this case because UDP is connectionless and as a result each web server thread is able to directly communicate with memcached servers directly without establishing or maintaining a connection thereby reducing the overhead.</p>
+
+<p>Web servers also rely on a lot of parallelism and over subscription to achieve high throughput.</p>
+
+<p>An interesting connection I made between TCP and my studies of computer systems is the following. TCP maintains a connection so this means that it consumes memory and as a result it is expensive to maintain a TCP connection between every web server thread and memcached server without some form of connection coalescing. How does coalescing work? By reducing the network, cpu, and memory resources needed by high throughput TCP connections.</p>
+
+<h3 id="how-did-they-handle-replication-in-a-given-region">How did they handle replication in a given region?</h3>
+
+<p>A region consists of multiple frontend clusters and a storage cluster. Each frontend cluster consists of web server and memcached servers. Multiple frontend clusters share a backend storage cluster. If multiple frontend clusters, which consist of a server and hundreds of memcache servers, share the same backend storage then I wonder how multiple clusters coordinate with the same storage. The backend storage cluster is responsible for invalidating cached data to keep frontend clusters consistent. How does this system accomplish this? Invalidating daemons – each daemon inspects the SQL statements and extracts deletes and broadcasts these deletes to the memcached deployment (frontend clusters) in a given region. This is done so the deletes  from the database get invalidated  in memcached.</p>
+
+<h3 id="deployment-accross-multiple-regions">Deployment accross multiple regions</h3>
+
+<p>To further scale the Facebook site, the engineers deployed in multiple regions – i.e., different geographic areas. Some benefits of this include:</p>
+
+<ul>
+  <li>
+    <p>Reduce latency, latency is reduced because servers that are closer to the end user can significantly reduce latency; and</p>
+  </li>
+  <li>
+    <p>Mitigate effects of natural disasters; and</p>
+  </li>
+  <li>
+    <p>Cheaper power and economic incentives.</p>
+  </li>
+</ul>
+
+<p>FB deployed accross  multiple regions to gain the above benefits. A region consists of a storage backend cluster and several frontend clusters (web servers, memcached servers). One region is designated to hold the master databases and the other regions are designated the replicas. What is the primary challenge of this architecture? Maintaining consistency. Maintaining consistency in memcached and persistent storage is the primary challenge when scaling across multiple regions. How did they solve this challenge where the challenge is the this. Replicas may lag behind the master database and as result replicas could have stale data.</p>
+
+<p>Interestingly, The way they invalidate deletes by using daemons avoids race conditions in which an invalidation arrives before the data has been replicated from the master region.</p>]]></content><author><name>Job Hernandez</name></author><category term="internals" /><category term="internet" /><category term="backend" /><summary type="html"><![CDATA[version 1.1: rephrased a few parts and added my interpretation, 7/20/23]]></summary></entry><entry><title type="html">The beauty I see in mathematics</title><link href="http://localhost:4000/2023/07/07/the-beauty-I-see-in-math.html" rel="alternate" type="text/html" title="The beauty I see in mathematics" /><published>2023-07-07T00:00:00-07:00</published><updated>2023-07-07T00:00:00-07:00</updated><id>http://localhost:4000/2023/07/07/the-beauty-I-see-in-math</id><content type="html" xml:base="http://localhost:4000/2023/07/07/the-beauty-I-see-in-math.html"><![CDATA[<p><em>version 1</em>: initial version</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>In High School I was a horrible student and it was not until I dropped out of university that I started paying attention to mathematics; my first exposure was a comment by Richard Feynman in one of his interviews. In this interview he said that to appreciate nature one needs mathematics. This was the start of my mathematical journey. Subsequently, I read “A Mathematicians Delight” by Sawyer and this book helped me realize that mathematics could be learned and taught me about the importance of abstraction. I remember this book had an immense impact on my mathematical development. Eventually, I stumbled with the essay by Eugene Wigner “The Unreasomable Effectiveness of Mathematics”. When I read the “Unreasonable Effectiveness of Mathematics” by Eugene Wigner I started marveling about the beauty of mathematics. After I read this article I became aware of the hidden beauty of mathematics.</p>
+
+<p>I find mathematics deep and beautiful. Mathematics is not only a tool to calculate. As Einstein said:</p>
+
+<blockquote>
+  <p>the universe has mathematical structure.</p>
+</blockquote>
+
+<p>So, math is beautiful because the universe has mathematical structure.</p>
+
+<p>To illustrate this I will first talk  about quarks and group theory and then I am going to comment about general relativity.</p>
+
+<p>And then I am going to finish with the following. Another reason why mathematics is a beautiful subject is because by doing mathematics and by using our minds to grasp the mathematical structure of the universe we deepen our humanity.</p>
+
+<h2 id="quarks-and-group-theory">Quarks and Group theory</h2>
+<p>How were quarks discovered? Around the middle of the 20th century scientists started discovering hadrons. Murray Gell-Mann then classified these hadrons as an \(SU(3)\) group.</p>
+
+<p>Group theory is the study mathematical study of symmetry.</p>
+
+<p>In group theory a <code class="language-plaintext highlighter-rouge">group</code> is the following.</p>
+
+<p>A group is a set \(G\) together with a law of composition that has the following properties:</p>
+
+<ol>
+  <li>
+    <p>The law of composition is associative: \((ab)c = a(bc)\) \(\forall a, b, c\) \(\in G\)</p>
+  </li>
+  <li>
+    <p>\(G\) contains an identity element \(1\) such that \(1a = a\) and \(a1 = a\) \(\forall a\) \(\in G\)</p>
+  </li>
+  <li>
+    <p>Every element \(a\) of \(G\) has an inverse, an element \(b\) such that \(ab=1\) and \(ba=1\)</p>
+  </li>
+</ol>
+
+<p>The \(SU(3)\) is such a group.</p>
+
+<p>The beauty of mathematics that I see is the realization that quarks were deduced and discovered from this mathematical structure. How can this be? How can it be that a mathematical structure was used to discover something physical? Mathematical objects are abstract objects after all which are causally inert; so how can this be? This question is part of the beauty of mathematics.</p>
+
+<h2 id="general-relativity">General Relativity</h2>
+<p>Another example is the theory of general relativity; this theory also has mathematical structure. The mathematical structures of general relativity consist of the differential geometry structure <code class="language-plaintext highlighter-rouge">manifold</code>. A manifold is a set with additional information. The theory of general relativity dictates that matter leads to the curvature of spacetime and in turn the curvature leads to the motion of matter - i.e., gravity. So, in a sense the mathematical structure of the universe gives it its flow.</p>
+
+<h2 id="mathematics-is-full-of-profound-mystery">Mathematics is full of profound mystery</h2>
+
+<p>As Wigner pointed out in the above essay, how can mathematical structures that were created with no application in mind become a necessity for the formulation of theories in physics? Why is this? Consider that mathematical objects, if you are a platonist, are abstract objects that exist in their own realm. As a consequence, mathematical objects are causally inert. So, how can it be that the universe has mathematical structure?</p>
+
+<p>Could it be like Dirac believed that pure mathematics and theoretical physics will converge?</p>
+
+<p>What is the best explanation for the deep and beautiful relationship between pure mathematical structures and the universe?</p>
+
+<p>For an atheist this is just a happy coincidence. But for a theist, God is the interface between the platonic realm of mathematical objects and the four dimensional universe.</p>
+
+<p>So, as you can see the relationship between pure mathematics and physics raises deep philosophical questions. And the above examples are only a few examples. There are many more of these examples.</p>
+
+<p>This is the beauty of mathematics as I see it. Mathematics is full of profound mystery. It is truly a beautiful subject. So, I strongly believe that mathematics is discovered.</p>
+
+<p>As Richard Feynman said:</p>
+
+<blockquote>
+  <p>to appreciate nature you need mathematics.</p>
+</blockquote>
+
+<p>I am not an expert in math but I have studied the basics of group theory and it gave me tremendous power to appreciate nature. Of course, this is not to say that math is the only way to appreciate nature. But physics is the most fundamental of the sciences and to be able to appreciate the universe from a physics point of view you need mathematics.</p>
+
+<h2 id="mathematics-deepens-our-humanity">Mathematics deepens our humanity</h2>
+
+<p>The correspondence between math and physics and studying this correspondence is also a way for us to think about what it means to be human.</p>
+
+<p>For me this level of appreciation and all the emotional effects it has on me leads me to believe that this is  what it means to be human. In her book “Lost in Thought”, Zena Hitz argues that intellectual life cultivates a place of retreat within a human being – you retreat into a place where reflection about fundamental questions about what it means to be human. Intellectual life enables us to withdraw from the world-status, wealth, prestige-and enable us to deepen our humanity. Pure mathematics raises such questions because to be able to grasp the laws of physics and grasp the mathematical structure of the universe is a uniquely human trait. As a consequence, when we study pure mathematics we explore our human nature.</p>]]></content><author><name>Job Hernandez</name></author><category term="math" /><summary type="html"><![CDATA[version 1: initial version]]></summary></entry><entry><title type="html">DSLs can lead to better systems</title><link href="http://localhost:4000/2023/06/15/DSLs-can-lead-to-better-systems.html" rel="alternate" type="text/html" title="DSLs can lead to better systems" /><published>2023-06-15T00:00:00-07:00</published><updated>2023-06-15T00:00:00-07:00</updated><id>http://localhost:4000/2023/06/15/DSLs-can-lead-to-better-systems</id><content type="html" xml:base="http://localhost:4000/2023/06/15/DSLs-can-lead-to-better-systems.html"><![CDATA[<p><em>draft</em></p>
+
+<h3 id="intro">Intro</h3>
+<p>Conjecture: DSLs can lead to better systems in the industry</p>
+
+<p>This essay is a summary of the paper <a href="https://drive.google.com/file/d/1aYupExDuAbUheDX4aycrxZDrc6stTcig/view">A Domain Specific Language for Microservices</a> and it also has some of my thoughts about this paper.</p>
+
+<h3 id="a-dsl-for-microservices">A DSL for microservices</h3>
+<p>According to the above paper Twitter’s consumer product consists of independent services communicating via Thrift RPC interfaces; an interesting thing I learned is that a typical user level request gets handled by multiple services; at the time of this paper Twitter had a microservices architecture but despite the autonomy a microservice architecture gave engineering teams it was too costly to maintain each service; according to the paper some of the benefits a service architecture gave included:</p>
+
+<p>Each service has its own codebase so a team can develop each service independently;
+Each service is independently deployed so there is no need of central coordination; and
+Each team has an owning team so domain knowledge is dependent on the service.</p>
+
+<p>There is a quote that reminded me of the book <code class="language-plaintext highlighter-rouge">Software Design for Flexibility</code> by Gerald Sussman. Here is the quote:</p>
+
+<blockquote>
+  <p>Often application logic of a service is modest and does not justify this overhead; it is therefore pragmatic to build new functionality into an existing service rather than bring up a new one.</p>
+</blockquote>
+
+<p>This quote is talking about how the costs that arise from a microservice architecture cannot be justified when a given service is modest.</p>
+
+<p>All of this is the first hint as to why building systems that are additive is crucial. At least, this is the argument by Dr. Sussman. As I said this quote reminded me of chapter 1 in <code class="language-plaintext highlighter-rouge">Software Design for Flexibility</code> because the authors talk about how one needs to build systems that grow and adapt as requirements change; instead of heavily modifying code one should <code class="language-plaintext highlighter-rouge">add</code> to the system to increase functionality. The quote from the Twitter engineers was hinting that a better design was to be able to add services without the costs of a microservices architecture.</p>
+
+<p>One thing I would like to point out that I found insightful is that when one adds more and more functionality to a microservice it becomes a monolith, obviating the benefits of a microservice architecture.</p>
+
+<p>The solution that the Twitter engineers figured out is to build the Strato service system. Strato is a system that allows applications to be added – a form of additive software design. Engineering teams work on application logic instead of developing a service.</p>
+
+<p>The application logic is built using a DSL called StratoQL; a StratoQL expression provides implicit concurrency whereby the developer can concurrently call different services. Remember that in the beginning of this essay I pointed out that a typical request is handled by multiple services; well, this is still possible with the DSL.</p>
+
+<h3 id="lessons">Lessons</h3>
+<p>Some lessons of this paper is that Dr. Felleisen, the Racket creator, and Dr. Gerald Sussman may be right about the importance of writing DSLs to solve problems. One argument in <code class="language-plaintext highlighter-rouge">Software Design for Flexibility</code> is that DSLs are a technique for organizing a system in a way where functionality can be added by adding to the system instead of modifying the system heavily. Or consider the lessons from <code class="language-plaintext highlighter-rouge">Structure and Interpretation of Computer Programs</code>. The main lesson in this book is that computer science is about controlling complexity; abstraction is key for controlling complexity. DSLs are the ultimate abstraction and what this paper showed is that DSLs can also reduce costs.</p>
+
+<p>One thing I am wondering now is how DSLs can be applied to web development. It may be possible to write a DSL for web development where concurrency is implicit and a language where different api endpoints can be called concurrently.</p>]]></content><author><name>Job Hernandez</name></author><category term="compiler" /><category term="backend" /><category term="internet" /><summary type="html"><![CDATA[draft]]></summary></entry><entry><title type="html">Web System Architecture</title><link href="http://localhost:4000/2023/06/15/web-system-architecture.html" rel="alternate" type="text/html" title="Web System Architecture" /><published>2023-06-15T00:00:00-07:00</published><updated>2023-06-15T00:00:00-07:00</updated><id>http://localhost:4000/2023/06/15/web-system-architecture</id><content type="html" xml:base="http://localhost:4000/2023/06/15/web-system-architecture.html"><![CDATA[<p><em>version 1.1</em>: June 16 2023, added more detail, and diagrams</p>
+
+<p><em>version 1</em>: June 15 2023, initial release</p>
+
+<h3 id="intro">Intro</h3>
+<p>One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a <a href="https://www.youtube.com/watch?v=hnpzNAPiC0E&amp;t">talk</a> by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted.</p>
+
+<p>So, I naturally enjoyed my time reading <code class="language-plaintext highlighter-rouge">Scalable Web Architecture and Distributed Systems</code>, the first chapter in the book <code class="language-plaintext highlighter-rouge">The Architecture of Open Source Applications</code>.</p>
+
+<p>In this essay I will try to summarize this chapter and share some of my thoughts about how I would design a social media application. And I am not an expert; I am just writing about this because its interesting and for learning purposes.</p>
+
+<h3 id="design-principles">Design Principles</h3>
+<p>According to the author of this chapter some key design decisions for building scalable web applications consist of:</p>
+
+<ul>
+  <li>Availability;</li>
+  <li>Performance;</li>
+  <li>Reliability; and</li>
+  <li>Scalability.</li>
+</ul>
+
+<p>A system is said to be <em>available</em> if it is always up and running. If a system is unavailable even for one minute the given company may lose thousands or even millions of dollars.</p>
+
+<p>The availability of a system is achieved through <em>replication</em>. The purpose of replication is to enable the given system to continue operating despite failures; distributed systems hide partial failure by replicating servers for instance.</p>
+
+<p>Replication is also implemented for reliability and performance; replicas are conducive to the reliability of a system because if one replica crashes other replicas can keep the system going; moreover, replicas are conducive to performance in two cases. Firstly, suppose you are scaling in size; that is, an increasing number of processes need to access data; by having two replicas you can serve more processes. Secondly, suppose you are scaling in a geographical area; by using replicas near the geographic location of your processes you decrease latency times.</p>
+
+<p>The <em>performance</em> of a web system is another design principle; performance is important because performance affects the usage and user satisfaction as well as search engine rankings which correlate with revenue and retention. Performance can be defined as fast responses and low latency.</p>
+
+<p>Another key design principle is <em>reliability</em>; as noted above one way to achieve reliability is through replicas. Reliability means that a given request will always get the same data in response and if the data changes the request will get new data.</p>
+
+<p>Finally, another key design principle is <em>scalability</em>; scalability has to do with increasing the capability of your web system to handle more load.</p>
+
+<h3 id="core-factors-that-are-important-for-large-web-systems">Core factors that are important for large web systems</h3>
+
+<p>Core factors crucial in the design of large web systems include <em>services</em>, <em>redundancy</em>, <em>sharding</em>, and <em>handling failure</em>.</p>
+
+<p>The author of this chapter gives an example, namely, an image hosting website. One of the things we care about this is fast delivery when a user requests an image; other things to consider include:
+            	- storage scalability: the application needs to have no limits as to how many images it can store
+            	- low latency for image downloads/requests
+            	- reliability: if a user uploads an image, the image needs to be there all the time
+               - system needs to be easy to maintain
+               - system needs to be cost effective</p>
+<h4 id="services">Services</h4>
+<p>Often it is important to decouple service into functions; consider the image hosting application above: it retrieves and uploads images through the network. If only one server handles these two functions there may be problems because writes are not asynchronous while reads are asynchronous; so during an upload the connection will be maintained and the client will be blocked– it will have to wait until the image gets written. So, in such cases it is beneficial to to decouple these two functions into their own services.</p>
+
+<h4 id="redundancy">Redundancy</h4>
+<p>If you only have one server then if something happens to this server the data will be lost; for example, the images in our image hosting application will be lost; so it is important to replicate the database in a different geographic location; for example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> |--------             |----------   |------------    |--------------------
+ |client  |  ------&gt;   | server  |-&gt; | database  | -&gt; | replica (database) |
+ |--------             |---------    |------------    |-------------------
+</code></pre></div></div>
+
+<h4 id="sharding">Sharding</h4>
+<p>Suppose you have a tremendously large dataset that cannot fit in one server. You can either scale vertically whereby you use additional CPU cores, replace CPU with a faster CPU, add a bigger storage or you can scale horizontally whereby you add additional nodes – e.g., add a new server.</p>
+
+<p>With respect to horizontal scaling one common technique is partitioning or sharding; for example, a given single file server can get replaced by multiple file servers each containing a set of images. One problem with this type of distribution of data  is data locality – i.e.,the closer the data to the operation the better the performance. Another problem with the distribution of data is inconsistency. When services share a resource there may be race conditions.</p>
+
+<h3 id="how-do-you-make-web-systems-fast-and-scalable">How do you make web systems fast and scalable?</h3>
+<p>To make web systems fast and scalable you need to utilize caches, global caches, proxies, load balancers, and queues.</p>
+
+<h4 id="caches">Caches</h4>
+<p>Caches exploit the locality of reference principle, namely, that that was requested recently it is likely to be requested again. If you place a cache in your request layer node then it will improve the performance of your API; when the user makes a request the API server will check if the data is in the cache; if it is not it will query the database; for example;</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|---------      |---------     |-----------     |------------
+|client  | --&gt;  | API    | --&gt; | cache    | --&gt; | database  |
+|---------      |---------     |-----------     |------------
+</code></pre></div></div>
+
+<h4 id="global-caches">Global caches</h4>
+<p>Placing a global cache in your application means that multiple request nodes will use the same global cache.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------
+| client      | \
+|--------------   \
+|--------------     \   ---------------      ------------
+| client      | ------&gt; | global cache | --&gt; | database |
+|--------------     /   ---------------      ------------
+|--------------   /
+| client      | /
+|--------------
+</code></pre></div></div>
+
+<h4 id="proxy">Proxy</h4>
+<p>A proxy acts as an intermediary – a client sends a request to the proxy and in turn the proxy relays this to the back-end servers. How can proxies get used to speed up service? Proxies enable <em>collapse forwarding</em> whereby same or similar requests get collapsed into one yielding only one response instead.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------     |-------------      |----------
+| client      | --&gt; | proxy      | --&gt;  | server  |
+|--------------     |-------------      |----------
+</code></pre></div></div>
+
+<h4 id="load-balancers">Load Balancers</h4>
+<p>Load balancers are also another key piece of a distributed system; a load balancer distributed load across different servers; suppose there are three requests coming in: Req 1, Req 2, and Req 3; the job of the load balancer is to send Req 1 to server 1, Req 2 to server 2 and Req 3 to server 3. Load balancers allow you to scale by handling more requests.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------                              |---------------
+| client      | \                            | server       |
+|--------------   \                         /|---------------
+|--------------     \   ----------------- /   | ------------
+| client      | ------&gt; | load balancer | --&gt; | server     |
+|--------------     /   ----------------- \   |------------
+|--------------   /                         \|---------------
+| client      | /                            | server       |
+|--------------                              |---------------
+
+</code></pre></div></div>
+
+<h4 id="queue">Queue</h4>
+<p>In a complex application writes take a long time. This when queues come in. Writes are not asynchronous - so when a client wants to write something to the database, the client gets blocked – i.e., it waits until the data has been written to start working again. By placing a queue in your architecture the requests get placed in a queue, and when it is placed here the client gets an acknowledgement and as a result it can keep working. In other words, when a server gets more requests than it handles the clients have to wait for other requests to get handled. Queues solve this issue.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------
+| client      | \
+|--------------   \
+|--------------     \   ---------------      ------------
+| client      | ------&gt; | queue        | --&gt; | server   |
+|--------------     /   ---------------      ------------
+|--------------   /
+| client      | /
+|--------------
+
+
+</code></pre></div></div>
+<h3 id="lessons-learned">Lessons Learned</h3>
+
+<p>Suppose I am building a social media app; it would consist of a server, database, cache, queue, and a worker. A queue and a worker will enable asynchronous communication; for example, in a social media app when a user x gets a friend request from another user y, user x usually gets a notification via email. A queue and a worker work together to make this happen. A producer sends a message to a queue and the worker processes this message; the first message that gets into the queue, it is the first message that the worker processes. Here is a depiction of the produce, queue, and worker interaction:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|-----------      |-----------     |-----------     
+|producer  | --&gt;  | queue    | --&gt; | worker    |
+|-----------      |-----------     |-----------     
+</code></pre></div></div>
+
+<p>Technically, we need a message broker that manages the queue and translates requests into a messaging protocol. For this we can choose <code class="language-plaintext highlighter-rouge">celery</code>, and <code class="language-plaintext highlighter-rouge">RabbitMQ</code>; celery workers will listen to the message broker to get new messages to process for asynchronous tasks. Suppose we use Django as the server then we have:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|-----------    |------------       |--------------     |---------
+|          |--&gt; | Django     |---\  | RabbitMQ    | --&gt; | celery |
+| browser  |&lt;-- |            |---/  |             | &lt;-- |        |
+|-----------    |-------------      |--------------     |---------
+</code></pre></div></div>
+
+<p>We can then use <code class="language-plaintext highlighter-rouge">memcache</code> as our cache layer to speed up the API. Once we have this our final architecture looks like this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                                    |--------------                   |---------
+                                /&gt;&gt; | cache       | --------------&gt;   | database|
+                |---------    /     |--------------                   |---------
+ |---------  &lt;--|  Server | /       |--------------       
+ | browser | --&gt;|         | ------&gt; | queue      | 
+ | --------     |---------          |--------------
+                                       ^  |
+                                       |  v
+                                     |--------------   
+                                     | worker      | 
+                                     |--------------
+
+
+</code></pre></div></div>]]></content><author><name>Job Hernandez</name></author><category term="internet" /><category term="backend" /><category term="architecture" /><summary type="html"><![CDATA[version 1.1: June 16 2023, added more detail, and diagrams]]></summary></entry></feed>

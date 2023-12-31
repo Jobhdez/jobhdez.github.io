@@ -2,7 +2,7 @@
 layout: default
 permalink: /t/cpu-architecture
 ---
-
+<h1>Tag: cpu-architecture</h1>
 <ul class="post-list">
   {%- for post in site.tags["cpu-architecture"] -%}
     <li>

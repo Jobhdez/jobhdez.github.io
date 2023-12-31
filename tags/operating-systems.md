@@ -1,8 +1,9 @@
 ---
-layout: tag
+layout: default
 permalink: /t/operating-systems
 ---
 
+<h1>Tag: operating-systems</h1>
 <ul class="post-list">
   {%- for post in site.tags["operating-systems"] -%}
     <li>

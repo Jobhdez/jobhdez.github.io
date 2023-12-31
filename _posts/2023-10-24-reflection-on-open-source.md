@@ -2,6 +2,7 @@
 layout: post
 title: Reflecting on my open source experience
 author: Job Hernandez Lara
+tags: open-source
 ---
 
 *version*: 1.0, 11/22/23

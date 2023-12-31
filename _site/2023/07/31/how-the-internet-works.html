@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>How the Internet Works | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="How the Internet Works" />
+<meta name="author" content="Job Hernandez" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="version 1: initial version, 7/31/23" />
+<meta property="og:description" content="version 1: initial version, 7/31/23" />
+<link rel="canonical" href="http://localhost:4000/2023/07/31/how-the-internet-works.html" />
+<meta property="og:url" content="http://localhost:4000/2023/07/31/how-the-internet-works.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-31T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How the Internet Works" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-07-31T00:00:00-07:00","datePublished":"2023-07-31T00:00:00-07:00","description":"version 1: initial version, 7/31/23","headline":"How the Internet Works","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/07/31/how-the-internet-works.html"},"url":"http://localhost:4000/2023/07/31/how-the-internet-works.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">How the Internet Works</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-07-31T00:00:00-07:00" itemprop="datePublished">
+        Jul 31, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>version 1</em>: initial version, 7/31/23</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>I am on a journey to learn more about backend software engineering fundamentals. In his YouTube video <a href="https://www.youtube.com/watch?v=V3ZPPPKEipA&amp;t">How to become a good backend engineer</a> Hussein Nasser argues that a good backend engineer is someone who knows the fundamentals. Some fundamentals include communication protocols such as HTTP, and TCP; cache systems; message queues, web servers. In this article I touch upon the Internet and communication protocols such as TCP, IP, and HTTP and web servers. I have also written about cache systems which you can read <a href="https://jobhdez.github.io/2023/07/17/memcached-at-facebook.html">here</a> and I have also written a little bit about message queues and web architecture which you can read <a href="https://jobhdez.github.io/2023/06/15/web-system-architecture.html">here</a>. As a disclaimer, be aware that I am not an expert. I write about these topics because I want to consolidate what I study. I love the Internet and the fact that anything works at all is fascinating.</p>
+
+<p>Here is quote by Alan Kay:</p>
+
+<blockquote>
+  <p>The Internet was done so well that most people think of it as a natural resource like the Pacific Ocean, rather than something that was man-made. When was the last time a technology with a scale like that was so error-free?</p>
+</blockquote>
+
+<h2 id="what-is-the-internet">What is the Internet?</h2>
+
+<p>Network applications are ubiquitous; everytime you browse the web, and send an email you are interacting with network applications.</p>
+
+<p>The Internet can be seen as a network of networks; for example, your home Wifi connects multiple computers to form a Local Area Network (LAN)<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>. The Internet can then be seen as a network of LANs whose hosts use routers and protocol software to communicate with other hosts.</p>
+
+<p>The Internet can also be seen as a collection of hosts with the following properties<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>:</p>
+
+<ul>
+  <li>
+    <p>the given hosts correspond to 32-bit IP addresses</p>
+  </li>
+  <li>
+    <p>these 32-bit IP addresses correspond to Internet domain names</p>
+  </li>
+  <li>
+    <p>processes in different hosts can communicate over a connection</p>
+  </li>
+</ul>
+
+<p>Every network application conforms to the client-server architecture. This architecture consists of one server process and multiple client processes. Internet clients and servers communicate by exchanging streams of bytes over a connection. A connection consists of a client socket and server socket. A socket is the endpoint of a connection.  Each socket is associated with an address and a 16 bit port.</p>
+
+<h3 id="how-does-the-internet-work">How does the Internet work?</h3>
+<p>Clients and servers on the Internet use IP addresses to communicate. Domain names, however, are a human readable representation of IP addresses. When you try to go to <code class="language-plaintext highlighter-rouge">https://google.com</code> a domain name server is involved to map the domain name <code class="language-plaintext highlighter-rouge">google.com</code> to an IP address. Subsequently, the source host and destination host will establish a connection over TCP.</p>
+
+<p>Interestingly, the kernel and networking are related. First, there is a network adapter/driver on each host which is connected on the I/O bus of a computer system. When the packets arrive at this network adapter the kernel creates a virtual memory for the processes involved. Subsequently, the virtual memory addresses get mapped to physical addresses and the CPU starts fetching instructions from memory; moreover, the socket interface is a set of system calls. In other words, the socket interface consists of functions that call the underlying TCP/IP implementation in the kernel. Recall that system calls are the interface of user mode and kernel mode. When a user mode process needs resources such as memory it initiates a system call and the kernel allocates the necessary memory. Well, it turns out that the given client’s socket port is assigned by the kernel when the client sends a connection request. In contrast, the given server’s port is already established, it is well known in advance.</p>
+
+<h4 id="the-network-stack">The network stack</h4>
+<p>At the lowest level of the Internet stack there’s Local Area Networks (LAN) which essentially is your Wifi network at home. Each host in a LAN is connected to other LANs through routers. What happens when one computer connects with another computer?
+To see how computers connect with one another one has to be aware of the protocol stack. The protocol stack consists of the following structure<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>—---------                      —-------------
+| http   |                      | HTTP      |
+—--------                        —------------
+    |                               ^
+    V                               |
+—--------                      —-------------
+| TCP   |                      |  TCP
+—-------                       —---------------
+   |                                 ^
+   V                                 |
+—-------                        —------------
+| IP   |                        | IP       |
+—------                         —------------
+   |                                 ^
+   V                                 |
+—----------                     —------------
+| hardware | —----------------&gt; | hardware
+—----------                    —------------
+</code></pre></div></div>
+
+<p>Given a connection between computers there are two protocol stacks involved. When one is using the browser the data travels from the Application protocol to the hardware. In other words, the packets would travel from the application layer – e.g., HTTP – to the TCP layer where a port will be attached and then these packets will continue onto the IP layers where the destination IP address and from here the packets move onto the LAN networks which can be created with Wifi or the Ethernet. At the receiving protocol stack a router sends the packets to the correct computer and the packets start getting processed from the IP protocol to the application protocol.</p>
+
+<h5 id="internet-protocol-ip">Internet Protocol (IP)</h5>
+<p>The IP is essential to the Global Internet. The essence is a route table. IP routes the IP packet to the destination hosts<sup id="fnref:3:1" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>.
+With respect to IP there are two types of routing: direct routing and indirect routing. Direct routing happens when two hosts on the same IP network communicate whereas in contrast indirect routing happens when two hosts on different IP networks connect. When IP mediates the communication between two hosts the header will consist of the source and destination IP addresses.</p>
+
+<p>When an IP packet travels over the Internet it can go from one IP-router to another while its route table determines where to direct the IP packet.</p>
+
+<h5 id="transmission-control-protocol-tcp">Transmission Control Protocol (TCP)</h5>
+
+<p>TCP is used when guarantee delivery is needed. In order to send a request over HTTP the client and server first needs to establish a connection over TCP. This connection over TCP can be seen as a virtual circuit.</p>
+
+<p>In the <a href="https://datatracker.ietf.org/doc/html/rfc1180">RFC 1180</a> is says:</p>
+
+<blockquote>
+  <p>TCP provides a different service than UDP.  TCP offers a connection-oriented byte stream, instead of a connectionless datagram delivery service. TCP guarantees delivery, whereas UDP does not.</p>
+</blockquote>
+
+<p>The connection or virtual circuits between the two TCP implementations on the respective hosts is full duplex. That is, data can flow in both directions.</p>
+
+<h5 id="hypertext-transfer-protocol-http">Hypertext Transfer Protocol (HTTP)</h5>
+
+<p>HTTP is an application protocol that mediates the exchange of HTML documents between a web browser and a server<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup>. HTTP is stateless which means that there is no relationship between requests happening one after another; nevertheless, via sessions you can provide some state.</p>
+
+<h3 id="what-is-the-web">What is the web?</h3>
+<p>The web is also a collection of clients and servers that communicate via a text based protocol called
+HTTP. HTTP is how information gets exchanged. This information or content is represented by HTML. Technically, web servers and clients see content as a pair consisting of a sequence of bytes and a MIME type. Some MIME types include HTML, images and plain text.</p>
+
+<p>To have something concrete I will talk about the Apache and nginx web servers and briefly dive into the differences in the following section.</p>
+
+<h4 id="web-servers">Web Servers</h4>
+<p>Here, I will talk about two http servers, namely, Apache and nginx. Apache spawns a process for each new connection whereas nginx is event driven. If a http server is process based then it will not deal with concurrency well.</p>
+
+<p>Here is a key point about why web servers that are thread or process based such as Apache do not handle concurrency well. Everytime the web server spawns a new process the cpu needs to create virtual memory (stack and heap) for each process. As a result, this leads to poor performance due to excessive context switching (switching the CPU among processes). In contrast, the foundation of nginx consists of an event based, asynchronous, single threaded, non-blocking architecture. Such architecture results in better performance, better use of server resources and enables the dynamic growth of web sites. As mentioned above Apache spawns a new process per connection but in contrast nginx consists of workers; each worker in nginx consists of a loop that handles many connections. This run loop is asynchronous so it does not block like the Apache server. Since nginx does not spawn a process or thread for each connection it does not consume a lot of memory given that it does not need to create virtual memory for a given process. As a result, nginx conserves CPU cycles because the CPU does not need to work on allocating stack and heap memory. In other words, one of the main reasons why nginx is more performant than Apache is because it does not spawn a process or thread for each connection - i.e., nginx is event driven. What nginx does instead is keep track of the network and storage, initializes new connections and adds them to the run loop and process asynchronously until completion. Nginx is algo great for parallelization since it spawns multiple workers to handle many connections and as a result you can have a separate worker for each core.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>We have discussed that the Internet can be seen as a network of LAN networks whose hosts, through their protocol implementations, communicate with other hosts. We also briefly discussed how data packets flow from the application HTTP protocol, to the TCP protocol, which in turn sends data to the IP protocol which in turn sends data to the network adapter through a LAN.</p>
+
+<h3 id="references">References</h3>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p><a href="https://www.cloudflare.com/learning/network-layer/what-is-a-lan/">Cloudflare - What is a LAN</a> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><a href="https://csapp.cs.cmu.edu/">Computer Systems - A Programmer’s Perspective</a> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p><a href="https://www.rfc-editor.org/rfc/pdfrfc/rfc1180.txt.pdf">A TCP/IP tutorial</a> <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a> <a href="#fnref:3:1" class="reversefootnote" role="doc-backlink">&#8617;<sup>2</sup></a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview">An Overview of HTTP</a> <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/07/31/how-the-internet-works.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

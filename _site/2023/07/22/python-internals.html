@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>A semi deep dive into Python | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="A semi deep dive into Python" />
+<meta name="author" content="Job Hernandez" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="a brief description of the Python language" />
+<meta property="og:description" content="a brief description of the Python language" />
+<link rel="canonical" href="http://localhost:4000/2023/07/22/python-internals.html" />
+<meta property="og:url" content="http://localhost:4000/2023/07/22/python-internals.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-22T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="A semi deep dive into Python" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-07-22T00:00:00-07:00","datePublished":"2023-07-22T00:00:00-07:00","description":"a brief description of the Python language","headline":"A semi deep dive into Python","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/07/22/python-internals.html"},"url":"http://localhost:4000/2023/07/22/python-internals.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">A semi deep dive into Python</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-07-22T00:00:00-07:00" itemprop="datePublished">
+        Jul 22, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>version 1.2</em>: add conclusion, fix typos, 7/23/23</p>
+
+<p><em>version 1.1</em>: fix typos, change title, change headings, 7/22/23</p>
+
+<p><em>version 1</em>: initial version, 7/22/23</p>
+
+<h2 id="introduction">Introduction</h2>
+<p>I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages I use. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.</p>
+
+<p>After writing this blog post I have realized that Python is indeed a powerful language. Python3 is strongly typed with dynamic and static guarantees (with mypy). This is similar to Lisp which is what made it so much better back in the day; moreover, Python has first class functions so you can build powerful abstractions using higher order functions. It allows incremental development, perhaps not as interactive as Common Lisp + SLIME but it does offer a REPL nonetheless which enables you to experiment with your programming ideas, get feedback and develop programs that have few bugs (since you have already tested your ideas on the REPL). Python also has a great community and has a great library ecosystem.</p>
+
+<p>Consider what Peter Norvig <a href="https://norvig.com/python-lisp.html">said</a> about Python. He considers Python to be a dialect of Lisp:</p>
+
+<blockquote>
+  <p>Basically, Python can be seen as a dialect of Lisp with “traditional” syntax (what Lisp people call “infix” or “m-lisp” syntax). One message on comp.lang.python said “I never understood why LISP was a good idea until I started playing with python.” Python supports all of Lisp’s essential features except macros, and you don’t miss macros all that much because it does have eval, and operator overloading, and regular expression parsing, so some–but not all–of the use cases for macros are covered.</p>
+</blockquote>
+
+<h2 id="a-quick-dive-into-pythons-execution-model">A quick dive into Python’s execution model</h2>
+
+<p>According to the Python <a href="https://devguide.python.org/internals/compiler/">CPython internal docs</a> Python3 consists of a compiler and stack-based virtual machine. So, as any other compiler architecture it consists of a frontend and backend. The frontend consists of a parser that generates the abstract syntax tree which in turn gets converted into a control flow graph which in turn gets compiled into bytecode, but unlike a native compiler, this bytecode gets executed by a stack-based virtual machine. Java also consists of a similar architecture including a stack-based virtual machine.</p>
+
+<p>To illustrate the above points I will provide some concrete examples. I  have been working on a compiler for a language that has Python syntax. Although this compiler generates x86 assembly it consists of a parser that generates an abstract syntax tree.</p>
+
+<p>An abstract syntax tree (AST) is a tree that represents a given program. You can represent nodes in a tree with objects; for example, the <code class="language-plaintext highlighter-rouge">if</code> statement node can be represented by the following Python object:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Class IfStmt:
+    def __init__(self, condition, then, else):
+        self.condition = condition
+        self.then = then
+        self.else = else
+
+     def __repr__(self):
+         f’(IF {self.condition} {self.then} {self.else})’
+</code></pre></div></div>
+<p>Once you have your node objects you recursively go through the parse tree and, for example, when you hit an <code class="language-plaintext highlighter-rouge">if</code> statement you construct the AST node using the <code class="language-plaintext highlighter-rouge">IfStmt</code> object.</p>
+
+<p>Consider the following program:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if 2==2: 
+    x = 30 + -10 
+    print(x + 10)
+else: 
+    y = 34 + -2 
+    print(y)
+</code></pre></div></div>
+
+<p>The parser will generate the an abstract sysntax tree that looks <em>similar</em> but not exact to the following:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#S(PY-MODULE
+   :STATEMENTS (#S(PY-IF
+                   :EXP #S(PY-CMP
+                           :LEXP #S(PY-CONSTANT :NUM 2)
+                           :CMP :==
+                           :REXP #S(PY-CONSTANT :NUM 2))
+                   :IF-STATEMENT (#S(PY-ASSIGNMENT
+                                     :NAME ZETTA-VAR::X
+                                     :EXP #S(PY-SUM
+                                             :LEXP #S(PY-CONSTANT :NUM 30)
+                                             :REXP #S(PY-NEG-NUM
+                                                      :NUM #S(PY-CONSTANT
+                                                              :NUM 10))))
+                                  #S(PY-PRINT
+                                     :EXP #S(PY-SUM
+                                             :LEXP #S(PY-VAR
+                                                      :NAME ZETTA-VAR::X)
+                                             :REXP #S(PY-CONSTANT :NUM 10))))
+                   :ELSE-STATEMENT (#S(PY-ASSIGNMENT
+                                       :NAME ZETTA-VAR::Y
+                                       :EXP #S(PY-SUM
+                                               :LEXP #S(PY-CONSTANT :NUM 34)
+                                               :REXP #S(PY-NEG-NUM
+                                                        :NUM #S(PY-CONSTANT
+                                                                :NUM 2))))
+                                    #S(PY-PRINT
+                                       :EXP #S(PY-VAR :NAME ZETTA-VAR::Y))))))
+</code></pre></div></div>
+
+<p>The above example was taken from my compiler project but it should give you a concrete idea of what an AST is.</p>
+
+<p>After the AST is generated the Python system creates a control flow graph. A control flow graph is a directed graph. It takes the above Python AST and creates a graph similar to the following.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if 2==2:
+   goto block1
+   goto block2
+block1:
+    x = 30 + -10 
+    print(x + 10)
+block2:
+    y = 34 + -2 
+    print(y)
+</code></pre></div></div>
+
+<p>It is not straightforward as that because you need to convert the block:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>x = 30 + -10
+print(x+10)
+</code></pre></div></div>
+
+<p>into an intermediate language that is closer to the bytecode but the CPython internals article does not talk about this; moreover, it is also not as straightforward because expressions such as <code class="language-plaintext highlighter-rouge">if expressions</code> generate more blocks and to generate the blocks in the most efficient way possible you also need to use graphs.</p>
+
+<p>After the control flow graph is generated then the Python3 system lowers this control flow graph to bytecode. Since the Python’s virtual machine is stack-based it pushes constructs to the stack and pops them; for example, suppose you are adding two numbers: <code class="language-plaintext highlighter-rouge">2+2</code>. Then <code class="language-plaintext highlighter-rouge">2</code>, <code class="language-plaintext highlighter-rouge">2</code>, and the addition operator <code class="language-plaintext highlighter-rouge">+</code> will be pushed to the stack; to execute the virtual machine will pop those and push <code class="language-plaintext highlighter-rouge">4</code> to the stack.</p>
+
+<h2 id="a-quick-dive-into-some-of-pythons-programming-constructs">A quick dive into some of Python’s programming constructs</h2>
+
+<p>I don’t have experience with building large systems as I have not started my career in software engineering so I don’t have first hand experience with this topic; nevertheless, I would like to explore this topic because I want to improve my understanding of the Python3 programming language. As a result I have decided to use as a guide a few points that Robert Smith made in one of his <a href="https://github.com/stylewarning/deprecated-coalton-prototype/blob/master/thoughts.md">writings</a> where he explains what it takes to build large systems. Robert is very experienced – he has built state of the art compilers and linear algebra systems, and a programming language (and many more things) that are used in production at a couple quantum computing companies. So, yes his metric is worth considering. Anyways, these are the points he makes:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- Does the language manage names well? Are there ways of creating new namespaces that won't likely collide with others'?
+- Does the languages' implementation offer any static or dynamic guarantees of correctness? Do we know that certain classes of errors are not possible?
+- Does the language intrinsically, or the implementation explicitly, permit one to incrementally change programs?
+- Does the language offer or allow to be expressed re-usable abstractions? What kinds?
+</code></pre></div></div>
+
+<p>I will briefly explain a little bit about the above points and try to use what I have learned from my computer science studies to evaluate. I am mostly doing this as a reflection.</p>
+
+<h3 id="namespaces">Namespaces</h3>
+
+<p>In Python3 a namespace is a mapping from names to objects. They are implemented as dictionaries. According to the Python3 <a href="https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces">docs</a> there are three types of namespaces: built in namespaces, module (global names) namespaces and local namespaces. There are no relationship between the names in different modules so you can have a function named <code class="language-plaintext highlighter-rouge">square</code> in two modules and there will be no name conflicts; nevertheless, each respective <code class="language-plaintext highlighter-rouge">square</code> name has to be prefixed by the name of the module. The namespace consisting of the built in names is created when the interpreter starts up. On the other hand, the namespace consisting of global names of a given module is created when you import the module. And finally the namespace consisting of local names is created when a given function is called and deleted when the function returns.</p>
+
+<p>From an elementary point of view  based on the classic introductory textbook “Structure and Interpretation of Computer Programs  (SICP)”, Python’s organization of namespaces, especially the module namespace, is conducive to building large software systems. In SICP the authors explain that by isolating different parts of the system as packages, multiple developers can work independently on different parts of the system without introducing name conflicts. And it makes a system modular. So, namespaces in Python are conducive for building large systems or at least it is at a basic level. But as I said, I do not have first hand experience building large systems (in Python) so take my evaluation with a grain of salt.</p>
+
+<h3 id="does-python3-offer-any-static-or-dynamic-guarantees-of-correctness">Does Python3 offer any static or dynamic guarantees of correctness?</h3>
+
+<p>That is, as Robert points out, does Python offer us any certainty that a whole class or errors will not happen? Well as you know, Python3 is a dynamically typed language so the Python3 implementation does not have a type checker; it consists of tags instead. Dr. Siek, author of a very good compiler textbook called “Essentials of Compilation” explains a dynamically typed language to be:</p>
+
+<blockquote>
+  <p>In dynamically typed languages, …, a particular expression may produce a value of a different type each time it is executed.</p>
+</blockquote>
+
+<p>Consider the following example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>d = lambda x: 3 + x if x == 3 else False
+d(3) ## -&gt; 6
+d(4) ## -&gt; False
+</code></pre></div></div>
+
+<p>The function <code class="language-plaintext highlighter-rouge">d</code> yields an <code class="language-plaintext highlighter-rouge">Int</code> or <code class="language-plaintext highlighter-rouge">Bool</code> depending on the input. This is not possible in a statically typed language. This means that the function <code class="language-plaintext highlighter-rouge">d</code> is polymorphic which is not to be confused with subtype polymorphism or parametric polymorphism.</p>
+
+<p>Now that I have explained what dynamic typing is, what guarantees does Python offer? Python is <em>strongly typed</em> and dynamically typed. In a strongly typed language the expression <code class="language-plaintext highlighter-rouge">2 + “hello”</code> will yield an error. The Python interpreter is smart enough to know that an integer and a string cannot be added together. In contrast, for example in Javascript the expression <code class="language-plaintext highlighter-rouge">2 + “hello”</code> evaluates to <code class="language-plaintext highlighter-rouge">2hello</code>. Python respects the semantics of the language but Javascript does not. Robert Smith puts it like this:</p>
+
+<blockquote>
+  <p>The strong-typedness of Common Lisp ensures that a program which has a type error cannot descend into a state that no longer respects the predictable semantics of the language.</p>
+</blockquote>
+
+<p>Python also offers static guarantees if you use <code class="language-plaintext highlighter-rouge">mypy</code> and given that Python has a garbage collector it guarantees that there will not be a certain class of memory error.</p>
+
+<p>Given that Python offers dynamic and static guarantees and memory guarantees but especially because it offers static guarantees with mypy I think Python can be used to build large systems. As Robert said:</p>
+
+<blockquote>
+  <p>Programs can get large. Along with that comes challenges in comprehension, modification, and maintenance.</p>
+</blockquote>
+
+<p>Or as I learned in the mitocw Software Construction course, statically typed languages are more conducive to programs that are easier to understand, safe from bugs, and ready for change. As a result I think Python is a good language to build large software system but of course my answer to this question is theoretical and based on Robert’s thinking.</p>
+
+<h3 id="does-python-allow-the-expression-of-re-usable-abstractions-what-kinds-and-does-it-allow-an-incremental-approach-to-development">Does Python allow the expression of re-usable abstractions? What kinds? And does it allow an incremental approach to development?</h3>
+
+<p>I think the answer here is that yes it does. Since functions are first class objects in Python then you can build higher order functions which lead to a more modular system since you can reuse the higher order function multiple times without repeating yourself. Python also offers an object oriented system which is really good too.</p>
+
+<p>Python also allows the programmer to incrementally develop a program because it has a repl.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Well, there you have it. We can still go deeper. If we want to understand Python deeper then we can build compiler and implement features such as tuples, arrays, lexical scoped functions, first class functions, object system. In addition we can implement a type checker, efficient tail calls, generics to get a much better understanding of programming in general.</p>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/07/22/python-internals.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

@@ -2,7 +2,7 @@
 layout: post
 title: A semi deep dive into CPU architecture
 author: Job Hernandez Lara
-tags: [cpu-architecture, x86-64]
+tags: [cpu-architecture, x86-64, computer-science]
 ---
 
 * Table of Contents

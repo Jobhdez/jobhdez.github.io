@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Power of Lisp macros | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="Power of Lisp macros" />
+<meta name="author" content="Job Hernandez Lara" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="version: 1.0, initial version" />
+<meta property="og:description" content="version: 1.0, initial version" />
+<link rel="canonical" href="http://localhost:4000/2023/10/25/power-of-lisp-macros.html" />
+<meta property="og:url" content="http://localhost:4000/2023/10/25/power-of-lisp-macros.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-10-25T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Power of Lisp macros" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2023-10-25T00:00:00-07:00","datePublished":"2023-10-25T00:00:00-07:00","description":"version: 1.0, initial version","headline":"Power of Lisp macros","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/10/25/power-of-lisp-macros.html"},"url":"http://localhost:4000/2023/10/25/power-of-lisp-macros.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Power of Lisp macros</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-10-25T00:00:00-07:00" itemprop="datePublished">
+        Oct 25, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>version</em>: 1.0, initial version</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>I find it hard to admit but I spent on average around 2 hours a day programming in Lisp for about 3 years and never touched macros. But fortunately by contributing to open source and seeing how really good programmers program I was able to pick up some macro skills.</p>
+
+<p>As a result, I have more appreciation for Lisp and kind of see how in other languages you end up repeating yourself due to lack of syntactic abstraction; moreover, I have seen how macros enable you to build languages and extend the Lisp language itself.</p>
+
+<p>This is all important because, as the SICP authors claimed, software engineering is about controlling complexity. Using macros allows you to control complexity because by using macros your systems are easier to maintain and by using macros for building DSLs and extending Lisp itself you end up increasing the expressiveness of Lisp.</p>
+
+<p>In what follows I will explain how macros are indeed useful and lead to better systems.</p>
+
+<p>Definitely, I am not an expert but these are my observations from contributing to Coalton and conversing with the creator of Coalton.</p>
+
+<h3 id="macros-allow-you-to-get-more-done-with-less">Macros allow you to get more done with less</h3>
+
+<p>One of the reasons why Lisp macros are powerful is because macros enable syntactic abstraction. Syntactic abstraction leads to shorter code and more modular code and  moreover it leads to code without repeating patterns</p>
+
+<p>Consider building a vector library. Suppose you are trying to implement different types such as single float and double float and so on.</p>
+
+<p>In Common Lisp you can write the pattern of addition once and I apply it \(n\) times where \(N\) is the number of types you are implementing.</p>
+
+<p>Here is how I would write it:</p>
+
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nb">defmacro</span> <span class="nv">addition-handler</span> <span class="p">(</span><span class="k">type</span> <span class="nv">fn-name</span><span class="p">)</span>
+  <span class="o">`</span><span class="p">(</span><span class="nb">defun</span> <span class="o">,</span><span class="nv">fn-name</span> <span class="p">(</span><span class="nv">vec</span> <span class="nv">vec2</span><span class="p">)</span>
+ 	<span class="p">(</span><span class="k">progn</span> <span class="p">(</span><span class="k">setq</span> <span class="nv">vec3</span> <span class="p">(</span><span class="nb">make-array</span> <span class="o">,</span><span class="p">(</span><span class="nb">length</span> <span class="nv">vec</span><span class="p">)</span> <span class="ss">:element-type</span> <span class="ss">',type</span><span class="p">))</span>
+    	<span class="p">(</span><span class="nb">dotimes</span> <span class="p">(</span><span class="nv">i</span> <span class="o">,</span><span class="p">(</span><span class="nb">length</span> <span class="nv">vec</span><span class="p">))</span>
+      	<span class="p">(</span><span class="nb">setf</span> <span class="p">(</span><span class="nb">aref</span> <span class="nv">vec3</span> <span class="nv">i</span><span class="p">)</span>
+   	 	<span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nb">aref</span> <span class="nv">vec</span> <span class="nv">i</span><span class="p">)</span>
+   	    	    <span class="p">(</span><span class="nb">aref</span> <span class="nv">vec2</span> <span class="nv">i</span><span class="p">)))))))</span>
+
+<span class="p">(</span><span class="nv">addition-handler</span> <span class="kt">single-float</span> <span class="nv">addition-vector-single-float</span><span class="p">)</span>
+<span class="p">(</span><span class="nv">addition-handler</span> <span class="kt">double-float</span> <span class="nv">addition-vector-double-float</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>You can continue this pattern and implement more vector operations and more types.</p>
+
+<p>So, in Lisp you can get more done with less code. In turn, this leads to smaller systems due to the abstraction and since smaller systems are easier to make sense of the ease of maintenance increases.</p>
+
+<h3 id="macros-allow-you-to-build-dsls">Macros allow you to build DSLs</h3>
+
+<p>In SICP you learn that DSLs are the ultimate abstraction. Software engineering is about controlling complexity. As we have seen previously macros allow you to control complexity because macros lead to more abstracted systems.</p>
+
+<p>It turns out that the power of macros is about building languages. As Robert, the creator of Coalton and an state of the art quantum computing compiler Quilc said:</p>
+
+<blockquote>
+  <p>The real power of macros is when they’re in the hands of compiler writers and language designers.</p>
+</blockquote>
+
+<p>The idea of building DSLs with macros is closely tied to the idea that software systems should be evolvable and adaptable; for example, in the book “Software Design for Flexibility”, Sussman and Hanson claimed that systems need to be evolvable. According to them, systems should be designed in such a way that they adapt and grow as requirements change.</p>
+
+<blockquote>
+  <p>The best systems are evolvable: they can be adapted to new situations with only minor modifications.</p>
+</blockquote>
+
+<p>When adding a new feature one should be able to add to the system instead of modifying the codebase.</p>
+
+<p>Well Lisp can be seen as an evolvable system. With macros you can adapt the language to new situations and can extend the language with new constructs without modifying the Lisp compiler.</p>
+
+<p>You can see Lisp as an assembly of tiny domain specific languages.</p>
+
+<p>Lisp has a tiny core and the rest of the language can be built by writing macros. As Alan Kay said:</p>
+
+<blockquote>
+  <p>Yes, that was the big revelation to me when I was in graduate school—when I finally understood that the half page of code on the bottom of page 13 of the Lisp 1.5 manual was Lisp in itself. These were “Maxwell’s Equations of Software!” This is the whole world of programming in a few lines that I can put my hand over.</p>
+</blockquote>
+
+<p>So, as I said Lisp is an evolvable system because it has macros; for example, suppose your favorite language doesn’t have list comprehensions. How would you add this construct to your language? The only way you can do this is by modifying the compiler. As a result, your favorite language is not as evolvable as it could be.</p>
+
+<p>In a conversation I had on Twitter with Robert Smith, he demonstrated the power of macros by showing me how a language for list comprehensions could be implemented.</p>
+
+<p>What follows is a summary of his message.</p>
+
+<p>Suppose you want to express this in your language:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[(x, y) for x in range(5) for y = 2*x when isEven(x)] 
+</code></pre></div></div>
+
+<p>How would you add list comprehensions to your favorite language? You cannot.</p>
+
+<p>But in Lisp you can write a macro that allows you to express this.</p>
+
+<p>For example, a macro for list comprehensions is a tiny DSL.</p>
+
+<p>You might say that Python can be used as this because of macros but as Robert Smith says:</p>
+
+<blockquote>
+  <p>(1) Python macros don’t really exist as a defined part of the language, (2) python has no concept of “macroexpansion time”, (3) being able to manipulate ASTs and source code is not the same as having a macro facility built in to the language, even if you can accomplish similar tasks in theory. I would say that python allows metaprogramming (in a very bizarre and difficult way), but NOT that it supports macros. The  language is definitely not homoiconic, which is a key ingredient in making macros facile.</p>
+</blockquote>
+
+<p>I was able to see the power of macros thanks to Robert Smith. He explained this to me by the following implementation of the the loop comprehension DSL:</p>
+
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">;;; A list comprehension will be defined as:</span>
+<span class="c1">;;;</span>
+<span class="c1">;;;    (comp &amp;lt;expr&amp;gt; &amp;lt;clause&amp;gt;*)</span>
+<span class="c1">;;;</span>
+<span class="c1">;;; where &amp;lt;expr&amp;gt; is any Lisp expression, and &amp;lt;clause&amp;gt; can be:</span>
+<span class="c1">;;;</span>
+<span class="c1">;;;    &amp;lt;clause&amp;gt; := (for &amp;lt;var&amp;gt; in &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;              | (for &amp;lt;var&amp;gt; = &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;              | (for &amp;lt;var&amp;gt; from &amp;lt;expr&amp;gt; to &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;              | (when &amp;lt;expr&amp;gt;)</span>
+<span class="c1">;;;</span>
+<span class="c1">;;; For example,</span>
+<span class="c1">;;;</span>
+<span class="c1">;;;    (comp (list x y) (for x from 1 to 100) (for y = (* x x)) (when (evenp y)))</span>
+<span class="c1">;;;</span>
+<span class="c1">;;; would generate a list of numbers and their squares, only when the</span>
+<span class="c1">;;; square is even.</span>
+
+<span class="nv">CL-USER&gt;</span> <span class="p">(</span><span class="nv">compile-comp</span> <span class="o">'</span><span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">list</span> <span class="nv">x</span> <span class="nv">y</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">100</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nb">=</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">x</span> <span class="nv">x</span><span class="p">))</span> <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nb">evenp</span> <span class="nv">y</span><span class="p">))))</span>
+
+ <span class="p">(</span><span class="nv">LET</span> <span class="p">((</span><span class="ss">#:RESULT1639</span> <span class="nv">NIL</span><span class="p">))</span> <span class="p">(</span><span class="nv">LOOP</span> <span class="ss">:FOR</span> <span class="nv">X</span> <span class="ss">:FROM</span> <span class="mi">1</span> <span class="ss">:TO</span> <span class="mi">100</span> <span class="ss">:DO</span> <span class="p">(</span><span class="nv">LET</span> <span class="p">((</span><span class="nv">Y</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">X</span> <span class="nv">X</span><span class="p">)))</span> <span class="p">(</span><span class="nv">WHEN</span> <span class="p">(</span><span class="nv">EVENP</span> <span class="nv">Y</span><span class="p">)</span> <span class="p">(</span><span class="nv">PUSH</span> <span class="p">(</span><span class="nv">LIST</span> <span class="nv">X</span> <span class="nv">Y</span><span class="p">)</span> <span class="ss">#:RESULT1639</span><span class="p">))))</span> <span class="p">(</span><span class="nv">NREVERSE</span> <span class="ss">#:RESULT1639</span><span class="p">))</span>
+
+<span class="nv">CL-USER&gt;</span> <span class="p">(</span><span class="nv">compile-comp</span> <span class="o">'</span><span class="p">(</span><span class="nv">comp</span> <span class="nv">x</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="nv">LET</span> <span class="p">((</span><span class="ss">#:RESULT1640</span> <span class="nv">NIL</span><span class="p">))</span>
+  <span class="p">(</span><span class="nv">LOOP</span> <span class="ss">:FOR</span> <span class="nv">X</span> <span class="ss">:FROM</span> <span class="mi">1</span> <span class="ss">:TO</span> <span class="mi">10</span>
+    	<span class="ss">:DO</span> <span class="p">(</span><span class="nv">LOOP</span> <span class="ss">:FOR</span> <span class="nv">Y</span> <span class="ss">:FROM</span> <span class="mi">1</span> <span class="ss">:TO</span> <span class="mi">10</span>
+              	<span class="ss">:DO</span> <span class="p">(</span><span class="nv">PUSH</span> <span class="nv">X</span> <span class="ss">#:RESULT1640</span><span class="p">)))</span>
+  <span class="p">(</span><span class="nv">NREVERSE</span> <span class="ss">#:RESULT1640</span><span class="p">))</span>
+
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">for-in-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">4</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FOR"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"IN"</span> <span class="p">(</span><span class="nb">third</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">for-=-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">4</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FOR"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"="</span> <span class="p">(</span><span class="nb">third</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">for-range-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">6</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FOR"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"FROM"</span> <span class="p">(</span><span class="nb">third</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"TO"</span> <span class="p">(</span><span class="nb">fifth</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">when-clause?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">2</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"WHEN"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">list-comprehension-form?</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">and</span> <span class="p">(</span><span class="nb">=</span> <span class="mi">2</span> <span class="p">(</span><span class="nb">length</span> <span class="nv">form</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">string=</span> <span class="s">"COMP"</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">form</span><span class="p">))))</span>
+
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">compile-clause</span> <span class="p">(</span><span class="nv">build-expr</span> <span class="nv">clause</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">cond</span>
+	<span class="p">((</span><span class="nv">for-in-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="nb">loop</span> <span class="ss">:for</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span> <span class="ss">:in</span> <span class="o">,</span><span class="p">(</span><span class="nb">fourth</span> <span class="nv">clause</span><span class="p">)</span>
+        	<span class="ss">:do</span> <span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">((</span><span class="nv">for-=-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="k">let</span> <span class="p">((</span><span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span> <span class="o">,</span><span class="p">(</span><span class="nb">fourth</span> <span class="nv">clause</span><span class="p">)))</span>
+    	<span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">((</span><span class="nv">for-range-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="nb">loop</span> <span class="ss">:for</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span> <span class="ss">:from</span> <span class="o">,</span><span class="p">(</span><span class="nb">fourth</span> <span class="nv">clause</span><span class="p">)</span> <span class="ss">:to</span> <span class="o">,</span><span class="p">(</span><span class="nb">sixth</span> <span class="nv">clause</span><span class="p">)</span>
+        	<span class="ss">:do</span> <span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">((</span><span class="nv">when-clause?</span> <span class="nv">clause</span><span class="p">)</span>
+ 	<span class="o">`</span><span class="p">(</span><span class="nb">when</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">clause</span><span class="p">)</span>
+    	<span class="o">,</span><span class="nv">build-expr</span><span class="p">))</span>
+	<span class="p">(</span><span class="no">t</span>
+ 	<span class="p">(</span><span class="nb">error</span> <span class="s">"Invalid clause: ~S"</span> <span class="nv">clause</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">compile-clauses</span> <span class="p">(</span><span class="nv">build-expr</span> <span class="nv">clauses</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">null</span> <span class="nv">clauses</span><span class="p">)</span>
+  	<span class="nv">build-expr</span>
+  	<span class="p">(</span><span class="nv">compile-clauses</span>
+   	<span class="p">(</span><span class="nv">compile-clause</span> <span class="nv">build-expr</span> <span class="p">(</span><span class="nb">first</span> <span class="nv">clauses</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">rest</span> <span class="nv">clauses</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">compile-comp</span> <span class="p">(</span><span class="nv">form</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">assert</span> <span class="p">(</span><span class="nv">list-comprehension-form?</span> <span class="nv">form</span><span class="p">))</span>
+  <span class="p">(</span><span class="k">let*</span> <span class="p">((</span><span class="nv">clauses</span>	<span class="p">(</span><span class="nb">nthcdr</span> <span class="mi">2</span> <span class="nv">form</span><span class="p">))</span>
+     	<span class="p">(</span><span class="nv">result</span> 	<span class="p">(</span><span class="nb">gensym</span> <span class="s">"RESULT"</span><span class="p">))</span>
+     	<span class="p">(</span><span class="nv">build-expr</span> <span class="o">`</span><span class="p">(</span><span class="nb">push</span> <span class="o">,</span><span class="p">(</span><span class="nb">second</span> <span class="nv">form</span><span class="p">)</span> <span class="o">,</span><span class="nv">result</span><span class="p">)))</span>
+	<span class="o">`</span><span class="p">(</span><span class="k">let</span> <span class="p">((</span><span class="o">,</span><span class="nv">result</span> <span class="no">nil</span><span class="p">))</span>
+   	<span class="o">,</span><span class="p">(</span><span class="nv">compile-clauses</span> <span class="nv">build-expr</span> <span class="p">(</span><span class="nb">reverse</span> <span class="nv">clauses</span><span class="p">))</span>
+   	<span class="p">(</span><span class="nb">nreverse</span> <span class="o">,</span><span class="nv">result</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>Here is the interaction in the REPL:</p>
+
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">*</span> <span class="p">(</span><span class="nb">defmacro</span> <span class="nv">comp</span> <span class="p">(</span><span class="nv">expr</span> <span class="k">&amp;rest</span> <span class="nv">clauses</span><span class="p">)</span> <span class="p">(</span><span class="nv">compile-comp</span> <span class="o">`</span><span class="p">(</span><span class="nv">comp</span> <span class="o">,</span><span class="nv">expr</span> <span class="o">,@</span><span class="nv">clauses</span><span class="p">)))</span> 
+
+<span class="nb">*</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">x</span> <span class="nv">x</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">))</span> 
+  <span class="p">(</span><span class="mi">1</span> <span class="mi">4</span> <span class="mi">9</span> <span class="mi">16</span> <span class="mi">25</span> <span class="mi">36</span> <span class="mi">49</span> <span class="mi">64</span> <span class="mi">81</span> <span class="mi">100</span><span class="p">)</span> 
+
+<span class="nb">*</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">x</span> <span class="nv">x</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">in</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">sin</span> <span class="nv">y</span><span class="p">)</span> <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nb">evenp</span> <span class="nv">y</span><span class="p">)))))</span> 
+<span class="p">(</span><span class="mf">0.82682174</span> <span class="mf">0.57275003</span> <span class="mf">0.07807302</span> <span class="mf">0.97882974</span> <span class="mf">0.295959</span><span class="p">)</span> 
+
+<span class="nb">*</span> <span class="p">(</span><span class="nv">comp</span> <span class="p">(</span><span class="nb">list</span> <span class="nv">x</span> <span class="nv">y</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">x</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nv">for</span> <span class="nv">y</span> <span class="nv">from</span> <span class="mi">1</span> <span class="nv">to</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nb">&lt;</span> <span class="nv">x</span> <span class="nv">y</span><span class="p">)))</span> 
+<span class="p">((</span><span class="mi">1</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">3</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">4</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">5</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">6</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">7</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">8</span> <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="mi">8</span> <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="mi">9</span> <span class="mi">10</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>As you can see you can extend Lisp, which does not support list comprehensions, with the ability to express comprehensions. This is indeed the power of macros.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>So, there you go. Based on my observations and conversations I have had I have tried to show the power of macros. Firstly, I showed how you can do more with less code by using macros which in turn leads to systems without repeating patterns. If you consider that Lisp also has higher order functions you can see how Lisp is a great language to build modular code. In addition, I shared how macros can help the programmer extend the Lisp language itself which is the ultimate way to conquer complexity.</p>
+
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/10/25/power-of-lisp-macros.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

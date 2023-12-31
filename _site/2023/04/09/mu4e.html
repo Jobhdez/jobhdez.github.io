@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>How to use Emacs as an email client for protonmail | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="How to use Emacs as an email client for protonmail" />
+<meta name="author" content="Job Hernandez" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="version 1.1: 8/21/23, add brief explanation of mu4e and improved clarity" />
+<meta property="og:description" content="version 1.1: 8/21/23, add brief explanation of mu4e and improved clarity" />
+<link rel="canonical" href="http://localhost:4000/2023/04/09/mu4e.html" />
+<meta property="og:url" content="http://localhost:4000/2023/04/09/mu4e.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-04-09T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How to use Emacs as an email client for protonmail" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-04-09T00:00:00-07:00","datePublished":"2023-04-09T00:00:00-07:00","description":"version 1.1: 8/21/23, add brief explanation of mu4e and improved clarity","headline":"How to use Emacs as an email client for protonmail","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/04/09/mu4e.html"},"url":"http://localhost:4000/2023/04/09/mu4e.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">How to use Emacs as an email client for protonmail</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-04-09T00:00:00-07:00" itemprop="datePublished">
+        Apr 9, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>version 1.1</em>: 8/21/23, add brief explanation of mu4e and improved clarity</p>
+
+<p><em>version 1</em>: 4/9/23, initial version</p>
+
+<h3 id="emacs-is-amazing">Emacs is amazing</h3>
+<p>Emacs is amazing. I am finally appreciating the power of emacs which to me is being able to use Emacs as an operating system. One of the things you can use Emacs for is email. I will speak in particular about <code class="language-plaintext highlighter-rouge">protonmail</code>. For this to work you need <code class="language-plaintext highlighter-rouge">protonmail bridge</code>.</p>
+
+<h3 id="how-does-mu4e-work">How does mu4e work?</h3>
+
+<p>Interestingly mu4e does not fetch your mail from gmail or protonmail servers; <code class="language-plaintext highlighter-rouge">mu4e</code> uses either programs such as <code class="language-plaintext highlighter-rouge">fetchmail</code>, <code class="language-plaintext highlighter-rouge">offlinemap</code>, <code class="language-plaintext highlighter-rouge">isync/mbsync</code>. And it uses <code class="language-plaintext highlighter-rouge">smptmail</code> to send messages; instead what <code class="language-plaintext highlighter-rouge">mu4e</code> is manipulate the messages when it programs such as <code class="language-plaintext highlighter-rouge">fetchmail</code> fetches the messages; moreover, <code class="language-plaintext highlighter-rouge">mu4e</code> uses <code class="language-plaintext highlighter-rouge">mu</code> to search for messages. <code class="language-plaintext highlighter-rouge">mu4e</code> communicates with <code class="language-plaintext highlighter-rouge">mu</code> - <code class="language-plaintext highlighter-rouge">mu</code> indexes the messages which is to say it puts them in a special database.. The messages are stored in a given directory; for example, in this article we will store the messages in the directory  <code class="language-plaintext highlighter-rouge">~/.mail</code> but it also common to store the messages in a directory called <code class="language-plaintext highlighter-rouge">~/Maildir</code></p>
+
+<h3 id="dependencies">Dependencies</h3>
+<p>You will need to install <code class="language-plaintext highlighter-rouge">mu</code> and <code class="language-plaintext highlighter-rouge">isync</code></p>
+
+<h3 id="mbsyncrc">.mbsyncrc</h3>
+<p>First you will need to an <code class="language-plaintext highlighter-rouge">.mbsyncrc</code> but you need to make: <code class="language-plaintext highlighter-rouge">mkdir ~/.mbsyncrc</code>.</p>
+
+<p>Paste the following to this file:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>IMAPAccount protonmail
+Host 127.0.0.1
+Port 1143
+User &lt;your-email&gt;
+PassCmd "gpg -q --for-your-eyes-only --no-tty -d ~/.authinfo.gpg | awk 'FNR == 2 {print $8}'"
+SSLType STARTTLS
+SSLVersions TLSv1.2
+CertificateFile ~/.config/protonmail/bridge/cert.pem
+
+IMAPStore remote
+Account protonmail
+
+#You can change .mail to something else
+MaildirStore local
+Path ~/.mail/
+Inbox ~/.mail/INBOX/
+
+Channel inbox 
+Far :remote:
+Near :local:
+Patterns * 
+Create Both
+Expunge Both
+SyncState *
+
+Group protonmail
+Channel inbox
+</code></pre></div></div>
+
+<p>For this to work you will need to make <code class="language-plaintext highlighter-rouge">/protonmail/bridge/</code> inside <code class="language-plaintext highlighter-rouge">/.config/</code>; login to  the <code class="language-plaintext highlighter-rouge">protonmail bridge</code> app and export <code class="language-plaintext highlighter-rouge">cert.pem</code> and move it inside <code class="language-plaintext highlighter-rouge">/.config</code> and described.</p>
+
+<p>Next, you need to create an <code class="language-plaintext highlighter-rouge">.authinfo</code> file – i.e., <code class="language-plaintext highlighter-rouge">mkdir ~/.authinfo</code> and paste this:</p>
+
+<h3 id="authentication">Authentication</h3>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># -*- epa-file-encrypt-to: (&lt;your-email&gt;) -*-
+machine 127.0.0.1 port 1143 login USERNAME@protonmail.com password BRIDGE_PASSWORD
+machine 127.0.0.1 port 1025 login USERNAME@protonmail.com password BRIDGE_PASSWORD
+</code></pre></div></div>
+
+<p>You will need to encrypt this file and to do this you need to do this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ gpg -c .authinfo
+</code></pre></div></div>
+
+<p>And now delete <code class="language-plaintext highlighter-rouge">.authinfo</code>; you will now have an <code class="language-plaintext highlighter-rouge">.authinfo.gpg</code></p>
+
+<h3 id="generate-gpg-key">Generate gpg key</h3>
+<p>To be able to send an email though you will need to generate a gpg key associated with the email in the top of your <code class="language-plaintext highlighter-rouge">.authinfo</code>. Emacs will try to decrypt the file
+before it sends the email. To generate the key do this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gpg --gen-key
+gpg --armor --export-secret-keys &lt;your-email&gt; &gt; mykey.asc
+</code></pre></div></div>
+
+<p>This is actually what the line <code class="language-plaintext highlighter-rouge"># -*- epa-file-encrypt-to: (&lt;your-email&gt;) -*-</code> is for on top of your <code class="language-plaintext highlighter-rouge">.authinfo</code> file.</p>
+
+<h3 id="sync">Sync</h3>
+<p>Next, type this in the terminal:</p>
+
+<p>Step 1. Initialize the message store:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mu init --maildir ~/.mail --my-address=&lt;your-email&gt;
+</code></pre></div></div>
+
+<p>Step 2. Index the messages – i.e., scan the messages in <code class="language-plaintext highlighter-rouge">~/.mail</code> and store thes messages in a specical database:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mu index
+</code></pre></div></div>
+
+<p>Step 3. Fetch mail:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ mbsync protonmail
+</code></pre></div></div>
+
+<h3 id="troubleshooting">Troubleshooting</h3>
+
+<p>It is possible that you stop using <code class="language-plaintext highlighter-rouge">mu4e</code> for a while and when you come back things are not in sync.</p>
+
+<p>First, you need to put your gpg key into the Emacs buffer; you can do this by <code class="language-plaintext highlighter-rouge">M-x epa-insert-keys</code>; after this you may repeat the fetching step of the above.</p>
+
+<p>If you type <code class="language-plaintext highlighter-rouge">mbsync protonmail</code> and you are not prompted to put in your password for decryption you may need to kill the gpg process; you can kill the gpg process by typing:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ gpgconf --kill gpg-agent
+</code></pre></div></div>
+
+<p>You might also want to kill the mu process in some cases:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pkill -2 -u $UID mu
+</code></pre></div></div>
+
+<p>After you have killed the <code class="language-plaintext highlighter-rouge">mu</code> process you can now fetch the mail again.</p>
+
+<h3 id="mu4e-emacs-config">mu4e emacs config</h3>
+
+<p>Finally, you need to configure your <code class="language-plaintext highlighter-rouge">.emacs</code> file; copy and paste the following:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e/")
+(require 'mu4e)
+
+(setq mu4e-maildir "~/.mail"
+mu4e-attachment-dir "~/Downloads")
+
+(setq user-mail-address "&lt;your-email&gt;
+user-full-name  &lt;your-name&gt;)
+
+;; Get mail
+(setq mu4e-get-mail-command "mbsync protonmail"
+mu4e-change-filenames-when-moving t   ; needed for mbsync
+mu4e-update-interval 120)             ; update every 2 minutes
+
+;; Send mail
+(setq message-send-mail-function 'smtpmail-send-it
+smtpmail-auth-credentials "~/.authinfo.gpg"
+smtpmail-smtp-server "127.0.0.1"
+smtpmail-stream-type 'starttls
+smtpmail-smtp-service 1025)
+
+(add-to-list 'gnutls-trustfiles (expand-file-name "~/.config/protonmail/bridge/cert.pem"))
+</code></pre></div></div>
+<h3 id="basics-of-mu4e">Basics of mu4e</h3>
+<p>To access your <code class="language-plaintext highlighter-rouge">mu4e</code> file you can use your package manager to tell you where <code class="language-plaintext highlighter-rouge">mu</code> is located. When I did this I got the file <code class="language-plaintext highlighter-rouge">/usr/share/emacs/site-lisp/mu4e/</code>. It could be slightly different on your machine.
+Now, mu4e is ready to be used which you can do by:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>M-x mu4e
+</code></pre></div></div>
+
+<p>When you want to reply do this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>M-x mu4e-compose-reply
+</code></pre></div></div>
+<p>And to send the message:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C-c C-c to send the email
+</code></pre></div></div>
+
+<p>You can get a list of the mu4e commands by typing <code class="language-plaintext highlighter-rouge">M-x mu4e-</code> and typing enter.</p>
+
+<p>You should look at the <code class="language-plaintext highlighter-rouge">mu4e</code> documentation <a href="https://www.djcbsoftware.nl/code/mu/mu4e/index.html#SEC_Contents">here</a>.</p>
+
+<p>Also, if you want to setup <code class="language-plaintext highlighter-rouge">mu4e</code> for gmail check this tutorial <a href="https://www.djcbsoftware.nl/code/mu/mu4e/Gmail-configuration.html">here</a></p>
+
+<p>Enjoy – happy programming</p>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/04/09/mu4e.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

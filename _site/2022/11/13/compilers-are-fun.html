@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Why you should build a compiler :) | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="Why you should build a compiler :)" />
+<meta name="author" content="Job Hernandez" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="version 1.1: July 3 2023 - add better support for my claim" />
+<meta property="og:description" content="version 1.1: July 3 2023 - add better support for my claim" />
+<link rel="canonical" href="http://localhost:4000/2022/11/13/compilers-are-fun.html" />
+<meta property="og:url" content="http://localhost:4000/2022/11/13/compilers-are-fun.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-11-13T00:00:00-08:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Why you should build a compiler :)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2022-11-13T00:00:00-08:00","datePublished":"2022-11-13T00:00:00-08:00","description":"version 1.1: July 3 2023 - add better support for my claim","headline":"Why you should build a compiler :)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/11/13/compilers-are-fun.html"},"url":"http://localhost:4000/2022/11/13/compilers-are-fun.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Why you should build a compiler :)</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2022-11-13T00:00:00-08:00" itemprop="datePublished">
+        Nov 13, 2022
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>version 1.1</em>: July 3 2023 - add better support for my claim</p>
+
+<p><em>version 1</em>: Nov 13 2022 - initial version</p>
+
+<h2 id="my-background">My background</h2>
+<p>Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as <code class="language-plaintext highlighter-rouge">while loops</code>, <code class="language-plaintext highlighter-rouge">if statements</code>, <code class="language-plaintext highlighter-rouge">assignments</code> and <code class="language-plaintext highlighter-rouge">variables</code>, <code class="language-plaintext highlighter-rouge">tuples</code> and <code class="language-plaintext highlighter-rouge">functions</code> to x86-64; nevertheless, it is not quite done; for example, as of <code class="language-plaintext highlighter-rouge">7/3/23</code> it lowers the source language to an x86 AST. The x86 AST is mostly correct so I just now have to create the x86 file and finish up tuples which require a 64 bit tag.</p>
+
+<p>So, as you can see I am not an expert compiler engineer but I have done some work and as a result I have learned a lot. So, the following statements are based on my observations from implementing my compiler and studying compiler textbooks.</p>
+
+<h2 id="why-you-should-build-a-compiler">Why you should build a compiler</h2>
+<p>In the book “Selected Papers on Computer Science” Donald Knuth wrote:</p>
+<blockquote>
+  <p>Perhaps I can summarize all of these remarks by saying that methods are more important than facts. The educational value of [toy programs] a problem given to a student depends mostly on how often the thought processes that are invoked to solve it will be helpful in later situations. It has little to do with how useful the answer to the problem may be.</p>
+</blockquote>
+
+<p>This above quote resonated with me because it helped me realize that compilers, even if you build toys, are valuable because of the methods and knowledge you gain from these systems that can be useful in later situations.</p>
+
+<h3 id="learn-compilers-to-gain-a-better-understanding-of-computer-science">Learn compilers to gain a better understanding of computer science</h3>
+<p>Dr. Knuth claimed in his book “Selected Papers on Computer Science” that algorithms are the main object of study in computer science. And I agree. Everytime you write a program you are writing an algorithm. As a consequence, considering that algorithms are the main object of study in CS and considering that graph theory is essential in compiler engineering then by studying and implementing a compiler one will get a great education in computer science.</p>
+
+<p>It is remarkable to think how compilers compile large systems such as the linux kernel. Imagine how the mathematical structures – i.e., graphs – enable the efficiency of the generated code. This will help you appreciate how important graph algorithms are and how important algorithms are in general.</p>
+
+<p>In addition, you  will gain a better understanding of a big chunk of the system stack; for example, implementing a toy x86 compiler will teach you how memory is laid out in processes, it will give you a better idea of how a high level program is represented as assembly which in turn will give you a better understanding of how a processor executes a program; moreover, you will learn how garbage collection works; for example, when implementing tuples or arrays you will learn how these are heap objects and how garbage collection manages heap memory for these; furthermore, implementing a compiler will also give a much better appreciation of the memory hierarchy; for example, you will learn why register allocation improves the performance of the generated code. Register allocation is the process by which registers are used instead of stack locations. Register allocation gives light into the memory hierarchy because the cpu takes a sinlge cycle while fetching from main memory takes hundreds of cycles. As a result of implementing register allocation you will have a concrete example regarding the memory hierarchy. If you dig deeper you will learn that  caches take a few cycles, a few cycles more than register but considerably less cycles then fetching from main memory. An interesting thing I learned from studying how systems work is how the disk within a client-server architecture is part of this memory system. The memory hierarchy consists of:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Registers
+   |
+   V
+Caches 
+   |
+   V
+Main memory
+   |
+   V
+Disk
+   |
+   V
+Disk in remote network server
+</code></pre></div></div>
+<p>As you go down the memory hierarchy, from registers to disk in a remote server, the number of cpu cycles needed to fetch data increases. As a programmer it is important to visualize the consequences of the programs one writes.</p>
+
+<p>You may be asking what use can this level of understanding have. I have read engineering blogs from facebook such as this <a href="https://engineering.fb.com/2015/06/26/security/fighting-spam-with-haskell/">article</a> where the engineers were able to improve the performance of the system by improving the garbage collector of the Haskell’s GHC compiler; moreover, this same FB blog post also talks about how they analyzed how their system used cpu and memory resources. So, I think understanding compilers and hence systems can pay off when you are working on network applications.</p>
+
+<p>But the point I want to make is that even if you write such a limited compiler you will gain better appreciation of how computers work; that is, you will gain experience how some of the language constructs you use as a programmer get mapped to a sequence of instructions and this will, in turn, give you an insight as to how computers work; for example, you will have concrete examples of how values get moved to registers. Making sense of assembly code felt like my studies of Logic — e.g., when studying <code class="language-plaintext highlighter-rouge">hypothetical syllogisms</code> which are forms of deductive arguments. In these logical forms everything flows logically. Assembly code feels this way to me. So, in a way you will also start appreciating studying discrete mathematics and doing proofs because this prepares you to think deeply about computer science. Not that I have much experience thinking deeply about computer science but I am realizing that computer science theory can help form you into a thinking individual.  Furthermore, I think learning and writing compilers, even if they are toys, but especially if they are more serious is analogous to the claim by Richard Feynman. He said something like:</p>
+<blockquote>
+  <p>To appreciate nature you need mathematics.</p>
+</blockquote>
+
+<p>Furthermore, by building a compiler you will understand modern programming languages better. People say that to understand something you need to teach it but to really understand something you need to implement it. So, by implementing a programming language you will understand constructs such as lexical scoped functions, efficient tail calls, dynamic and statically typed languages. And you will also gain an understanding of how tuples and arrays are lowered to assembly and also understand how these are heap objects.</p>
+
+<h3 id="learning-about-and-implementing-a-compiler-will-empower-you-to-make-a-big-impact">Learning about and implementing a compiler will empower you to make a big impact</h3>
+<p>According to this <a href="https://www.embecosm.com/2018/02/26/how-much-does-a-compiler-cost/">post</a> GCC is about 5 million and LLVM is about 1.6 million. So, the complexity of compilers is tremendous; it is also amazing to think that computer scientists figured out how to build compilers and it is also amazing that such large and complex systems such as compilers work at all.</p>
+
+<p>Once you have implemented a compiler you will have a good understanding to contribute to GCC or LLVM. Now, think about the tremendous impact you will have if you contribute to LLVM. LLVM is used to compile Android and Apple apps, and it is crucial for deep learning. A lot of the infrastructure depends on LLVM so by contributing to LLVM you will have an enormous impact.</p>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2022/11/13/compilers-are-fun.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
