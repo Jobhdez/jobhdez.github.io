@@ -3,7 +3,7 @@ layout: post
 title: "A semi deep dive into Python"
 author: Job Hernandez
 description: "a brief description of the Python language"
-tags: python compiler internals
+tags: python compilers internals
 ---
 
 *version 1.2*: add conclusion, fix typos, 7/23/23

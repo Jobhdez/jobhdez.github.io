@@ -2,7 +2,7 @@
 layout: post
 title: "Why you should build a compiler :)"
 author: Job Hernandez
-tags: [compiler, computer-science]
+tags: [compilers, computer-science]
 ---
 
 *version 1.1*: July 3 2023 - add better support for my claim
