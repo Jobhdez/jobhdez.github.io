@@ -5,6 +5,9 @@ author: Job Hernandez Lara
 tags: lisp compilers computer-science
 ---
 
+* Table of Contents
+{:toc}
+
 ### Introduction
 
 In “Structure and Interpretation of Computer Programs” it talks about the deep meaning of what an interpreter is. An interpreter can be seen as a machine that emulates other machines. 
