@@ -31,10 +31,10 @@ Suppose you have the following Scheme program:
 
 ```scheme
 (define (sum-of-squares e e2)
-(+ (square e) (square e2)))
+  (+ (square e) (square e2)))
 
 (define (square e)
-(* e e))
+  (* e e))
 ```
 
 To evaluate this you will go through the following process:
@@ -76,12 +76,12 @@ Consider the following two programs taken from SICP:
 
 ```scheme
 (define (make-simplified-withdraw balance)
-(lambda (amount)
-(set! balance (- balance amount))))
+   (lambda (amount)
+     (set! balance (- balance amount))))
 
 (define (make-decrementer balance)
-(lambda (amount)
-(- balance amount)))
+   (lambda (amount)
+     (- balance amount)))
 
 (define w1 (make-simplified-withdraw 25))
 (define d1 (make-decrementer 25))
