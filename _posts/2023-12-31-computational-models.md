@@ -108,7 +108,7 @@ So, my point is that the deep computational idea behind interpreters is grounded
 
 ### A Scheme interpreter implemented in Python
 
-As an example take a look at the following Scheme interpreter I built in Python. This example shows how a Python interpreter can emulate a Scheme interpreter which can compute any Scheme expression.
+As an example take a look at the following [Scheme interpreter](https://github.com/Jobhdez/schemy) I built with Python. This example shows how a Python interpreter can emulate a Scheme interpreter which can compute any Scheme expression.
 
 ```python
 def interp(exp, env=global_env):
