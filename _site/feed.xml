@@ -1,5 +1,278 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-12-30T16:09:03-08:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Job Hernandez Lara’s Blog</title><subtitle>A technical blog about things I find interesting :)
-</subtitle><author><name>Job Hernandez</name><email>hj93@protonmail.com</email></author><entry><title type="html">A semi deep dive into CPU architecture</title><link href="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html" rel="alternate" type="text/html" title="A semi deep dive into CPU architecture" /><published>2023-11-05T00:00:00-07:00</published><updated>2023-11-05T00:00:00-07:00</updated><id>http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture</id><content type="html" xml:base="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html"><![CDATA[<ul id="markdown-toc">
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-12-31T17:00:05-08:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Job Hernandez Lara’s Blog</title><subtitle>A technical blog about things I find interesting :)
+</subtitle><author><name>Job Hernandez</name><email>hj93@protonmail.com</email></author><entry><title type="html">The computation model behind interpreters</title><link href="http://localhost:4000/2023/12/31/computational-models.html" rel="alternate" type="text/html" title="The computation model behind interpreters" /><published>2023-12-31T00:00:00-08:00</published><updated>2023-12-31T00:00:00-08:00</updated><id>http://localhost:4000/2023/12/31/computational-models</id><content type="html" xml:base="http://localhost:4000/2023/12/31/computational-models.html"><![CDATA[<h3 id="introduction">Introduction</h3>
+
+<p>In “Structure and Interpretation of Computer Programs” it talks about the deep meaning of what an interpreter is. An interpreter can be seen as a machine that emulates other machines.</p>
+
+<p>Interpreters compute anything that in principle can be computed, i.e. an interpreter is a universal machine; for example, if you feed a C interpreter to a Scheme interpreter the Scheme interpreter can emulate the C interpreter and thereby compute any C program.</p>
+
+<blockquote>
+  <p>The deep idea here is that any evaluator can emulate any other. Thus, the notion of “what can in principle be computed” (ignoring practicalities of time and memory required) is independent of the language or the computer and instead reflects an underlying notion of computability.</p>
+</blockquote>
+
+<p>To illustrate what this quote is saying, suppose we give the python3 interpreter a Scheme interpreter. As a consequence, the python3 interpreter will mimic a scheme interpreter which in turn will compute any scheme expression.</p>
+
+<p>In what follows I will try to explain the environment model of computation that is the ground for interpreters. And we will conclude with a Scheme interpreter implemented in Python.</p>
+<h3 id="models-of-computation">Models of computation</h3>
+
+<p>In “Structure and Interpretation of Computer Programs” it talks about at least two computational models; one is associated with pure functional programming and one with programming with assignment/mutation. These computational models are the <strong>substitution model</strong> and <strong>environment model</strong>.</p>
+
+<p>Both models are about how expressions get evaluated.</p>
+
+<p>In the substitution model, each element of an expression is another expression including the operator. So, the way the substitution model works is by evaluating each expression and then applying the operator to the operands.</p>
+
+<p>Suppose you have the following Scheme program:</p>
+
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">sum-of-squares</span> <span class="nv">e</span> <span class="nv">e2</span><span class="p">)</span>
+   <span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nf">square</span> <span class="nv">e</span><span class="p">)</span> <span class="p">(</span><span class="nf">square</span> <span class="nv">e2</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">square</span> <span class="nv">e</span><span class="p">)</span>
+   <span class="p">(</span><span class="nb">*</span> <span class="nv">e</span> <span class="nv">e</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>To evaluate this you will go through the following process:</p>
+
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">sum-of-squares</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nf">square</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="nf">square</span> <span class="mi">4</span><span class="p">))</span>
+<span class="c1">;; -&gt;</span>
+<span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nb">*</span> <span class="mi">3</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="nb">*</span> <span class="mi">4</span> <span class="mi">4</span><span class="p">))</span>
+<span class="c1">;; -&gt;</span>
+<span class="p">(</span><span class="nb">+</span> <span class="mi">9</span> <span class="mi">16</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">25</span>
+</code></pre></div></div>
+
+<p>A property of such model is <strong>referential transparency</strong>. A program is said to be referentially transparent if one function definition can be substituted for another one and still evaluate to the same value.</p>
+
+<p>Consider the following:</p>
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="nv">p1</span> <span class="nv">sum-of-squares</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">p2</span> <span class="nv">sum-of-squares</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">p1</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">25</span>
+
+<span class="p">(</span><span class="nf">p2</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">25</span>
+</code></pre></div></div>
+
+<p>In the above example, the function <code class="language-plaintext highlighter-rouge">p1</code> can be substituted with <code class="language-plaintext highlighter-rouge">p2</code> at any time and get the same result.</p>
+
+<p>But what happens when you introduce mutation? If you introduce mutation does referential transparency still hold?</p>
+
+<p>Consider the following two programs taken from SICP:</p>
+
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">make-simplified-withdraw</span> <span class="nv">balance</span><span class="p">)</span>
+   <span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="nf">amount</span><span class="p">)</span>
+     <span class="p">(</span><span class="k">set!</span> <span class="nv">balance</span> <span class="p">(</span><span class="nb">-</span> <span class="nv">balance</span> <span class="nv">amount</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">make-decrementer</span> <span class="nv">balance</span><span class="p">)</span>
+   <span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="nf">amount</span><span class="p">)</span>
+    <span class="p">(</span><span class="nb">-</span> <span class="nv">balance</span> <span class="nv">amount</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="nv">w1</span> <span class="p">(</span><span class="nf">make-simplified-withdraw</span> <span class="mi">25</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">d1</span> <span class="p">(</span><span class="nf">make-decrementer</span> <span class="mi">25</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">w1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">15</span>
+<span class="p">(</span><span class="nf">w1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">5</span>
+
+<span class="c1">;; the following adheres to the substitution model</span>
+<span class="p">(</span><span class="nf">d1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">15</span>
+<span class="p">(</span><span class="nf">d1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">15</span>
+</code></pre></div></div>
+
+<p>For the first example, since the substitution model does not hold anymore then we must talk about the <strong>environment model</strong> of computation.</p>
+
+<p>In the environment model of computation a variable is not just a name for a value; instead, a variable implies a container. This container is called an <strong>environment</strong>. In this model, to evaluate a program you must also evaluate the operator and operand but you need to include an environment. When an assignment is being evaluated the interpreter must look in an environment to look up the value for the variable.</p>
+
+<p>To evaluate procedures we must evaluate it in the context of the global environment and also within its local environment.</p>
+
+<p>So, my point is that the deep computational idea behind interpreters is grounded on the environment model of computation. The environment model of computation is indeed the model that is used to implement interpreters.</p>
+
+<h3 id="a-scheme-interpreter-implemented-in-python">A Scheme interpreter implemented in Python</h3>
+
+<p>As an example take a look at the following Scheme interpreter I built in Python. This example shows how a Python interpreter can emulate a Scheme interpreter which can compute any Scheme expression.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">scheme_interp.nodes</span> <span class="kn">import</span> <span class="p">(</span>
+	<span class="n">Program</span><span class="p">,</span>
+	<span class="n">Nil</span><span class="p">,</span>
+	<span class="n">Exps</span><span class="p">,</span>
+	<span class="n">Exp</span><span class="p">,</span>
+	<span class="n">Prim</span><span class="p">,</span>
+	<span class="n">If</span><span class="p">,</span>
+	<span class="n">Bool</span><span class="p">,</span>
+	<span class="n">Begin</span><span class="p">,</span>
+	<span class="n">While</span><span class="p">,</span>
+	<span class="n">Let</span><span class="p">,</span>
+	<span class="n">SetBang</span><span class="p">,</span>
+	<span class="n">Int</span><span class="p">,</span>
+	<span class="n">Op</span><span class="p">,</span>
+	<span class="n">Binding</span><span class="p">,</span>
+	<span class="n">Var</span><span class="p">,</span>
+	<span class="n">Define</span><span class="p">,</span>
+	<span class="n">Application</span><span class="p">,</span>
+	<span class="n">Lambda</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="n">scheme_interp.utils</span> <span class="kn">import</span> <span class="n">flatten_params</span><span class="p">,</span> <span class="n">flatten_exps</span>
+<span class="kn">import</span> <span class="n">operator</span> <span class="k">as</span> <span class="n">op</span>
+
+<span class="k">class</span> <span class="nc">Env</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">(),</span> <span class="n">args</span><span class="o">=</span><span class="p">(),</span> <span class="n">outer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    	<span class="n">self</span><span class="p">.</span><span class="nf">update</span><span class="p">(</span><span class="nf">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
+    	<span class="n">self</span><span class="p">.</span><span class="n">outer</span> <span class="o">=</span> <span class="n">outer</span>
+
+	<span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
+    	<span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">self</span><span class="p">:</span>
+        	<span class="k">return</span> <span class="n">self</span>
+    	<span class="k">elif</span> <span class="n">self</span><span class="p">.</span><span class="n">outer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        	<span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">outer</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+    	<span class="k">else</span><span class="p">:</span>
+        	<span class="k">raise</span> <span class="nc">NameError</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Variable </span><span class="sh">'</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="sh">'</span><span class="s"> is not defined.</span><span class="sh">"</span><span class="p">)</span>
+    
+<span class="k">class</span> <span class="nc">Procedure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+    	<span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">body</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span>
+
+	<span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">body</span><span class="p">,</span> <span class="nc">Env</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">env</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">standard_env</span><span class="p">():</span>
+	<span class="n">env</span> <span class="o">=</span> <span class="nc">Env</span><span class="p">()</span>
+	<span class="n">env</span><span class="p">.</span><span class="nf">update</span><span class="p">({</span>
+    	<span class="sh">'</span><span class="s">car</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    	<span class="sh">'</span><span class="s">cdr</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+    	<span class="sh">'</span><span class="s">cons</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
+    	<span class="sh">'</span><span class="s">list</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="nf">list</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+    	<span class="sh">'</span><span class="s">map</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nf">list</span><span class="p">(</span><span class="nf">map</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)),</span>
+    	<span class="sh">'</span><span class="s">eq?</span><span class="sh">'</span><span class="p">:</span> <span class="n">op</span><span class="p">.</span><span class="n">is_</span><span class="p">,</span>
+    	<span class="sh">'</span><span class="s">equal?</span><span class="sh">'</span><span class="p">:</span> <span class="n">op</span><span class="p">.</span><span class="n">eq</span><span class="p">,</span>
+    	<span class="sh">'</span><span class="s">list</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="nf">list</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+    	<span class="sh">'</span><span class="s">list?</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+    	<span class="sh">'</span><span class="s">length</span><span class="sh">'</span><span class="p">:</span> <span class="nb">len</span><span class="p">,</span>
+    	<span class="sh">'</span><span class="s">null?</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">==</span> <span class="p">[],</span>
+   	 
+    	<span class="p">})</span>
+	<span class="k">return</span> <span class="n">env</span>
+
+<span class="n">global_env</span> <span class="o">=</span> <span class="nf">standard_env</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">global_env</span><span class="p">):</span>
+
+	<span class="n">match</span> <span class="n">exp</span><span class="p">:</span>
+    	<span class="n">case</span> <span class="nc">Exps</span><span class="p">(</span><span class="n">exps</span><span class="p">):</span>
+        	<span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
+        	<span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">:</span>
+            	<span class="n">result</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="k">return</span> <span class="n">result</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Exp</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Bool</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="n">b</span>
+   	 
+    	<span class="n">case</span> <span class="nc">If</span><span class="p">(</span><span class="n">cnd</span><span class="p">,</span> <span class="n">thn</span><span class="p">,</span> <span class="n">els</span><span class="p">):</span>
+        	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">cnd</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+            	<span class="n">case</span> <span class="sh">"</span><span class="s">#t</span><span class="sh">"</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">thn</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+            	<span class="n">case</span> <span class="sh">"</span><span class="s">#f</span><span class="sh">"</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">els</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+           	 
+    	<span class="n">case</span> <span class="nc">Prim</span><span class="p">(</span><span class="nc">Op</span><span class="p">(</span><span class="n">oper</span><span class="p">),</span> <span class="n">e</span><span class="p">,</span> <span class="n">e2</span><span class="p">):</span>
+        	<span class="n">match</span> <span class="n">oper</span><span class="p">:</span>
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">and</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="k">return</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+                   	 
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">or</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+                           	 
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">+</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">+</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+           	 
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">-</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">*</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">*</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">=</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span> <span class="k">if</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">==</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">else</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+    	<span class="n">case</span> <span class="nc">Int</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="n">n</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Var</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="n">env</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">e</span><span class="p">)[</span><span class="n">e</span><span class="p">]</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Let</span><span class="p">(</span><span class="nc">Binding</span><span class="p">(</span><span class="nc">Var</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="n">e</span><span class="p">),</span> <span class="n">body_exp</span><span class="p">):</span>
+        	<span class="n">proc</span> <span class="o">=</span> <span class="nc">Procedure</span><span class="p">([</span><span class="n">var</span><span class="p">],</span> <span class="n">body_exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="n">exps</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span><span class="p">]</span>
+        	<span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">for</span> <span class="n">e2</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span>
+
+        	<span class="k">return</span> <span class="nf">proc</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+   	 
+    	<span class="n">case</span> <span class="nc">SetBang</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+        	<span class="n">env</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">var</span><span class="p">.</span><span class="n">var</span><span class="p">)[</span><span class="n">var</span><span class="p">.</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="k">return</span> <span class="bp">None</span>
+       	 
+    	<span class="n">case</span> <span class="nc">Begin</span><span class="p">(</span><span class="n">exps</span><span class="p">):</span>
+        	<span class="n">flat_expressions</span> <span class="o">=</span> <span class="nf">flatten_exps</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
+        	<span class="n">expressions</span> <span class="o">=</span> <span class="n">flat_expressions</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        	<span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">expressions</span><span class="p">:</span>
+            	<span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+        	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">flat_expressions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+
+    	<span class="n">case</span> <span class="nc">Define</span><span class="p">(</span><span class="nc">Var</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="n">exp</span><span class="p">):</span>
+        	<span class="n">env</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+    	<span class="n">case</span> <span class="nc">Lambda</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">):</span>
+        	<span class="n">parameters</span> <span class="o">=</span> <span class="nf">flatten_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        	<span class="k">return</span> <span class="nc">Procedure</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+    	<span class="n">case</span> <span class="nc">Application</span><span class="p">(</span><span class="n">exps</span><span class="p">):</span>
+        	<span class="n">exps</span> <span class="o">=</span> <span class="nf">flatten_exps</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
+        	<span class="n">operator</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="n">exps</span> <span class="o">=</span> <span class="n">exps</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        	<span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span>
+
+        	<span class="k">return</span> <span class="nf">operator</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+       	 
+    	<span class="n">case</span> <span class="n">_</span><span class="p">:</span>
+        	<span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Parse node </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s"> is not valid node.</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>In conclusion, I have tried to illustrate two models of computation, one of which, the evaluation model, is the ground for the deep idea about computation underlying interpreters.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="lisp" /><category term="compilers" /><category term="computer-science" /><summary type="html"><![CDATA[Introduction]]></summary></entry><entry><title type="html">A semi deep dive into CPU architecture</title><link href="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html" rel="alternate" type="text/html" title="A semi deep dive into CPU architecture" /><published>2023-11-05T00:00:00-07:00</published><updated>2023-11-05T00:00:00-07:00</updated><id>http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture</id><content type="html" xml:base="http://localhost:4000/2023/11/05/a-semi-deep-dive-into-cpu-architecture.html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
   <li><a href="#exposing-the-x86-architecture" id="markdown-toc-exposing-the-x86-architecture">Exposing the x86 architecture</a></li>
   <li><a href="#how-the-processor-executes-instructions" id="markdown-toc-how-the-processor-executes-instructions">How the processor executes instructions</a>    <ul>
@@ -1012,155 +1285,4 @@ Each team has an owning team so domain knowledge is dependent on the service.</p
 <h3 id="lessons">Lessons</h3>
 <p>Some lessons of this paper is that Dr. Felleisen, the Racket creator, and Dr. Gerald Sussman may be right about the importance of writing DSLs to solve problems. One argument in <code class="language-plaintext highlighter-rouge">Software Design for Flexibility</code> is that DSLs are a technique for organizing a system in a way where functionality can be added by adding to the system instead of modifying the system heavily. Or consider the lessons from <code class="language-plaintext highlighter-rouge">Structure and Interpretation of Computer Programs</code>. The main lesson in this book is that computer science is about controlling complexity; abstraction is key for controlling complexity. DSLs are the ultimate abstraction and what this paper showed is that DSLs can also reduce costs.</p>
 
-<p>One thing I am wondering now is how DSLs can be applied to web development. It may be possible to write a DSL for web development where concurrency is implicit and a language where different api endpoints can be called concurrently.</p>]]></content><author><name>Job Hernandez</name></author><category term="compilers" /><category term="backend" /><category term="internet" /><summary type="html"><![CDATA[draft]]></summary></entry><entry><title type="html">Web System Architecture</title><link href="http://localhost:4000/2023/06/15/web-system-architecture.html" rel="alternate" type="text/html" title="Web System Architecture" /><published>2023-06-15T00:00:00-07:00</published><updated>2023-06-15T00:00:00-07:00</updated><id>http://localhost:4000/2023/06/15/web-system-architecture</id><content type="html" xml:base="http://localhost:4000/2023/06/15/web-system-architecture.html"><![CDATA[<p><em>version 1.1</em>: June 16 2023, added more detail, and diagrams</p>
-
-<p><em>version 1</em>: June 15 2023, initial release</p>
-
-<h3 id="intro">Intro</h3>
-<p>One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a <a href="https://www.youtube.com/watch?v=hnpzNAPiC0E&amp;t">talk</a> by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted.</p>
-
-<p>So, I naturally enjoyed my time reading <code class="language-plaintext highlighter-rouge">Scalable Web Architecture and Distributed Systems</code>, the first chapter in the book <code class="language-plaintext highlighter-rouge">The Architecture of Open Source Applications</code>.</p>
-
-<p>In this essay I will try to summarize this chapter and share some of my thoughts about how I would design a social media application. And I am not an expert; I am just writing about this because its interesting and for learning purposes.</p>
-
-<h3 id="design-principles">Design Principles</h3>
-<p>According to the author of this chapter some key design decisions for building scalable web applications consist of:</p>
-
-<ul>
-  <li>Availability;</li>
-  <li>Performance;</li>
-  <li>Reliability; and</li>
-  <li>Scalability.</li>
-</ul>
-
-<p>A system is said to be <em>available</em> if it is always up and running. If a system is unavailable even for one minute the given company may lose thousands or even millions of dollars.</p>
-
-<p>The availability of a system is achieved through <em>replication</em>. The purpose of replication is to enable the given system to continue operating despite failures; distributed systems hide partial failure by replicating servers for instance.</p>
-
-<p>Replication is also implemented for reliability and performance; replicas are conducive to the reliability of a system because if one replica crashes other replicas can keep the system going; moreover, replicas are conducive to performance in two cases. Firstly, suppose you are scaling in size; that is, an increasing number of processes need to access data; by having two replicas you can serve more processes. Secondly, suppose you are scaling in a geographical area; by using replicas near the geographic location of your processes you decrease latency times.</p>
-
-<p>The <em>performance</em> of a web system is another design principle; performance is important because performance affects the usage and user satisfaction as well as search engine rankings which correlate with revenue and retention. Performance can be defined as fast responses and low latency.</p>
-
-<p>Another key design principle is <em>reliability</em>; as noted above one way to achieve reliability is through replicas. Reliability means that a given request will always get the same data in response and if the data changes the request will get new data.</p>
-
-<p>Finally, another key design principle is <em>scalability</em>; scalability has to do with increasing the capability of your web system to handle more load.</p>
-
-<h3 id="core-factors-that-are-important-for-large-web-systems">Core factors that are important for large web systems</h3>
-
-<p>Core factors crucial in the design of large web systems include <em>services</em>, <em>redundancy</em>, <em>sharding</em>, and <em>handling failure</em>.</p>
-
-<p>The author of this chapter gives an example, namely, an image hosting website. One of the things we care about this is fast delivery when a user requests an image; other things to consider include:
-            	- storage scalability: the application needs to have no limits as to how many images it can store
-            	- low latency for image downloads/requests
-            	- reliability: if a user uploads an image, the image needs to be there all the time
-               - system needs to be easy to maintain
-               - system needs to be cost effective</p>
-<h4 id="services">Services</h4>
-<p>Often it is important to decouple service into functions; consider the image hosting application above: it retrieves and uploads images through the network. If only one server handles these two functions there may be problems because writes are not asynchronous while reads are asynchronous; so during an upload the connection will be maintained and the client will be blocked– it will have to wait until the image gets written. So, in such cases it is beneficial to to decouple these two functions into their own services.</p>
-
-<h4 id="redundancy">Redundancy</h4>
-<p>If you only have one server then if something happens to this server the data will be lost; for example, the images in our image hosting application will be lost; so it is important to replicate the database in a different geographic location; for example:</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> |--------             |----------   |------------    |--------------------
- |client  |  ------&gt;   | server  |-&gt; | database  | -&gt; | replica (database) |
- |--------             |---------    |------------    |-------------------
-</code></pre></div></div>
-
-<h4 id="sharding">Sharding</h4>
-<p>Suppose you have a tremendously large dataset that cannot fit in one server. You can either scale vertically whereby you use additional CPU cores, replace CPU with a faster CPU, add a bigger storage or you can scale horizontally whereby you add additional nodes – e.g., add a new server.</p>
-
-<p>With respect to horizontal scaling one common technique is partitioning or sharding; for example, a given single file server can get replaced by multiple file servers each containing a set of images. One problem with this type of distribution of data  is data locality – i.e.,the closer the data to the operation the better the performance. Another problem with the distribution of data is inconsistency. When services share a resource there may be race conditions.</p>
-
-<h3 id="how-do-you-make-web-systems-fast-and-scalable">How do you make web systems fast and scalable?</h3>
-<p>To make web systems fast and scalable you need to utilize caches, global caches, proxies, load balancers, and queues.</p>
-
-<h4 id="caches">Caches</h4>
-<p>Caches exploit the locality of reference principle, namely, that that was requested recently it is likely to be requested again. If you place a cache in your request layer node then it will improve the performance of your API; when the user makes a request the API server will check if the data is in the cache; if it is not it will query the database; for example;</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|---------      |---------     |-----------     |------------
-|client  | --&gt;  | API    | --&gt; | cache    | --&gt; | database  |
-|---------      |---------     |-----------     |------------
-</code></pre></div></div>
-
-<h4 id="global-caches">Global caches</h4>
-<p>Placing a global cache in your application means that multiple request nodes will use the same global cache.</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------
-| client      | \
-|--------------   \
-|--------------     \   ---------------      ------------
-| client      | ------&gt; | global cache | --&gt; | database |
-|--------------     /   ---------------      ------------
-|--------------   /
-| client      | /
-|--------------
-</code></pre></div></div>
-
-<h4 id="proxy">Proxy</h4>
-<p>A proxy acts as an intermediary – a client sends a request to the proxy and in turn the proxy relays this to the back-end servers. How can proxies get used to speed up service? Proxies enable <em>collapse forwarding</em> whereby same or similar requests get collapsed into one yielding only one response instead.</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------     |-------------      |----------
-| client      | --&gt; | proxy      | --&gt;  | server  |
-|--------------     |-------------      |----------
-</code></pre></div></div>
-
-<h4 id="load-balancers">Load Balancers</h4>
-<p>Load balancers are also another key piece of a distributed system; a load balancer distributed load across different servers; suppose there are three requests coming in: Req 1, Req 2, and Req 3; the job of the load balancer is to send Req 1 to server 1, Req 2 to server 2 and Req 3 to server 3. Load balancers allow you to scale by handling more requests.</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------                              |---------------
-| client      | \                            | server       |
-|--------------   \                         /|---------------
-|--------------     \   ----------------- /   | ------------
-| client      | ------&gt; | load balancer | --&gt; | server     |
-|--------------     /   ----------------- \   |------------
-|--------------   /                         \|---------------
-| client      | /                            | server       |
-|--------------                              |---------------
-
-</code></pre></div></div>
-
-<h4 id="queue">Queue</h4>
-<p>In a complex application writes take a long time. This when queues come in. Writes are not asynchronous - so when a client wants to write something to the database, the client gets blocked – i.e., it waits until the data has been written to start working again. By placing a queue in your architecture the requests get placed in a queue, and when it is placed here the client gets an acknowledgement and as a result it can keep working. In other words, when a server gets more requests than it handles the clients have to wait for other requests to get handled. Queues solve this issue.</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|--------------
-| client      | \
-|--------------   \
-|--------------     \   ---------------      ------------
-| client      | ------&gt; | queue        | --&gt; | server   |
-|--------------     /   ---------------      ------------
-|--------------   /
-| client      | /
-|--------------
-
-
-</code></pre></div></div>
-<h3 id="lessons-learned">Lessons Learned</h3>
-
-<p>Suppose I am building a social media app; it would consist of a server, database, cache, queue, and a worker. A queue and a worker will enable asynchronous communication; for example, in a social media app when a user x gets a friend request from another user y, user x usually gets a notification via email. A queue and a worker work together to make this happen. A producer sends a message to a queue and the worker processes this message; the first message that gets into the queue, it is the first message that the worker processes. Here is a depiction of the produce, queue, and worker interaction:</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|-----------      |-----------     |-----------     
-|producer  | --&gt;  | queue    | --&gt; | worker    |
-|-----------      |-----------     |-----------     
-</code></pre></div></div>
-
-<p>Technically, we need a message broker that manages the queue and translates requests into a messaging protocol. For this we can choose <code class="language-plaintext highlighter-rouge">celery</code>, and <code class="language-plaintext highlighter-rouge">RabbitMQ</code>; celery workers will listen to the message broker to get new messages to process for asynchronous tasks. Suppose we use Django as the server then we have:</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>|-----------    |------------       |--------------     |---------
-|          |--&gt; | Django     |---\  | RabbitMQ    | --&gt; | celery |
-| browser  |&lt;-- |            |---/  |             | &lt;-- |        |
-|-----------    |-------------      |--------------     |---------
-</code></pre></div></div>
-
-<p>We can then use <code class="language-plaintext highlighter-rouge">memcache</code> as our cache layer to speed up the API. Once we have this our final architecture looks like this:</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                                    |--------------                   |---------
-                                /&gt;&gt; | cache       | --------------&gt;   | database|
-                |---------    /     |--------------                   |---------
- |---------  &lt;--|  Server | /       |--------------       
- | browser | --&gt;|         | ------&gt; | queue      | 
- | --------     |---------          |--------------
-                                       ^  |
-                                       |  v
-                                     |--------------   
-                                     | worker      | 
-                                     |--------------
-
-
-</code></pre></div></div>]]></content><author><name>Job Hernandez</name></author><category term="internet" /><category term="backend" /><category term="architecture" /><summary type="html"><![CDATA[version 1.1: June 16 2023, added more detail, and diagrams]]></summary></entry></feed>
+<p>One thing I am wondering now is how DSLs can be applied to web development. It may be possible to write a DSL for web development where concurrency is implicit and a language where different api endpoints can be called concurrently.</p>]]></content><author><name>Job Hernandez</name></author><category term="compilers" /><category term="backend" /><category term="internet" /><summary type="html"><![CDATA[draft]]></summary></entry></feed>

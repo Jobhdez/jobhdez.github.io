@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>The computation model behind interpreters | Job Hernandez Lara’s Blog</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="The computation model behind interpreters" />
+<meta name="author" content="Job Hernandez Lara" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Introduction" />
+<meta property="og:description" content="Introduction" />
+<link rel="canonical" href="http://localhost:4000/2023/12/31/computational-models.html" />
+<meta property="og:url" content="http://localhost:4000/2023/12/31/computational-models.html" />
+<meta property="og:site_name" content="Job Hernandez Lara’s Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-12-31T00:00:00-08:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="The computation model behind interpreters" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2023-12-31T00:00:00-08:00","datePublished":"2023-12-31T00:00:00-08:00","description":"Introduction","headline":"The computation model behind interpreters","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/12/31/computational-models.html"},"url":"http://localhost:4000/2023/12/31/computational-models.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Job Hernandez Lara&apos;s Blog" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Job Hernandez Lara&#39;s Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The computation model behind interpreters</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2023-12-31T00:00:00-08:00" itemprop="datePublished">
+        Dec 31, 2023
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="introduction">Introduction</h3>
+
+<p>In “Structure and Interpretation of Computer Programs” it talks about the deep meaning of what an interpreter is. An interpreter can be seen as a machine that emulates other machines.</p>
+
+<p>Interpreters compute anything that in principle can be computed, i.e. an interpreter is a universal machine; for example, if you feed a C interpreter to a Scheme interpreter the Scheme interpreter can emulate the C interpreter and thereby compute any C program.</p>
+
+<blockquote>
+  <p>The deep idea here is that any evaluator can emulate any other. Thus, the notion of “what can in principle be computed” (ignoring practicalities of time and memory required) is independent of the language or the computer and instead reflects an underlying notion of computability.</p>
+</blockquote>
+
+<p>To illustrate what this quote is saying, suppose we give the python3 interpreter a Scheme interpreter. As a consequence, the python3 interpreter will mimic a scheme interpreter which in turn will compute any scheme expression.</p>
+
+<p>In what follows I will try to explain the environment model of computation that is the ground for interpreters. And we will conclude with a Scheme interpreter implemented in Python.</p>
+<h3 id="models-of-computation">Models of computation</h3>
+
+<p>In “Structure and Interpretation of Computer Programs” it talks about at least two computational models; one is associated with pure functional programming and one with programming with assignment/mutation. These computational models are the <strong>substitution model</strong> and <strong>environment model</strong>.</p>
+
+<p>Both models are about how expressions get evaluated.</p>
+
+<p>In the substitution model, each element of an expression is another expression including the operator. So, the way the substitution model works is by evaluating each expression and then applying the operator to the operands.</p>
+
+<p>Suppose you have the following Scheme program:</p>
+
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">sum-of-squares</span> <span class="nv">e</span> <span class="nv">e2</span><span class="p">)</span>
+   <span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nf">square</span> <span class="nv">e</span><span class="p">)</span> <span class="p">(</span><span class="nf">square</span> <span class="nv">e2</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">square</span> <span class="nv">e</span><span class="p">)</span>
+   <span class="p">(</span><span class="nb">*</span> <span class="nv">e</span> <span class="nv">e</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>To evaluate this you will go through the following process:</p>
+
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">sum-of-squares</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nf">square</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="nf">square</span> <span class="mi">4</span><span class="p">))</span>
+<span class="c1">;; -&gt;</span>
+<span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nb">*</span> <span class="mi">3</span> <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="nb">*</span> <span class="mi">4</span> <span class="mi">4</span><span class="p">))</span>
+<span class="c1">;; -&gt;</span>
+<span class="p">(</span><span class="nb">+</span> <span class="mi">9</span> <span class="mi">16</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">25</span>
+</code></pre></div></div>
+
+<p>A property of such model is <strong>referential transparency</strong>. A program is said to be referentially transparent if one function definition can be substituted for another one and still evaluate to the same value.</p>
+
+<p>Consider the following:</p>
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="nv">p1</span> <span class="nv">sum-of-squares</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">p2</span> <span class="nv">sum-of-squares</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">p1</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">25</span>
+
+<span class="p">(</span><span class="nf">p2</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">25</span>
+</code></pre></div></div>
+
+<p>In the above example, the function <code class="language-plaintext highlighter-rouge">p1</code> can be substituted with <code class="language-plaintext highlighter-rouge">p2</code> at any time and get the same result.</p>
+
+<p>But what happens when you introduce mutation? If you introduce mutation does referential transparency still hold?</p>
+
+<p>Consider the following two programs taken from SICP:</p>
+
+<div class="language-scheme highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">make-simplified-withdraw</span> <span class="nv">balance</span><span class="p">)</span>
+   <span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="nf">amount</span><span class="p">)</span>
+     <span class="p">(</span><span class="k">set!</span> <span class="nv">balance</span> <span class="p">(</span><span class="nb">-</span> <span class="nv">balance</span> <span class="nv">amount</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">make-decrementer</span> <span class="nv">balance</span><span class="p">)</span>
+   <span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="nf">amount</span><span class="p">)</span>
+    <span class="p">(</span><span class="nb">-</span> <span class="nv">balance</span> <span class="nv">amount</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="nv">w1</span> <span class="p">(</span><span class="nf">make-simplified-withdraw</span> <span class="mi">25</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">d1</span> <span class="p">(</span><span class="nf">make-decrementer</span> <span class="mi">25</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">w1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">15</span>
+<span class="p">(</span><span class="nf">w1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">5</span>
+
+<span class="c1">;; the following adheres to the substitution model</span>
+<span class="p">(</span><span class="nf">d1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">15</span>
+<span class="p">(</span><span class="nf">d1</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1">;; -&gt;</span>
+<span class="mi">15</span>
+</code></pre></div></div>
+
+<p>For the first example, since the substitution model does not hold anymore then we must talk about the <strong>environment model</strong> of computation.</p>
+
+<p>In the environment model of computation a variable is not just a name for a value; instead, a variable implies a container. This container is called an <strong>environment</strong>. In this model, to evaluate a program you must also evaluate the operator and operand but you need to include an environment. When an assignment is being evaluated the interpreter must look in an environment to look up the value for the variable.</p>
+
+<p>To evaluate procedures we must evaluate it in the context of the global environment and also within its local environment.</p>
+
+<p>So, my point is that the deep computational idea behind interpreters is grounded on the environment model of computation. The environment model of computation is indeed the model that is used to implement interpreters.</p>
+
+<h3 id="a-scheme-interpreter-implemented-in-python">A Scheme interpreter implemented in Python</h3>
+
+<p>As an example take a look at the following Scheme interpreter I built in Python. This example shows how a Python interpreter can emulate a Scheme interpreter which can compute any Scheme expression.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">scheme_interp.nodes</span> <span class="kn">import</span> <span class="p">(</span>
+	<span class="n">Program</span><span class="p">,</span>
+	<span class="n">Nil</span><span class="p">,</span>
+	<span class="n">Exps</span><span class="p">,</span>
+	<span class="n">Exp</span><span class="p">,</span>
+	<span class="n">Prim</span><span class="p">,</span>
+	<span class="n">If</span><span class="p">,</span>
+	<span class="n">Bool</span><span class="p">,</span>
+	<span class="n">Begin</span><span class="p">,</span>
+	<span class="n">While</span><span class="p">,</span>
+	<span class="n">Let</span><span class="p">,</span>
+	<span class="n">SetBang</span><span class="p">,</span>
+	<span class="n">Int</span><span class="p">,</span>
+	<span class="n">Op</span><span class="p">,</span>
+	<span class="n">Binding</span><span class="p">,</span>
+	<span class="n">Var</span><span class="p">,</span>
+	<span class="n">Define</span><span class="p">,</span>
+	<span class="n">Application</span><span class="p">,</span>
+	<span class="n">Lambda</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="n">scheme_interp.utils</span> <span class="kn">import</span> <span class="n">flatten_params</span><span class="p">,</span> <span class="n">flatten_exps</span>
+<span class="kn">import</span> <span class="n">operator</span> <span class="k">as</span> <span class="n">op</span>
+
+<span class="k">class</span> <span class="nc">Env</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">(),</span> <span class="n">args</span><span class="o">=</span><span class="p">(),</span> <span class="n">outer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    	<span class="n">self</span><span class="p">.</span><span class="nf">update</span><span class="p">(</span><span class="nf">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
+    	<span class="n">self</span><span class="p">.</span><span class="n">outer</span> <span class="o">=</span> <span class="n">outer</span>
+
+	<span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
+    	<span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">self</span><span class="p">:</span>
+        	<span class="k">return</span> <span class="n">self</span>
+    	<span class="k">elif</span> <span class="n">self</span><span class="p">.</span><span class="n">outer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        	<span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">outer</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+    	<span class="k">else</span><span class="p">:</span>
+        	<span class="k">raise</span> <span class="nc">NameError</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Variable </span><span class="sh">'</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="sh">'</span><span class="s"> is not defined.</span><span class="sh">"</span><span class="p">)</span>
+    
+<span class="k">class</span> <span class="nc">Procedure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+    	<span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">body</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span>
+
+	<span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">body</span><span class="p">,</span> <span class="nc">Env</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">params</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">env</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">standard_env</span><span class="p">():</span>
+	<span class="n">env</span> <span class="o">=</span> <span class="nc">Env</span><span class="p">()</span>
+	<span class="n">env</span><span class="p">.</span><span class="nf">update</span><span class="p">({</span>
+    	<span class="sh">'</span><span class="s">car</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    	<span class="sh">'</span><span class="s">cdr</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+    	<span class="sh">'</span><span class="s">cons</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
+    	<span class="sh">'</span><span class="s">list</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="nf">list</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+    	<span class="sh">'</span><span class="s">map</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nf">list</span><span class="p">(</span><span class="nf">map</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)),</span>
+    	<span class="sh">'</span><span class="s">eq?</span><span class="sh">'</span><span class="p">:</span> <span class="n">op</span><span class="p">.</span><span class="n">is_</span><span class="p">,</span>
+    	<span class="sh">'</span><span class="s">equal?</span><span class="sh">'</span><span class="p">:</span> <span class="n">op</span><span class="p">.</span><span class="n">eq</span><span class="p">,</span>
+    	<span class="sh">'</span><span class="s">list</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="nf">list</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+    	<span class="sh">'</span><span class="s">list?</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+    	<span class="sh">'</span><span class="s">length</span><span class="sh">'</span><span class="p">:</span> <span class="nb">len</span><span class="p">,</span>
+    	<span class="sh">'</span><span class="s">null?</span><span class="sh">'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">==</span> <span class="p">[],</span>
+   	 
+    	<span class="p">})</span>
+	<span class="k">return</span> <span class="n">env</span>
+
+<span class="n">global_env</span> <span class="o">=</span> <span class="nf">standard_env</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">global_env</span><span class="p">):</span>
+
+	<span class="n">match</span> <span class="n">exp</span><span class="p">:</span>
+    	<span class="n">case</span> <span class="nc">Exps</span><span class="p">(</span><span class="n">exps</span><span class="p">):</span>
+        	<span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
+        	<span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">:</span>
+            	<span class="n">result</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="k">return</span> <span class="n">result</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Exp</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Bool</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="n">b</span>
+   	 
+    	<span class="n">case</span> <span class="nc">If</span><span class="p">(</span><span class="n">cnd</span><span class="p">,</span> <span class="n">thn</span><span class="p">,</span> <span class="n">els</span><span class="p">):</span>
+        	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">cnd</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+            	<span class="n">case</span> <span class="sh">"</span><span class="s">#t</span><span class="sh">"</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">thn</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+            	<span class="n">case</span> <span class="sh">"</span><span class="s">#f</span><span class="sh">"</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">els</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+           	 
+    	<span class="n">case</span> <span class="nc">Prim</span><span class="p">(</span><span class="nc">Op</span><span class="p">(</span><span class="n">oper</span><span class="p">),</span> <span class="n">e</span><span class="p">,</span> <span class="n">e2</span><span class="p">):</span>
+        	<span class="n">match</span> <span class="n">oper</span><span class="p">:</span>
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">and</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="k">return</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+                   	 
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">or</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span>
+                    	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                        	<span class="n">match</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span>
+                            	<span class="n">case</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span><span class="p">:</span>
+                                	<span class="k">return</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+                           	 
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">+</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">+</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+           	 
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">-</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">-</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">*</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">*</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+            	<span class="n">case</span> <span class="sh">'</span><span class="s">=</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="k">return</span> <span class="sh">'</span><span class="s">#t</span><span class="sh">'</span> <span class="k">if</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="o">==</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">else</span> <span class="sh">'</span><span class="s">#f</span><span class="sh">'</span>
+    	<span class="n">case</span> <span class="nc">Int</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="n">n</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Var</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        	<span class="k">return</span> <span class="n">env</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">e</span><span class="p">)[</span><span class="n">e</span><span class="p">]</span>
+   	 
+    	<span class="n">case</span> <span class="nc">Let</span><span class="p">(</span><span class="nc">Binding</span><span class="p">(</span><span class="nc">Var</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="n">e</span><span class="p">),</span> <span class="n">body_exp</span><span class="p">):</span>
+        	<span class="n">proc</span> <span class="o">=</span> <span class="nc">Procedure</span><span class="p">([</span><span class="n">var</span><span class="p">],</span> <span class="n">body_exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="n">exps</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span><span class="p">]</span>
+        	<span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nf">interp</span><span class="p">(</span><span class="n">e2</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">for</span> <span class="n">e2</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span>
+
+        	<span class="k">return</span> <span class="nf">proc</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+   	 
+    	<span class="n">case</span> <span class="nc">SetBang</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
+        	<span class="n">env</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="n">var</span><span class="p">.</span><span class="n">var</span><span class="p">)[</span><span class="n">var</span><span class="p">.</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="k">return</span> <span class="bp">None</span>
+       	 
+    	<span class="n">case</span> <span class="nc">Begin</span><span class="p">(</span><span class="n">exps</span><span class="p">):</span>
+        	<span class="n">flat_expressions</span> <span class="o">=</span> <span class="nf">flatten_exps</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
+        	<span class="n">expressions</span> <span class="o">=</span> <span class="n">flat_expressions</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        	<span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">expressions</span><span class="p">:</span>
+            	<span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+        	<span class="k">return</span> <span class="nf">interp</span><span class="p">(</span><span class="n">flat_expressions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+
+    	<span class="n">case</span> <span class="nc">Define</span><span class="p">(</span><span class="nc">Var</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="n">exp</span><span class="p">):</span>
+        	<span class="n">env</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+    	<span class="n">case</span> <span class="nc">Lambda</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">):</span>
+        	<span class="n">parameters</span> <span class="o">=</span> <span class="nf">flatten_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        	<span class="k">return</span> <span class="nc">Procedure</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+    	<span class="n">case</span> <span class="nc">Application</span><span class="p">(</span><span class="n">exps</span><span class="p">):</span>
+        	<span class="n">exps</span> <span class="o">=</span> <span class="nf">flatten_exps</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
+        	<span class="n">operator</span> <span class="o">=</span> <span class="nf">interp</span><span class="p">(</span><span class="n">exps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+        	<span class="n">exps</span> <span class="o">=</span> <span class="n">exps</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        	<span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nf">interp</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span>
+
+        	<span class="k">return</span> <span class="nf">operator</span><span class="p">(</span><span class="o">*</span><span class="n">vals</span><span class="p">)</span>
+       	 
+    	<span class="n">case</span> <span class="n">_</span><span class="p">:</span>
+        	<span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="sh">'</span><span class="s">Parse node </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s"> is not valid node.</span><span class="sh">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>In conclusion, I have tried to illustrate two models of computation, one of which, the evaluation model, is the ground for the deep idea about computation underlying interpreters.</p>
+
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2023/12/31/computational-models.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>&copy; 2023 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
