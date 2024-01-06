@@ -10,16 +10,20 @@ tags: lisp compilers computer-science
 
 ### Introduction
 
-In “Structure and Interpretation of Computer Programs” it talks about the deep meaning of what an interpreter is. An interpreter can be seen as a machine that emulates other machines. 
+In this blog post I will explain what the substitution model for computation is which is associated with pure functional programming and then I explain how, when assignment and mutation are added,  the substitution model no longer holds. As a result, a different model for computation is needed, namely, the environment model for computation whereby expressions get evaluated in the context of an environment. I culminate the blog by sharing part of the scheme interpreter I built which is an implementation of the environment model. CPython also uses this environment model to carry out its computations; moreover, I also point out that a scheme interpreter built using a Python interpreter shows what it means to compute something in the sense of a universal machine.
+
+### Background
+In “Structure and Interpretation of Computer Programs” it talks about the deep meaning of what an interpreter is. An interpreter can be seen as a universal machine that emulates other machines. 
 
 Interpreters compute anything that in principle can be computed, i.e. an interpreter is a universal machine; for example, if you feed a C interpreter to a Scheme interpreter the Scheme interpreter can emulate the C interpreter and thereby compute any C program.
 
 > The deep idea here is that any evaluator can emulate any other. Thus, the notion of “what can in principle be computed” (ignoring practicalities of time and memory required) is independent of the language or the computer and instead reflects an underlying notion of computability.
 
-To illustrate what this quote is saying, suppose we give the python3 interpreter a Scheme interpreter. As a consequence, the python3 interpreter will mimic a scheme interpreter which in turn will compute any scheme expression.
+To illustrate what this quote is saying, suppose we give the Python3 interpreter a Scheme interpreter. As a consequence, the Python3 interpreter will mimic a Scheme interpreter which in turn will compute any Scheme expression. So, computation is universal.
 
-In what follows I will try to explain the environment model of computation that is the ground for interpreters. And we will conclude with a Scheme interpreter implemented in Python.
-### Models of computation
+In what follows I will try to explain the environment model for  computation. The environment model for computation is the ground for interpreters. And we will conclude with a Scheme interpreter implemented in Python.
+
+### Models for computation
 
 In “Structure and Interpretation of Computer Programs” it talks about at least two computational models; one is associated with pure functional programming and one with programming with assignment/mutation. These computational models are the **substitution model** and **environment model**.
 
@@ -28,6 +32,7 @@ Both models are about how expressions get evaluated.
 In the substitution model, each element of an expression is another expression including the operator. So, the way the substitution model works is by evaluating each expression and then applying the operator to the operands.
 
 Suppose you have the following Scheme program:
+
 
 ```scheme
 (define (sum-of-squares e e2)
@@ -54,6 +59,7 @@ To evaluate this you will go through the following process:
 A property of such model is **referential transparency**. A program is said to be referentially transparent if one function definition can be substituted for another one and still evaluate to the same value.
 
 Consider the following:
+
 ```scheme
 (define p1 sum-of-squares)
 (define p2 sum-of-squares)
@@ -103,17 +109,83 @@ Consider the following two programs taken from SICP:
 ```
 For the first example, since the substitution model does not hold anymore then we must talk about the **environment model** of computation.
 
-In the environment model of computation a variable is not just a name for a value; instead, a variable implies a container. This container is called an **environment**. In this model, to evaluate a program you must also evaluate the operator and operand but you need to include an environment. When an assignment is being evaluated the interpreter must look in an environment to look up the value for the variable. 
+In the environment model for computation a variable is not just a name for a value; instead, a variable implies a container. This container is called an **environment**. In this model, to evaluate a program you must also evaluate the operator and operand but you need to do this within an environment. When an assignment is being evaluated the interpreter must look up the value for the variable in an environment. 
 
 To evaluate procedures we must evaluate it in the context of the global environment and also within its local environment.
 
 So, my point is that the deep computational idea behind interpreters is grounded on the environment model of computation. The environment model of computation is indeed the model that is used to implement interpreters. 
 
-### A Scheme interpreter implemented in Python
+#### Interpreters are implementation of the environment model for computation
+
+A Scheme interpreter or a Python interpreter or any other interpreter in general are implementations of the environment model for computation.
+
+Evaluating or interpreting  programs is a process which consists of evaluating an expression in the context of an environment.
+
+For example, here is an example of the environment for my Scheme interpreter:
+
+```python
+class Env(dict):
+    def __init__(self, params=(), args=(), outer=None):
+        self.update(zip(params, args))
+        self.outer = outer
+
+    def find(self, var):
+        if var in self:
+            return self
+        elif self.outer is not None:
+            return self.outer.find(var)
+        else:
+            raise NameError(f"Variable '{var}' is not defined.")
+  ```
+
+
+And as I said above, when you introduce mutation and assignment, the substitution model no longer holds, and as a consequence, a variable is no longer just a definition. Instead a variable implies an environment. As you can see here:
+
+```python 
+def interp(exp, env=global_env):
+    match exp:
+        #....
+	case SetBang(var, e):
+            env.find(var.var)[var.var] = interp(e, env)
+            return None
+```
+
+Procedures are evaluated within an environment but a procedure needs to consider the global environment and an environment that is local to it. An example of this is the following code of this implementation:
+
+```python
+class Procedure(object):
+    def __init__(self, params, body, env):
+        self.params, self.body, self.env = params, body, env
+
+    def __call__(self, *args):
+        return interp(self.body, Env(self.params, args, self.env))
+```
+
+##### A Scheme interpreter implementation 
 
 As an example take a look at the following [Scheme interpreter](https://github.com/Jobhdez/schemy) I built with Python. This example shows how a Python interpreter can emulate a Scheme interpreter which can compute any Scheme expression.
 
 ```python
+class Env(dict):
+    def __init__(self, params=(), args=(), outer=None):
+        self.update(zip(params, args))
+        self.outer = outer
+
+    def find(self, var):
+        if var in self:
+            return self
+        elif self.outer is not None:
+            return self.outer.find(var)
+        else:
+            raise NameError(f"Variable '{var}' is not defined.")
+    
+class Procedure(object):
+    def __init__(self, params, body, env):
+        self.params, self.body, self.env = params, body, env
+
+    def __call__(self, *args):
+        return interp(self.body, Env(self.params, args, self.env))
+	
 def interp(exp, env=global_env):
 
     match exp:
@@ -219,5 +291,5 @@ def interp(exp, env=global_env):
 
 ### Conclusion
 
-In conclusion, I have tried to illustrate two models of computation, one of which, the evaluation model, is the ground for the deep idea about computation underlying interpreters.
+In conclusion, I have tried to illustrate two models for computation, one of which, the evaluation model, is the ground for the deep idea about computation underlying interpreters. I hope this was helpful. Thanks.
 
