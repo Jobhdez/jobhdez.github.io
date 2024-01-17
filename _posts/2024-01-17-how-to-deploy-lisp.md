@@ -5,15 +5,27 @@ author: Job Hernandez
 tags: aws, how-to
 ---
 
-Hello!
-
 ### Intoduction
-I have been programming server side programs with Lisp and the Hunchentoot web server. I am writing this blog post as a future reminder for myself and help anybody out there with the basics.
+
+I have been programming server side programs with Lisp and the Hunchentoot web server for a while. I am writing this blog post as a future reminder for myself and help anybody out there with the basics.  
 
 The way I managed to deploy my lisp server was by using docker and building the image within the EC2 instance. Once you run the image you just navigate to the EC2 instance's public IP and you will see your server there.
 
+But some disclaimers:
+
+My friend who has around 20 years of experience and is really good said that for production you probably do not need to manage docker yourself. This is what he said:
+
+> specifically the thing that makes it not for production is that you probably don't want to be managing docker yourself on an ec2 instance. It's not completely out of the question if you really really know what you're doing, but you need to deal with things like the ec2 instance rebooting, or the process crashing, or the docker host process crashing.
+ECS and EKS are services (one native to amazon, the other using kubernetes) that will manage a lot of that for you and more
+
+The problem with this is that if you use this approach for an app that cannot go down then if the EC2 instance restarts your app will be down because you have type `docker run`. But since my app is not critical I did this way.
+
+My friend did offer an alternative:
+
+> next time around, rather than using ec2 at all, I would push the image to ecr (its a private image repository) and then build an ecs instance that starts that image - that way you don't have to worry about docker at all beyond builiding the image
+
 ### The Dockerfile
-I happened to stumble accorss this [video](https://www.youtube.com/watch?v=QuG2ByK-Cwg&t=390s) and I was able to make the following dockerfile for my project:
+I happened to stumble accross this [video](https://www.youtube.com/watch?v=QuG2ByK-Cwg&t=390s) and I was able to make the following dockerfile for my project:
 
 ```
 FROM clfoundation/sbcl:alpine3.14 as builder
@@ -89,7 +101,10 @@ After trying to rebuild your image again you may get a cache error. To solve thi
 
 After you have ran the docker image you just need to point the the EC2's public IP and you should be able to see your server.
 
-To be able up a domain you need to buy a domain and within your EC2 instance you need to setup an Elastic IP and then go to your account whereever you bought it and in the DNS settings you need to associate your Elastic IP to an A record with a `@`. After this you just wait.
+To be able up a domain you need to buy a domain and within your EC2 instance you need to setup an Elastic IP and then go to your account whereever you bought it and in the DNS settings you need to associate your Elastic IP to an A record with a `@`. After this you just wait until the changes propagates.
 
 
 
+### Conclusion
+
+I hope this was helpful :-). Have a nice day.
