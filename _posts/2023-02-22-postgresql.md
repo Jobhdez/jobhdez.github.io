@@ -2,7 +2,7 @@
 layout: post
 title: "How to setup PostgreSQL on Arch Linux"
 author: Job Hernandez
-tags: sql
+tags: sql, how-to
 ---
 Arch Linux is great; you should check it out. This `how-to` exists mainly as an external memory for me. I hope this could be useful for someone else.
 
