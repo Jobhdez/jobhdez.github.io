@@ -2,7 +2,7 @@
 layout: post
 title: "How to deploy a Lisp server to AWS"
 author: Job Hernandez
-tags: aws, how-to
+tags: aws how-to
 ---
 
 ### Intoduction
