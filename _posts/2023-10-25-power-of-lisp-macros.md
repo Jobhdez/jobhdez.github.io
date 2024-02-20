@@ -21,7 +21,7 @@ Definitely, I am not an expert but these are my observations from contributing t
 
 ### Macros allow you to get more done with less
 
-One of the reasons why Lisp macros are powerful is because macros enable syntactic abstraction. Syntactic abstraction leads to shorter code and more modular code and  moreover it leads to code without repeating patterns
+One of the reasons why Lisp macros are powerful is because macros enable syntactic abstraction. Syntactic abstraction leads to shorter code and more modular code and  moreover it leads to code without repeating patterns.
 
 Consider building a vector library. Suppose you are trying to implement different types such as single float and double float and so on. 
 
