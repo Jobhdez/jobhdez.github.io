@@ -172,7 +172,7 @@ def torch_tensor_to_c(tensor):
 
 And here is the example that I ran:
 
-```
+```python
 # == utils for the example ==
 
 def write_file(c_program, file_name):
@@ -272,6 +272,7 @@ for (int i = 0; i < batch_size; ++i) {
 return 0;
 }
 ```
+
 ### Summary
 
 Hopefully, you have a better idea of how, at least, a minimal deep learning compiler works in practice. I left out the optimizations but you can learn more about the optimizations from the “The Deep Learning Compiler: A Comprehensive Survey” that is listed in the references. The basic idea is that given a deep learning model defined in Pytorch, the first thing is to build the computational graph consisting of deep learning operators such as convolution and tensors. Once you have the graph then you apply machine independent optimizations. After this you  build a low level IR to which machine dependent optimizations are applied and finally you generate the code.
@@ -285,6 +286,4 @@ Specifically, from that list, the Tiramisu, TVM, and Hidet papers are very good.
 ### References
 
 [^1]: [The Deep Learning Compiler](https://arxiv.org/pdf/2002.03794.pdf)
-[^2]:
-[A Friendly Introduction to Machine Learning Compilers and Optimizers]
-(https://huyenchip.com/2021/09/07/a-friendly-introduction-to-machine-learning-compilers-and-optimizers.html)
+[^2]: [A Friendly Introduction to Machine Learning Compilers and Optimizers](https://huyenchip.com/2021/09/07/a-friendly-introduction-to-machine-learning-compilers-and-optimizers.html)
