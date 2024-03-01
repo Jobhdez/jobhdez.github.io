@@ -5,7 +5,7 @@ author: Job Hernandez Lara
 tags: compilers 
 ---
 
-version*: 0.9.0, initial version, draft
+*version*: 0.9.0, initial version, draft
 
 
 * Table of Contents
