@@ -15,16 +15,16 @@ version*: 0.9.0, initial version, draft
 
 So, I have been writing compilers for sometime and some of the compilers that interest me are deep learning compilers. I started reading research papers and slowly became more curious.
 
-One bottleneck I experienced in the beginning of my compiler journey is how to use a parser generator. Once I learned to use a parser generator and use one to generate the parse tree I was able to tackle the compiler problem. Given a parse tree and an abstract syntax tree for it, you just figure out the solution in code like you would while developing a web backend.
+One bottleneck I experienced in the beginning of my compiler journey was how to use a parser generator. Once I learned  how to use a parser generator and used one to generate the parse tree for a compiler I was able to tackle the compiler problem. Given a parse tree and an abstract syntax tree for it, you just figure out how to go from the parse tree to the generated code.
 
-Similarly, when I started investigating deep learning compilers I could not start working on one because I lacked understanding of how these compilers manipulate the computational graph. When I figured out how to do this I was able to figure out how to go from the computational graph to the generated C code.
+Similarly, when I started investigating deep learning compilers I could not start working on one because I lacked understanding of how these compilers manipulated the computational graph. When I figured out how to do this I was able to figure out how to go from the computational graph to the generated C code.
 
-So, in this post I would like to share my experience, including some code, so someone new to this can get a better idea of how to get the computational graph without having to investigate the TVM codebase.
+So, in this post I would like to share my experience, including some code, to help someone new to this can get a better idea of how to get the computational graph without having to investigate the TVM codebase. It is my sense that once someone knows this, he or she can work on her own compiler.
 
 
 ### Why are deep learning compilers important?
 
-It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fine tuned to each computer architecture; as a result, when deep learning and hardware architectures, each new deep learning operator has to be implemented for each computer architecture.
+It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fine tuned to each computer architecture; as a result, when deep learning architectures and hardware architectures evolve, each new deep learning operator has to be implemented for each computer architecture.
 
 In other words, deep learning compilers are important because they allow engineers to cope with the diversity of hardware.[^1] Libraries are slow in adapting with new hardware architectures so it is hard for these libraries to utilize all the power of these architectures.
 
@@ -44,11 +44,11 @@ The following is based on this  deep learning survey.[^1] You should read it to 
 
 The frontend of a deep learning compiler consists of a high level intermediate representation (IR). This IR is a directed acyclic graph (DAG). The nodes in this graph represent the deep learning operators such as convolution. On the other hand, the edges represent tensors. Several optimizations that are independent of the hardware are applied to this high level IR.
 
-In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, one separates the computation from the schedule. Given a computation, one tries different schedulers to get best performance. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
+In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, one separates the computation from the schedule. Given a computation, one tries different schedules to get best performance. A schedule is a type of optimization that can be applied. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
 
 ### My experience writing a minimal deep learning compiler
 
-The Pytorch TVM frontend is defined [here](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5282) in line 5282. If you scroll down to line [5360](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5360) you will also notice how TVM gets the computational graph of a given Pytorch model.
+The Pytorch TVM frontend is defined [here](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5282) in line 5282. If you scroll down to line [5360](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5360) you will also notice how TVM gets the computational graph from a given Pytorch model.
 
 Based on TVM’s implementation, I figured out the following implementation which takes a convolutional layer defined in Pytorch and gets the computational graph and generates C code.
 
