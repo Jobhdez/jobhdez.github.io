@@ -220,7 +220,7 @@ write_file(c_program, "../backend/conv.c")
 
 So, given a model such as the following:
 
-```
+```python
 class Net(nn.Module):
 	def __init__(self):
     	super().__init__()
