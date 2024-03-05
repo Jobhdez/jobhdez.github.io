@@ -19,7 +19,7 @@ One bottleneck I experienced in the beginning of my compiler journey was how to 
 
 Similarly, when I started investigating deep learning compilers I could not start working on one because I lacked understanding of how these compilers manipulated the computational graph. When I figured out how to do this I was able to figure out how to go from the computational graph to the generated C code.
 
-So, in this post I would like to share my experience, including some code, to help someone new to this can get a better idea of how to get the computational graph without having to investigate the TVM codebase. It is my sense that once someone knows this, he or she can work on her own compiler.
+So, in this post I would like to share my experience, including some code, to help someone new get a better idea of how to get the computational graph without having to investigate the TVM codebase. It is my sense that once someone knows this, he or she can work on her own minimal compiler.
 
 
 ### Why are deep learning compilers important?
@@ -34,7 +34,7 @@ In her article[^2], Chip Huyen talks about how edge computing is becoming more i
 
 ### A simplified look into how deep learning compilers work
 
-Deep learning compilers are compilers that take a neural network model defined in Pytorch or another framework, and compile this model to optimized code. The point for this is to improve the inference time of a given model. 
+Deep learning compilers are compilers that take a neural network model defined in Pytorch or another deep learning framework, and compile this model to optimized code for various architectures, e.g., GPU, x86, ARM. One of the main goals is to improve the inference time of the deep learning models.
 
 As discussed above, Deep learning compilers make targeting different computer architectures feasible.
 
@@ -42,9 +42,9 @@ Deep learning compilers have a frontend and backend.
 
 The following is based on this  deep learning survey.[^1] You should read it to get a better idea.
 
-The frontend of a deep learning compiler consists of a high level intermediate representation (IR). This IR is a directed acyclic graph (DAG). The nodes in this graph represent the deep learning operators such as convolution. On the other hand, the edges represent tensors. Several optimizations that are independent of the hardware are applied to this high level IR.
+The frontend of a deep learning compiler consists of a high level intermediate representation (IR). This IR is a directed acyclic graph (DAG). The nodes in this graph represent the deep learning operators such as convolution. On the other hand, the edges represent tensors. Several optimizations that are independent of the hardware are applied to this high level IR. In other words, this graph is indeed the computational graph we need to get from a given neural net model. Once we have this graph, we have access to the deep learning operators such as convolution and the tensors such as weights, and biases.
 
-In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, one separates the computation from the schedule. Given a computation, one tries different schedules to get best performance. A schedule is a type of optimization that can be applied. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
+In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, one separates the computation from the schedule. Given a computation, one tries different schedules to get best performance. A schedule is a type of optimization that can be applied such as tiling or vectorization. The idea is that by applying a series of schedules one can get better performance. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
 
 ### My experience writing a minimal deep learning compiler
 
@@ -56,7 +56,11 @@ You can check out my compiler [here](https://github.com/Jobhdez/convolution-laye
 
 Here is how I manipulated the computational graph. The idea of my solution was to combine the graph information obtained from `torch.jit.trace` and `torch.fx.symbolic_trace` to get the appropriate information about the graph such as operators in the layers and actual tensors.
 
-Although I do not construct a DAG, I still created an abstract syntax tree to represent the deep learning model. 
+I also had to experiment with TVM's API and read the Pytorch documentation but once I was able to manipulate the operators and tensors I only had figure out how a convolution operator is implemented and then write it in C as part of the runtime.
+
+I am not 100 percent sure if this is the approach taken by TVM. I was looking at the TVM compiler back-end code and some neural net operators are implemented but they looked like constructors instead of the actual computation. I will have to research this more.
+
+Anyways, although I did not construct a DAG, I still created an abstract syntax tree to represent the deep learning model. 
 
 ```python
 def torch_to_ast(net, input_tensor):
@@ -158,8 +162,6 @@ def to_c(node):
     	c_str = c_str + c_print + 'return 0;\n}'
     	return c_str
 
-
-           	 
 def torch_tensor_to_c(tensor):
 	c_array = tensor.numpy()
 	c_array = c_array.tolist()
@@ -230,11 +232,15 @@ class Net(nn.Module):
     	return self.conv(x)
 ```
 
-My compiler generates the C code. You can take a look at the generate code for this example [here](https://github.com/Jobhdez/convolution-layer-to-C/blob/main/src/backend/conv.c).
+My compiler generates the C code. You can take a look at the generate code for this example [here](https://github.com/Jobhdez/convolution-layer-to-C/blob/main/src/backend/conv.c). It does not generate idiomatic C (sorry about that) but it does run.
+
+### How to improve it
+
+I have plans to keep working on this compiler but I need to study TVM more. Next, I want to compile a VGG block to C code. Now, we can manually write some of the optimizations that compilers use to help GCC generate faster code. And we can also generate vectorized C code. 
 
 ### Summary
 
-Hopefully, you have a better idea of how, at least, a minimal deep learning compiler works in practice. I left out the optimizations but you can learn more about the optimizations from the “The Deep Learning Compiler: A Comprehensive Survey” that is listed in the references. The basic idea is that given a deep learning model defined in Pytorch, the first thing is to build the computational graph consisting of deep learning operators such as convolution and tensors. Once you have the graph then you apply machine independent optimizations. After this you  build a low level IR to which machine dependent optimizations are applied and finally you generate the code.
+Hopefully, you have a better idea of how, at least, a minimal deep learning compiler works in practice. I left out the optimizations but you can learn more about the optimizations from the “The Deep Learning Compiler: A Comprehensive Survey” that is listed in the references. The basic idea is that given a deep learning model defined in Pytorch, the first thing to do is build the computational graph consisting of deep learning operators such as convolution and the tensors. Once you have the graph then you apply machine independent optimizations. After this you  build a low level IR to which machine dependent optimizations are applied and finally you generate the code.
 
 ### Some relevant further reading
 
