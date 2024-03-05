@@ -70,7 +70,7 @@ and load your server and replace `'lambda-server::start-server` with your functi
 
 Once you have the Dockerfile you then need to make an AWS account and launch an EC2 instance. You should keep it within the free tier limits and use a linux instance.
 
-Once you have launched the EC2 instance you need install git and docker:
+Once you have launched the EC2 instance you need to install git and docker:
 
 ```
 * sudo yum update -y
@@ -101,7 +101,7 @@ After trying to rebuild your image again you may get a cache error. To solve thi
 
 After you have built the docker image you just need to point to the EC2's public IP and you should be able to see your server.
 
-To deploy, you need to setup an Elastic IP within your EC2 instance and then associate the Elastic IP to an A record (in DNS settings in your domain provider) with a `@`. After this you just wait until the changes propagates.
+To deploy, you need to setup an Elastic IP within your EC2 instance and then associate the Elastic IP to an A record, in your domain provider's DNS settings, with a `@`. After this you just wait until the changes propagates.
 
 ### Conclusion
 
