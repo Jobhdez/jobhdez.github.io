@@ -9,7 +9,7 @@ tags: aws how-to
 
 I have been programming server side programs with Lisp and the Hunchentoot web server for a while. I am writing this blog post as a future reminder for myself and help anybody out there with the basics.  
 
-The way I managed to deploy my lisp server was by using docker and building the image within the EC2 instance. Once you run the image you just navigate to the EC2 instance's public IP and you will see your server there.
+The way I managed to deploy my Lisp server was by using docker and building the image within the EC2 instance. Once you run the image you  navigate to the EC2 instance's public IP and you will see your server there.
 
 But some disclaimers:
 
@@ -18,14 +18,14 @@ My friend who has around 20 years of experience and is really good said that for
 > specifically the thing that makes it not for production is that you probably don't want to be managing docker yourself on an ec2 instance. It's not completely out of the question if you really really know what you're doing, but you need to deal with things like the ec2 instance rebooting, or the process crashing, or the docker host process crashing.
 ECS and EKS are services (one native to amazon, the other using kubernetes) that will manage a lot of that for you and more
 
-The problem with this is that if you use this approach for an app that cannot go down then if the EC2 instance restarts your app will be down because you have type `docker run`. But since my app is not critical I did this way.
+The problem with this is that if you use this approach for an app that cannot go down then if the EC2 instance restarts your app will be down because you have type `docker run` to restart your server again. But since my app is not critical I used an EC2 instance.
 
 My friend did offer an alternative:
 
 > next time around, rather than using ec2 at all, I would push the image to ecr (its a private image repository) and then build an ecs instance that starts that image - that way you don't have to worry about docker at all beyond builiding the image
 
 ### The Dockerfile
-I happened to stumble accross this [video](https://www.youtube.com/watch?v=QuG2ByK-Cwg&t=390s) and I was able to make the following dockerfile for my project:
+I happened to stumble accross this [video](https://www.youtube.com/watch?v=QuG2ByK-Cwg&t=390s) and I was able to make the following Dockerfile for my project:
 
 ```
 FROM clfoundation/sbcl:alpine3.14 as builder
@@ -70,7 +70,7 @@ and load your server and replace `'lambda-server::start-server` with your functi
 
 Once you have the Dockerfile you then need to make an AWS account and launch an EC2 instance. You should keep it within the free tier limits and use a linux instance.
 
-Once you have launched the EC2 instance you need install git and docker. To this type:
+Once you have launched the EC2 instance you need install git and docker:
 
 ```
 * sudo yum update -y
@@ -91,7 +91,7 @@ Then you need to build it so you need to move to your repo's directory and type:
 * sudo docker run -p 80:4243 --rm compiler-web
 ```
 
- By doing `-t` you are tagging your image. In my case the tag for my image is `compiler-web`. You can change this as wish. My lisp server is listening at the port `4243` so you need to change this to your port. But keep the port 80 since this the port of your EC2 instance I believe.
+ By doing `-t` you are tagging your image. In my case the tag for my image is `compiler-web`. You can change this as you wish. My Lisp server is listening at the port `4243` so you need to change this to your port. But keep the port 80 since this the port of your EC2 instance I believe.
 
 After trying to rebuild your image again you may get a cache error. To solve this you can build it like this:
 
@@ -99,11 +99,9 @@ After trying to rebuild your image again you may get a cache error. To solve thi
 * sudo docker build --no-cache -t compiler-web .
 ```
 
-After you have ran the docker image you just need to point the the EC2's public IP and you should be able to see your server.
+After you have built the docker image you just need to point to the EC2's public IP and you should be able to see your server.
 
-To be able up a domain you need to buy a domain and within your EC2 instance you need to setup an Elastic IP and then go to your account whereever you bought it and in the DNS settings you need to associate your Elastic IP to an A record with a `@`. After this you just wait until the changes propagates.
-
-
+To deploy, you need to setup an Elastic IP within your EC2 instance and then associate the Elastic IP to an A record (in DNS settings in your domain provider) with a `@`. After this you just wait until the changes propagates.
 
 ### Conclusion
 
