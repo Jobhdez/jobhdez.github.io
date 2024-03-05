@@ -5,6 +5,9 @@ author: Job Hernandez
 tags: aws how-to
 ---
 
+*version* 1.0.0, 3/5/24, fix typos
+
+*version* 0.9.0, 1/17/24, initial version, draft
 ### Intoduction
 
 I have been programming server side programs with Lisp and the Hunchentoot web server for a while. I am writing this blog post as a future reminder for myself and help anybody out there with the basics.  
