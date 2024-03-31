@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "How facebook scaled memcached"
-author: Job Hernandez
+title: "How facebook scaled Memcache"
+author: Job Hernandez Lara
 tags: internals internet backend
 ---
 
@@ -12,7 +12,7 @@ tags: internals internet backend
 
 ### Introduction
 
-The following is my reflection of the paper [Scaling Memcached at Facebook](https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf). I am not an expert so please read the paper if you find my reflection interesting. In some parts of the following I included my interpretation of what I think is going on. So, again, please read the paper. It is a beautiful paper that will teach you a lot of things. I mainly wrote this to engage with the paper and enhance my understanding. After reading this experience paper I have learned that if I would like to work on similar stuff then I must know computer science fundamentals; for example, in the paper the authors talk about how they used UDP instead of TCP for get requests because UDP is connectionless and as a result each web server thread can communicate directly with memcached servers without establishing a connection thereby reducing latency. In my humble opinion this indicates that it pays to know backend engineering fundamentals such as communicating protocols – e.g., TCP, UDP. Without knowing the fundamentals, someone who is interested in working on distributed key-value stores will be significantly limited; moreover, reading about distributed systems is pretty interesting and expands your mind and arguably you can make better decisions as a backend programmer. 
+The following is my reflection of the paper [Scaling Memcache at Facebook](https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf). I am not an expert so please read the paper if you find my reflection interesting. In some parts of the following I included my interpretation of what I think is going on. So, again, please read the paper. It is a beautiful paper that will teach you a lot of things. I mainly wrote this to engage with the paper and enhance my understanding. After reading this experience paper I have learned that if I would like to work on similar stuff then I must know computer science fundamentals; for example, in the paper the authors talk about how they used UDP instead of TCP for get requests because UDP is connectionless and as a result each web server thread can communicate directly with memcached servers without establishing a connection thereby reducing latency. In my humble opinion this indicates that it pays to know backend engineering fundamentals such as communicating protocols – e.g., TCP, UDP. Without knowing the fundamentals, someone who is interested in working on distributed key-value stores will be significantly limited; moreover, reading about distributed systems is pretty interesting and expands your mind and arguably you can make better decisions as a backend programmer. 
 
 I find this type of infrastructure work really fascinating. I had already listened to an InfoQ Instagram [talk](https://www.youtube.com/watch?v=hnpzNAPiC0E) about how Instagram engineers scaled the infrastructure of the respective website I think a lot of interesting problems arise from big websites at the scale of Facebook and Google.
 
