@@ -5,11 +5,6 @@ author: Job Hernandez Lara
 tags: internals internet backend
 ---
 
-*version 1.1*: rephrased a few parts and added my interpretation, 7/20/23
-
-*version 1*: initial version, 7/17/23
-
-
 ### Introduction
 
 The following is my reflection of the paper [Scaling Memcache at Facebook](https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf). I am not an expert so please read the paper if you find my reflection interesting. In some parts of the following I included my interpretation of what I think is going on. So, again, please read the paper. It is a beautiful paper that will teach you a lot of things. I mainly wrote this to engage with the paper and enhance my understanding. After reading this experience paper I have learned that if I would like to work on similar stuff then I must know computer science fundamentals; for example, in the paper the authors talk about how they used UDP instead of TCP for get requests because UDP is connectionless and as a result each web server thread can communicate directly with memcached servers without establishing a connection thereby reducing latency. In my humble opinion this indicates that it pays to know backend engineering fundamentals such as communicating protocols – e.g., TCP, UDP. Without knowing the fundamentals, someone who is interested in working on distributed key-value stores will be significantly limited; moreover, reading about distributed systems is pretty interesting and expands your mind and arguably you can make better decisions as a backend programmer. 

@@ -6,12 +6,6 @@ description: "a brief description of the Python language"
 tags: python compilers internals
 ---
 
-*version 1.2*: add conclusion, fix typos, 7/23/23
-
-*version 1.1*: fix typos, change title, change headings, 7/22/23
-
-*version 1*: initial version, 7/22/23
-
 ## Introduction
 I am on a journey to understand programming deeply or as deeply as I can and as a result I want to understand the programming languages I use. In this article I will explore the Python programming language; specifically, I will briefly explain the execution model of Python and explore some features that experienced engineers may argue are conducive to building large systems.
 

@@ -5,8 +5,6 @@ author: Job Hernandez
 tags: math 
 ---
 
-*version 1*: initial version
-
 ## Introduction
 
 In High School I was a horrible student and it was not until I dropped out of university that I started paying attention to mathematics; my first exposure was a comment by Richard Feynman in one of his interviews. In this interview he said that to appreciate nature one needs mathematics. This was the start of my mathematical journey. Subsequently, I read "A Mathematicians Delight" by Sawyer and this book helped me realize that mathematics could be learned and taught me about the importance of abstraction. I remember this book had an immense impact on my mathematical development. Eventually, I stumbled with the essay by Eugene Wigner "The Unreasomable Effectiveness of Mathematics". When I read the "Unreasonable Effectiveness of Mathematics" by Eugene Wigner I started marveling about the beauty of mathematics. After I read this article I became aware of the hidden beauty of mathematics.

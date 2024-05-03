@@ -5,7 +5,6 @@ author: Job Hernandez Lara
 tags: lisp
 ---
 
-*version*: 1.0, initial version
 
 ### Introduction
 

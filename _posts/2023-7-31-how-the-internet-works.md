@@ -5,8 +5,6 @@ author: Job Hernandez
 tags: internet internals backend
 ---
 
-*version 1*: initial version, 7/31/23
-
 ## Introduction
 
 I am on a journey to learn more about backend software engineering fundamentals. In his YouTube video [How to become a good backend engineer](https://www.youtube.com/watch?v=V3ZPPPKEipA&t) Hussein Nasser argues that a good backend engineer is someone who knows the fundamentals. Some fundamentals include communication protocols such as HTTP, and TCP; cache systems; message queues, web servers. In this article I touch upon the Internet and communication protocols such as TCP, IP, and HTTP and web servers. I have also written about cache systems which you can read [here](https://jobhdez.github.io/2023/07/17/memcached-at-facebook.html) and I have also written a little bit about message queues and web architecture which you can read [here](https://jobhdez.github.io/2023/06/15/web-system-architecture.html). As a disclaimer, be aware that I am not an expert. I write about these topics because I want to consolidate what I study. I love the Internet and the fact that anything works at all is fascinating. 

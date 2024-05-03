@@ -4,7 +4,6 @@ title: "DSLs can lead to better systems"
 author: Job Hernandez
 tags: compilers backend internet
 ---
-*draft*
 
 ### Intro
 Conjecture: DSLs can lead to better systems in the industry

@@ -5,10 +5,6 @@ author: Job Hernandez Lara
 tags: open-source
 ---
 
-*version*: 1.0, 11/22/23
-
-*version*: 0.9.0, draft, 10/24/23
-
 ### Introduction
 
 I have been reading “Rebel Code”, a book about the early days of Linux and open source and I just find the stories in this book amazing. So, I am really excited about contributing to Coalton, a programming language written in Common Lisp that is embedded in Common Lisp. Coalton is a statically typed language, similar to Haskell, with type inference.

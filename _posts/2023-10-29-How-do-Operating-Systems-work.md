@@ -5,9 +5,6 @@ author: Job Hernandez Lara
 tags: [x86-64, operating-systems, computer-science]
 ---
 
-*version*: 0.9.0, initial version, draft
-
-
 * Table of Contents
 {:toc}
 

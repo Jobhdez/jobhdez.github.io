@@ -4,9 +4,6 @@ title: Web System Architecture
 author: Job Hernandez
 tags: internet backend architecture
 ---
-*version 1.1*: June 16 2023, added more detail, and diagrams
-
-*version 1*: June 15 2023, initial release
 
 ### Intro
 One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a [talk](https://www.youtube.com/watch?v=hnpzNAPiC0E&t) by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted.
