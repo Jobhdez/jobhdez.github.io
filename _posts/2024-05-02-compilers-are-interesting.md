@@ -13,7 +13,7 @@ So, far in my compiler journey I have faced three interesting problems. The prob
 
 A-Normal form is an intermediate language for functional programming languages but it can be used to compile languages such as Python.
 
-It was introduced in a paper called “The Essence of Continuations”, in which the authors argued that ANF is equivalent to continuation passing style but much simpler.
+It was introduced in a paper called “The Essence of Compiling with Continuations”[^1], in which the authors argued that ANF is equivalent to continuation passing style but much simpler.
 
 ANF consists of atomic and complex expressions. An atomic expression is an expression that is readily computable in x86 assembly.
 
@@ -51,7 +51,7 @@ exp     :: (let var <complex>) | atomic | complex
 
 The interesting conversion was the $$ if expression $$. It required some thought. I initially wrote it in Racket and then rewrote it in Haskell. Here is both of the implementations:
 
-Racket:
+Racket[^2]:
 
 ```
 (define (syntax->anf ast)
@@ -80,7 +80,7 @@ Racket:
 
 ```
 
-And here is my Haskell implementation:
+And here is my Haskell[^3] implementation:
 
 ```haskell
 toMon (IfExp (Bool b) thn els) counter =
@@ -133,7 +133,7 @@ In my Haskell compiler, the example
 let x = (4;5;6);; print(x[1]);
 ```
 
-Compiles to the following x86:
+Compiles to the following x86[^4]:
 
 ```
 .globl main
@@ -194,7 +194,7 @@ I implemented fmaximum and fminimum and their variants. In this type of problem 
 
 But working on this issue required me to change around 140 files! So, it was the most complex thing, engineering wise, that I had done. My git skills improved a lot and my emacs’ skills did to.
 
-But anyways, here is the code that I wrote:
+But anyways, here is the code that I wrote[^5]:
 
 ```c++
 template <typename T, cpp::enable_if_t<cpp::is_floating_point_v<T>, int> = 0>
@@ -301,3 +301,15 @@ LIBC_INLINE T fminimum_mag_num(T x, T y) {
   return fminimum_num(x, y);
 }
 ````
+
+### Footnotes
+
+[^1]: [The Essence of Compiling with Continuations](https://dl.acm.org/doi/pdf/10.1145/155090.155113)
+
+[^2]: [Racket version](https://github.com/Jobhdez/To-A-Normal-Form/blob/main/src/toANF/to-anf.rkt#L138)
+
+[^3]: [Haskell version](https://github.com/Jobhdez/pyhs/blob/main/src/ToMon.hs#L99)
+
+[^4]: [Interfacing with the garbage collector](https://github.com/Jobhdez/pyhs/blob/main/src/ToSelect.hs#L160)
+
+[^5]: [LLVM contribution](https://github.com/llvm/llvm-project/pull/86016)
