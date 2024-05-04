@@ -5,7 +5,7 @@ author: Job Hernandez
 tags: compilers 
 ---
 
-So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to $$ a normal form $$, compiling tuples to x86, and floating point math.
+So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to *A-Normal form*, compiling tuples to x86, and floating point math.
 
 ### Compiling without continuations
 
