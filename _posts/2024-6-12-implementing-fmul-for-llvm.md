@@ -213,7 +213,7 @@ Here is the code for the above:
 
 Finally, we compute the exponent and cast the result to float:
 
-```
+```c++
 uint32_t exp16 = (dm1 << 23);
 
 uint32_t m2 = m & fputil::FPBits<float>::FRACTION_MASK;
