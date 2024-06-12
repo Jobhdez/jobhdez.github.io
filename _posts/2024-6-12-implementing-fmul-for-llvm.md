@@ -25,17 +25,17 @@ On the other hand, for single precision, the mantissa field is 23 bits, and the 
 
 First, we need to get the bit representation of the double precision inputs and compute the sign bit of the result.
 
-```
+```c++
  auto x_bits = fputil::FPBits<double>(x);
 
  auto y_bits = fputil::FPBits<double>(y);
 
-  auto output_sign = (x_bits.sign() != y_bits.sign()) ? Sign::NEG : Sign::POS;
+ auto output_sign = (x_bits.sign() != y_bits.sign()) ? Sign::NEG : Sign::POS;
 ```
 
 Here, 
 
-```
+```c++
 fputil::FPBits
 ```
 
@@ -44,7 +44,7 @@ Is internal LLVM code that can help you manipulate bits.
 
 Next, we have the following that checks for special values like *NaNs* and *infinities*:
 
-```
+```c++
 if (LIBC_UNLIKELY(x_bits.is_inf_or_nan() || y_bits.is_inf_or_nan() ||
                 	x_bits.is_zero() || y_bits.is_zero())) {
 	if (x_bits.is_nan())
@@ -125,7 +125,7 @@ UInt128 product = static_cast<UInt128>(mx) * static_cast<UInt128>(my);
 
 In the textbook “Handbook of Floating Point Arithmetic” the reference implementation was for single precision:
 
-```
+```c++
 float fmul(double x, double y);
 ```
 
@@ -171,7 +171,7 @@ In contrast for the normal case, you have this:
 
 So, *highs* is 64 bits. In the normal case we know that the leading 1 bit is either at the 63rd or 64th bit. We want to shift that down to bit 24 to get the product's mantissa because the mantissa bit field of a single precision number is 24 bits.
 
-If $ c = 0 $$ if the leading 1 is at bit 63. If $$ c = 1 $$ then the leading bit is at bit 64.
+If $$ c = 0 $$ if the leading 1 is at bit 63. If $$ c = 1 $$ then the leading bit is at bit 64.
 
 Here is the code for the above:
 
