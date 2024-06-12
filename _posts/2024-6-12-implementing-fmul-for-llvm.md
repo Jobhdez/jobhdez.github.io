@@ -114,7 +114,7 @@ UInt128 product = static_cast<UInt128>(mx) * static_cast<UInt128>(my);
   int c;
 
   highs = static_cast<uint64_t>(product >> 64); // top highest 64 bit of the product
-  c = static_cast<int>(highs >= 0x8000000000000000); // denormal? Or normal?
+  c = static_cast<int>(highs >= 0x8000000000000000); // leading 1 bit is at bit 64 or not
   lows = static_cast<uint64_t>(product); // lowest 64 bits of the product
 
   lowt = (lows != 0); // sticky bit which will be used for rounding
