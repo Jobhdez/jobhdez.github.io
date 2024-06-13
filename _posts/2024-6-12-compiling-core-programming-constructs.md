@@ -13,7 +13,7 @@ Compilers have been traditionally broken up into three main components, namely, 
 
 The purpose of the front-end is to create a intermediate representation. A compiler front-end consists of lexical analysis whereby the source program is broken up into tokens, the parse tree whereby the tokens get composed into a tree basedd on the grammar of the language; for example, the tokens of my small language are the following:
 
-```
+```haskell
 %token
 if         { TokenIf }
 let        { TokenLet }
@@ -44,7 +44,7 @@ defun      { TokenDefun }
 
 and this is the grammar, which gives the semantics:
 
-```
+```haskell
 Exp : var  { Var $1 }
 | let var '=' Exp ';' { Let $2 $4 }
 | Exp '+' Exp ';' { Plus $1 $3 }
@@ -74,7 +74,47 @@ Consider the expression:
 The lexer, which breaks programs such as this into tokens would produce the following tokens:
 
 ```haskell
-[TokenLet,TokenVar "x",TokenEq,TokenInt 0,TokenSemicolon,TokenSemicolon,TokenWhile,TokenVar "x",TokenLess,TokenInt 4,TokenSemicolon,TokenColon,TokenIf,TokenVar "x",TokenLess,TokenInt 5,TokenSemicolon,TokenThen,TokenPrint,TokenOP,TokenVar "x",TokenCP,TokenSemicolon,TokenSemicolon,TokenLet,TokenVar "x",TokenEq,TokenVar "x",TokenPlus,TokenInt 1,TokenSemicolon,TokenSemicolon,TokenElse,TokenPrint,TokenOP,TokenInt 3,TokenCP,TokenSemicolon,TokenSemicolon]
+[
+    TokenLet,
+    TokenVar "x",
+    TokenEq,
+    TokenInt 0,
+    TokenSemicolon,
+    TokenSemicolon,
+    TokenWhile,
+    TokenVar "x",
+    TokenLess,
+    TokenInt 4,
+    TokenSemicolon,
+    TokenColon,
+    TokenIf,
+    TokenVar "x",
+    TokenLess,
+    TokenInt 5,
+    TokenSemicolon,
+    TokenThen,
+    TokenPrint,
+    TokenOP,
+    TokenVar "x",
+    TokenCP,
+    TokenSemicolon,
+    TokenSemicolon,
+    TokenLet,
+    TokenVar "x",
+    TokenEq,
+    TokenVar "x",
+    TokenPlus,
+    TokenInt 1,
+    TokenSemicolon,
+    TokenSemicolon,
+    TokenElse,
+    TokenPrint,
+    TokenOP,
+    TokenInt 3,
+    TokenCP,
+    TokenSemicolon,
+    TokenSemicolon
+]
 ```
 
 and using the above grammar, the parser generator creates the following abstract syntax tree:
@@ -154,7 +194,28 @@ As you can see, the instruction above has three components.
 The instruction selection pass generates the following for the running example:
 
 ```
-[("movq",ImmInt 0,ImmStr "x"),("whiletest",ImmStr "whiletestlabel",ImmStr ":"),("cmpq",ImmInt 4,ImmStr "x"),("jge",ImmStr "exit",ImmStr "dummy"),("jmp",ImmStr "iftest",ImmStr "dummy"),("iftest",ImmStr "iftestlabel",ImmStr "dummy"),("cmpq",ImmInt 5,ImmStr "x"),("jmp",ImmStr "block_0",ImmStr "dummy"),("je",ImmStr "block_1",ImmStr "dummy"),("block_0",ImmStr "blkdummy",ImmStr "dummy"),("movq",ImmStr "x",ImmReg "%rdi"),("print",ImmStr "dummy",ImmStr "dummy"),("incq",ImmStr "x",ImmStr "dummy"),("jmp",ImmStr "whiletest",ImmStr "thanks"),("block_1",ImmStr "dummy",ImmStr "dummy"),("movq",ImmInt 3,ImmReg "%rdi"),("print",ImmStr "dummy",ImmStr "dummy"),("jmp",ImmStr "whiletest",ImmStr "thanks"),("exit",ImmStr "retq",ImmStr "dummy")]
+[
+    ("movq", ImmInt 0, ImmStr "x"),
+    ("whiletest", ImmStr "whiletestlabel", ImmStr ":"),
+    ("cmpq", ImmInt 4, ImmStr "x"),
+    ("jge", ImmStr "exit", ImmStr "dummy"),
+    ("jmp", ImmStr "iftest", ImmStr "dummy"),
+    ("iftest", ImmStr "iftestlabel", ImmStr "dummy"),
+    ("cmpq", ImmInt 5, ImmStr "x"),
+    ("jmp", ImmStr "block_0", ImmStr "dummy"),
+    ("je", ImmStr "block_1", ImmStr "dummy"),
+    ("block_0", ImmStr "blkdummy", ImmStr "dummy"),
+    ("movq", ImmStr "x", ImmReg "%rdi"),
+    ("print", ImmStr "dummy", ImmStr "dummy"),
+    ("incq", ImmStr "x", ImmStr "dummy"),
+    ("jmp", ImmStr "whiletest", ImmStr "thanks"),
+    ("block_1", ImmStr "dummy", ImmStr "dummy"),
+    ("movq", ImmInt 3, ImmReg "%rdi"),
+    ("print", ImmStr "dummy", ImmStr "dummy"),
+    ("jmp", ImmStr "whiletest", ImmStr "thanks"),
+    ("exit", ImmStr "retq", ImmStr "dummy")
+]
+
 ```
 
 The relevant code that generates this is as follows:
@@ -188,7 +249,28 @@ Anyways, in the instruction selection pass generates three address code whose ad
 Since I did not implement register allocation, I have another pass which assigns stack locations:
 
 ```
-[("movq",ImmInt 0,ImmStack "-8(%rbp)"),("whiletest",ImmStr "whiletestlabel",ImmStr ":"),("cmpq",ImmInt 4,ImmStack "-8(%rbp)"),("jge",ImmStr "exit",ImmStr "dummy"),("jmp",ImmStr "iftest",ImmStr "dummy"),("iftest",ImmStr "iftestlabel",ImmStr "dummy"),("cmpq",ImmInt 5,ImmStack "-8(%rbp)"),("jmp",ImmStr "block_0",ImmStr "dummy"),("je",ImmStr "block_1",ImmStr "dummy"),("block_0",ImmStr "blkdummy",ImmStr "dummy"),("movq",ImmStack "-8(%rbp)",ImmReg "%rdi"),("print",ImmStr "dummy",ImmStr "dummy"),("incq",ImmStack "-8(%rbp)",ImmStr "dummy"),("jmp",ImmStr "whiletest",ImmStr "thanks"),("block_1",ImmStr "dummy",ImmStr "dummy"),("movq",ImmStr "3",ImmReg "%rdi"),("print",ImmStr "dummy",ImmStr "dummy"),("jmp",ImmStr "whiletest",ImmStr "thanks"),("exit",ImmStr "retq",ImmStr "dummy")]
+[
+    ("movq", ImmInt 0, ImmStack "-8(%rbp)"),
+    ("whiletest", ImmStr "whiletestlabel", ImmStr ":"),
+    ("cmpq", ImmInt 4, ImmStack "-8(%rbp)"),
+    ("jge", ImmStr "exit", ImmStr "dummy"),
+    ("jmp", ImmStr "iftest", ImmStr "dummy"),
+    ("iftest", ImmStr "iftestlabel", ImmStr "dummy"),
+    ("cmpq", ImmInt 5, ImmStack "-8(%rbp)"),
+    ("jmp", ImmStr "block_0", ImmStr "dummy"),
+    ("je", ImmStr "block_1", ImmStr "dummy"),
+    ("block_0", ImmStr "blkdummy", ImmStr "dummy"),
+    ("movq", ImmStack "-8(%rbp)", ImmReg "%rdi"),
+    ("print", ImmStr "dummy", ImmStr "dummy"),
+    ("incq", ImmStack "-8(%rbp)", ImmStr "dummy"),
+    ("jmp", ImmStr "whiletest", ImmStr "thanks"),
+    ("block_1", ImmStr "dummy", ImmStr "dummy"),
+    ("movq", ImmStr "3", ImmReg "%rdi"),
+    ("print", ImmStr "dummy", ImmStr "dummy"),
+    ("jmp", ImmStr "whiletest", ImmStr "thanks"),
+    ("exit", ImmStr "retq", ImmStr "dummy")
+]
+
 ```
 
 And the code that generates stack locations is here:
@@ -310,8 +392,35 @@ toStackHelper (x:xs) counter hashmap =
 
 And finally we generate the actual x86:
 
-```
-"\t.globl main\nmain:\n\tpushq %rbp\n\tmovq %rsp, %rbp\n\tsubq $8, %rsp\n\tmovq $0, -8(%rbp)\nwhiletest:\n\tcmpq $4, -8(%rbp)\n\tjge exit\n\tjmp iftest\niftest:\n\tcmpq $5, -8(%rbp)\n\tjmp block_0\n\tje block_1\nblock_0:\n\tmovq -8(%rbp), %rdi\n\tcallq print_int\n\tincq -8(%rbp)\n\tjmp whiletest\nblock_1:\n\tmovq 3,%rdi\n\tcallq print_int\n\tjmp whiletest\nexit:\n\taddq $8, %rsp\n\tpopq %rbp\n\tretq\n"
+```assembly
+    .globl main
+main:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $8, %rsp
+    movq $0, -8(%rbp)
+whiletest:
+    cmpq $4, -8(%rbp)
+    jge exit
+    jmp iftest
+iftest:
+    cmpq $5, -8(%rbp)
+    jmp block_0
+    je block_1
+block_0:
+    movq -8(%rbp), %rdi
+    callq print_int
+    incq -8(%rbp)
+    jmp whiletest
+block_1:
+    movq $3, %rdi
+    callq print_int
+    jmp whiletest
+exit:
+    addq $8, %rsp
+    popq %rbp
+    retq
+
 ```
 
 which is associated with this code:
@@ -410,7 +519,51 @@ let x = (4;5;6);; print(x[1]);
 it generates the following x86
 
 ```
-"\t.globl main\nmain:\n\tpushq %rbp\n\tmovq %rsp, %rbp\n\tsubq $0, %rsp\n\tmovq $65536, %rdi\n\tmovq $65536, %rsi\n\tcallq initialize\n\tmovq rootstack_begin(%rip), %r15\n\tmovq $0, 0(%r15)\n\taddq $8, %r15\n\tjmp start\nstart:\n\tmovq free_ptr(%rip),%rax\n\taddq $24, %rax\n\tmovq fromspace_end(%rip),%r13\n\tcmpq %r13,%rax\n\tjl block_77\n\tjmp block_78\nblock_77:\n\tmovq $0,%r13\n\tjmp block_80\nblock_78:\n\tmovq %r15,%rdi\n\tmovq $24,%rsi\n\tcallq collect\n\tjmp block_80\nblock_80:\n\tmovq free_ptr(%rip),%r11\n\taddq $32, free_ptr(%rip)\n\tmovq $7,0(%r11)\n\tmovq %r11,%r14\n\tmovq %r14,%r11\n\tmovq $4,8(%r11)\n\tmovq $5,16(%r11)\n\tmovq $6,24(%r11)\n\tmovq 16(%r11),%rdi\n\tcallq print_int\n\tjmp conclusion\nconclusion:\n\tsubq $8, %r15\n\taddq $0, %rsp\n\tpopq %rbp\n\tretq"
+    .globl main
+main:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $0, %rsp
+    movq $65536, %rdi
+    movq $65536, %rsi
+    callq initialize
+    movq rootstack_begin(%rip), %r15
+    movq $0, 0(%r15)
+    addq $8, %r15
+    jmp start
+start:
+    movq free_ptr(%rip), %rax
+    addq $24, %rax
+    movq fromspace_end(%rip), %r13
+    cmpq %r13, %rax
+    jl block_77
+    jmp block_78
+block_77:
+    movq $0, %r13
+    jmp block_80
+block_78:
+    movq %r15, %rdi
+    movq $24, %rsi
+    callq collect
+    jmp block_80
+block_80:
+    movq free_ptr(%rip), %r11
+    addq $32, free_ptr(%rip)
+    movq $7, 0(%r11)
+    movq %r11, %r14
+    movq %r14, %r11
+    movq $4, 8(%r11)
+    movq $5, 16(%r11)
+    movq $6, 24(%r11)
+    movq 16(%r11), %rdi
+    callq print_int
+    jmp conclusion
+conclusion:
+    subq $8, %r15
+    addq $0, %rsp
+    popq %rbp
+    retq
+
 ```
 
 ### Lessons from using Haskell
