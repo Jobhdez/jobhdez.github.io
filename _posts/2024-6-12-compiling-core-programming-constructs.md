@@ -185,7 +185,7 @@ SeqMon (MonLet "x" (AtmInt 0)) (MonWhile (MonLessThn (AtmVar "x") (AtmInt 4)) (M
 
 After the ANF pass, the instruction selection pass is next. The purpose of the instructor selector is *select* the appropriate x86 instructions. The intermediate language for this will be *three address code* which models assembly instructions such as:
 
-```assembly
+```x86asm
 movq $1, %rax
 ```
 
@@ -392,7 +392,7 @@ toStackHelper (x:xs) counter hashmap =
 
 And finally we generate the actual x86:
 
-```assembly
+```x86asm
     .globl main
 main:
     pushq %rbp
@@ -518,7 +518,7 @@ let x = (4;5;6);; print(x[1]);
 
 it generates the following x86
 
-```
+```x86asm
     .globl main
 main:
     pushq %rbp
