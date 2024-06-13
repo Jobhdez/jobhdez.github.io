@@ -193,7 +193,7 @@ As you can see, the instruction above has three components.
 
 The instruction selection pass generates the following for the running example:
 
-```
+```haskell
 [
     ("movq", ImmInt 0, ImmStr "x"),
     ("whiletest", ImmStr "whiletestlabel", ImmStr ":"),
@@ -248,7 +248,7 @@ Anyways, in the instruction selection pass generates three address code whose ad
 
 Since I did not implement register allocation, I have another pass which assigns stack locations:
 
-```
+```haskell
 [
     ("movq", ImmInt 0, ImmStack "-8(%rbp)"),
     ("whiletest", ImmStr "whiletestlabel", ImmStr ":"),
