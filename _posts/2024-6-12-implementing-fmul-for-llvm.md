@@ -17,7 +17,7 @@ Before I go over my implementation I am going to introduce some terms.
 
 A floating point number is made of three bit fields: the sign field, exponent field, and mantissa field. The sign field is always one bit irrespective of the type. In contrast the exponent field and mantissa field vary with the type.
 
-For example, for double precision, the mantissa field is 52 bits, and the exponent field is 11 bits. The maximum exponent of a double precision is 1023 and minimum exponent is -1022. You will see how these maximum and minimum exponents are used in a second.
+For example, for double precision, the mantissa field is 53 bits, and the exponent field is 11 bits. The maximum exponent of a double precision is 1023 and minimum exponent is -1022. You will see how these maximum and minimum exponents are used in a second.
 
 On the other hand, for single precision, the mantissa field is 23 bits, and the exponent field is 8 bits. The maximum exponent is 127 and the minimum exponent is -126.
 
@@ -126,7 +126,7 @@ UInt128 product = static_cast<UInt128>(mx) * static_cast<UInt128>(my);
 In the textbook “Handbook of Floating Point Arithmetic” the reference implementation was for single precision:
 
 ```c++
-float fmul(double x, double y);
+float fmul(float x, float y);
 ```
 
 So the formula for *dm1* was different. It needed to be changed because since the result is a 32 bit number and hence the exponent field is 8 bits, *dm1* needs to be a number that is within the range of what an 8 bit number can represent.
