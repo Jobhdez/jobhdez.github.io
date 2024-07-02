@@ -11,7 +11,7 @@ Compilers have been traditionally broken up into three main components, namely, 
 
 ### Front-end
 
-The purpose of the front-end is to create a intermediate representation. A compiler front-end consists of lexical analysis whereby the source program is broken up into tokens, the parse tree whereby the tokens get composed into a tree basedd on the grammar of the language; for example, the tokens of my small language are the following:
+The purpose of the front-end is to create an intermediate representation. A compiler front-end consists of lexical analysis whereby the source program is broken up into tokens, the parse tree whereby the tokens get composed into a tree based on the grammar of the language; for example, the tokens of my small language are the following:
 
 ```haskell
 %token
@@ -135,7 +135,7 @@ For example, consider the AST generated for this expression:
 let x = 4 + -3
 ```
 
-The A Normal Form generated for this is the following:
+The *A Normal Form* generated for this is the following:
 
 ```haskell
 SeqMon (MonLet "temp_0" (MonNegative 3)) (MonLet "x" (MonPlus (AtmInt 4) (AtmVar "temp_0")))
@@ -183,7 +183,7 @@ The ANF generated for the above example is this:
 SeqMon (MonLet "x" (AtmInt 0)) (MonWhile (MonLessThn (AtmVar "x") (AtmInt 4)) (MonIf (MonLessThn (AtmVar "x") (AtmInt 5)) (SeqMon (MonPrint (AtmVar "x")) (MonLet "x" (MonPlus (AtmVar "x") (AtmInt 1)))) (MonPrint (AtmInt 3))))
 ```
 
-After the ANF pass, the instruction selection pass is next. The purpose of the instructor selector is *select* the appropriate x86 instructions. The intermediate language for this will be *three address code* which models assembly instructions such as:
+After the ANF pass, the instruction selection pass is next. The purpose of the instructor selector is to *select* the appropriate x86 instructions. The intermediate language for this will be *three address code* which models assembly instructions such as:
 
 ```x86asm
 movq $1, %rax
@@ -244,7 +244,7 @@ toSelect (MonWhile cnd (MonIf cnd2 thn els)) =
 
 Note: the dummy arguments are one of the weaknesses of my implementation. In the next iteration of the project I am going to build a much cleaner design.
 
-Anyways, in the instruction selection pass generates three address code whose addresses are variables from the source program.
+Anyways, the instruction selection pass generates three address code whose addresses are variables from the source program.
 
 Since I did not implement register allocation, I have another pass which assigns stack locations:
 
@@ -505,10 +505,10 @@ toX86W ("addq", ImmInt n, ImmStr fp) =
 
 ### Tuples
 
-It was fun compiling tuples. Tuples motivate garbage collector. The garbage collector of my system (which was not written by me) is a two space collector. The collector is divided in a *ToSpace* and *FromSpace*. To make room, the garbage collector, moves the reachable objects from the *FromSpace* to *ToSpace*.
+It was fun compiling tuples. Tuples motivate garbage collector. The garbage collector of my system (which was not written by me) is a two space collector. The collector is divided into regions: *ToSpace* and *FromSpace*. To make room, the garbage collector, moves the reachable objects from the *FromSpace* to *ToSpace*.
 
 To compile tuples you need to make a 64 bit tag for the garbage collector to distinguish it.
-Tuples go through the same passes as above. In the 64 bit tag, theres bits corrsponding to the size of the tuple, bits that corresponds to whether an element of the tuple is a number or another tuple and bits that corresponds to whether the tuple is reachable from the root set.
+Tuples go through the same passes as above. In the 64 bit tag, there are bits corresponding to the size of the tuple, bits that corresponds to whether an element of the tuple is a number or another tuple and bits that correspond to whether the tuple is reachable from the root set.
 
 A given tuple containing expression
 
@@ -575,7 +575,6 @@ Haskell lets you write:
 Correct code, if a Haskell program compiles then it just works. Why is this? It has to do with the type system. By defining data types for each intermediate language and a signature enforced by the type system, you are forced to write more complete/less sloppy code and you are also guaranteed correctness. In addition, since the type system is about proving certain aspects of your program, when developing a program in Haskell, if the given program does not compile then the type errors will guide you to, in essence, prove your program correct iteratively.
 
 If type checkers are primitive proof systems then type checkers prove parts of your system correct. If type checkers prove parts of you’re program correct then type errors will guide you prove the correctness of some parts of your program correct iteratively. 
-Less sloppy code because the type system screams at you.
 
 There are a few things I would do differently next time. I think I need to think ahead of time the structure of my data; for example, the instruction selection pass (ToSelect.hs) returns an Imm data type. An Imm is either an ImmStr, ImmReg, or ImmTupMem. Some ImmStr’s contain dummy variables “dummy”.
 
