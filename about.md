@@ -16,8 +16,8 @@ a programming language used to build quantum computing software. I added support
 
 - [LLVM](https://github.com/llvm/llvm-project)
 
-compiler infrastracture that enables you to build concrete compilers. LLVM is used by Google, Apple, Nvidia and many other companies.
-You can see my patches [here](https://github.com/llvm/llvm-project/commits?author=Jobhdez)
+compiler infrastructure that enables you to build concrete compilers. LLVM is used by Google, Apple, Nvidia and many other companies.
+You can see my patches [here](https://github.com/llvm/llvm-project/commits?author=Jobhdez).
 
 - [x86 compiler](https://github.com/Jobhdez/pyhs)
 
