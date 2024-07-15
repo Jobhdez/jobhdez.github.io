@@ -10,7 +10,7 @@ Recently, my *fmul* pr got merged into LLVM. And I would like to talk about my c
 The problem was to multiply two double precision numbers and return a single precision number – i.e.,
 
 ```c++
-float fmul(double, double);
+float fmul(double x, double y);
 ```
 
 Before I go over my implementation I am going to introduce some terms.
