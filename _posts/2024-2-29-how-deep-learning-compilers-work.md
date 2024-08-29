@@ -8,34 +8,44 @@ tags: compilers
 * Table of Contents
 {:toc}
 
-### Why I am writing this
+### Introduction
 
-So, I have been writing compilers for sometime and some of the compilers that interest me are deep learning compilers. I started reading research papers and slowly became more curious.
+Deep learning compilers are the key to deploy neural nets on different devices and architectures. And with the end of Moore's Law, they will be increasingly important. It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fined tuned to each computer architecture; as a result, when there is a new architecture all the operators need to be re-implemented for this architecture.
 
-One bottleneck I experienced in the beginning of my compiler journey was how to use a parser generator. Once I learned  how to use a parser generator and used one to generate the parse tree for a compiler I was able to tackle the compiler problem. Given a parse tree and an abstract syntax tree for it, you just figure out how to go from the parse tree to the generated code.
-
-Similarly, when I started investigating deep learning compilers I could not start working on one because I lacked understanding of how these compilers manipulated the computational graph. When I figured out how to do this I was able to figure out how to go from the computational graph to the generated C code.
-
-So, in this post I would like to share my experience, including some code, to help someone new get a better idea of how to get the computational graph without having to investigate the TVM codebase. It is my sense that once someone knows this, he or she can work on her own minimal compiler.
-
-
-### Why are deep learning compilers important?
-
-It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fine tuned to each computer architecture; as a result, when deep learning architectures and hardware architectures evolve, each new deep learning operator has to be implemented for each computer architecture.
-
-In other words, deep learning compilers are important because they allow engineers to cope with the diversity of hardware.[^1] Libraries are slow in adapting with new hardware architectures so it is hard for these libraries to utilize all the power of these architectures.
-
-In contrast, deep learning compilers can target multiple hardware architectures.
+In other words, deep learning compilers are important because they allow engineers to cope with the diversity of hardware.[^1] Libraries are slow in adapting with new hardware architectures so it is hard for these libraries to utilize all the power of these architectures; moreover, deep learning compilers enable graph level optimizations and operator level optimization.
 
 In her article[^2], Chip Huyen talks about how edge computing is becoming more important. So, if you want your models to run on people’s cell phones and computers then you will need to target different architectures.
 
+
+### Computational Graphs
+
+A neural network is a computational graph whose nodes are deep learning operators such as convolution or tensors and the edges are dependencies among them. Technically speaking, a computational graph is a directed acyclic graph; for example, the expression:
+
+$$ a + a \times (b - c) + (b - c) \times d $$
+
+is represented as:
+
+```         
+	   +
+        /     \
+       +        *
+     /  \      / \
+    /     *   /   d
+    \   /  \ /
+      a    -
+          / \
+         b   c
+```
+
+Notice that common sub expressions are only used once. DAGs as these types of graphs are called, work the same way in regular compilers and deep learning compilers. Sub expressions are eliminated because it enables better performance because give two common sub expressions, the sub expression is only computed once.
+
+If you take a look at the TVM[^3] documentation, it mentions that a lot of the optimizations are DAG based.
+
+### How do deep learning compilers?
+
+Deep learning compilers take a DAG consisting of deep learning operators such as convolution and relu and lowers this graph to low level code such as LLVM IR. Since in a deep learning compiler you do not need to optimize kernels manually, one can target different architectures which is why deep learning compilers scale better.
+
 ### A simplified look into how deep learning compilers work
-
-Deep learning compilers are compilers that take a neural network model defined in Pytorch or another deep learning framework, and compile this model to optimized code for various architectures, e.g., GPU, x86, ARM. One of the main goals is to improve the inference time of the deep learning models.
-
-As discussed above, Deep learning compilers make targeting different computer architectures feasible.
-
-Deep learning compilers have a frontend and backend.
 
 The following is based on this  deep learning survey.[^1] You should read it to get a better idea.
 
@@ -43,13 +53,66 @@ The frontend of a deep learning compiler consists of a high level intermediate r
 
 In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, one separates the computation from the schedule. Given a computation, one tries different schedules to get best performance. A schedule is a type of optimization that can be applied such as tiling or vectorization. The idea is that by applying a series of schedules one can get better performance. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
 
-### My experience writing a minimal deep learning compiler
+#### Example
 
-The Pytorch TVM frontend is defined [here](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5282) in line 5282. If you scroll down to line [5360](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5360) you will also notice how TVM gets the computational graph from a given Pytorch model.
+TVM[^4] is a state of the art deep learning compiler it compiles deep learning models defined in frameworks, e.g., Pytorch to different architectures. This compiler works by representing the computational graph in an IR called Relay IR; for example, consider the example in the TVM documenation[^5]:
+
+```
+x = relay.var("x"
+v1 = relay.log(x)
+v2 = relay.add(v1 v1)
+f = relay.Function([x], v2)
+```
+
+This example corresponds to the following computation graph
+
+```
+
+            var
+	     |
+	    log
+	   /  \
+           \  /
+   result<-add
+```
+
+In the TVM paper[^4], it talks about the type of optimizations that are applied to this Relay IR. According to the TVM paper, some of these optimizations consist of *operation fusion* whereby multiple operators are fused into a single kernel. Operation fusion improves execution time because intermediate computations do not get saved in memory. In addition to operation fusion, *constant fold* is applied as well. Constant fold is an optimization that precomputes parts of the graph.
+
+Before the Relay graph gets lowered to low level code, the Relay operators -- e.g., relay.conv2d -- get mapped to a high level tensor expression language. The corresponding LLVM IR gets generated from this.
+
+#### A minimal implementation of a deep learning compiler
+
+
+I built a deep learning compiler[^5] before having an idea of how the deep learning model graph was represented internally in the compiler but I think I guessed partly right. Here is the code that takes the following model and generates an AST
+
+```python
+class Net(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv = nn.Conv2d(1, 1, 3).float()
+
+    def forward(self, x):
+        return self.conv(x)
+```
+Internally, in the AST the Conv2d is represented with this node:
+
+```python
+class Conv2dNode:
+    def __init__(self, input_tensor, weight, bias, input_height, input_width, filter_height, filter_width, batch_size, channels):
+        self.input_tensor = input_tensor
+        self.weight = weight
+        self.bias = bias
+        self.input_height = input_height
+        self.input_width = input_width
+        self.filter_height = filter_height
+        self.filter_width = filter_width
+        self.batch_size = batch_size
+        self.channels = channels
+```
+
+If you take a look at TVM's Pytorch frontend which is defined [here](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5282) in line 5282. If you scroll down to line [5360](https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5360) you will also notice how TVM gets the computational graph from a given Pytorch model.
 
 Based on TVM’s implementation, I figured out the following implementation which takes a convolutional layer defined in Pytorch and gets the computational graph and generates C code.
-
-You can check out my compiler [here](https://github.com/Jobhdez/convolution-layer-to-C).
 
 Here is how I manipulated the computational graph. The idea of my solution was to combine the graph information obtained from `torch.jit.trace` and `torch.fx.symbolic_trace` to get the appropriate information about the graph such as operators in the layers and actual tensors.
 
@@ -114,122 +177,79 @@ def get_layers(graph):
 And here is how I generated the C code.
 
 ```python
+            
 def to_c(node):
-	print(f'hello: {type(node)}')
-	if isinstance(node, Conv2dNode):
-       	 
-    	c_str = ""
-    	c_str = c_str = '#include "runtime.c"\n'
-    	c_str = c_str + "#include <stdio.h>\n\n"
+    if isinstance(node, Conv2dNode):
+        c_str = """
+#include "runtime.c"
+#include <stdio.h>
 
-    	bias = str(node.bias)
-    	input_h = str(node.input_height)
-    	input_w = str(node.input_width)
-    	filter_h = str(node.filter_height)
-    	filter_w = str(node.filter_width)
-    	batch_s = str(node.batch_size)
-    	channels = str(node.channels)
+int main() {
+"""
+        bias = str(node.bias)
+        input_h = str(node.input_height)
+        input_w = str(node.input_width)
+        filter_h = str(node.filter_height)
+        filter_w = str(node.filter_width)
+        batch_s = str(node.batch_size)
+        channels = str(node.channels)
 
-    	tensor = torch_tensor_to_c(node.input_tensor)
-    	weight = torch_tensor_to_c(node.weight)
-   	 
-    	c_str = c_str + "\nint main() {\n\n"
-    	c_str = c_str + f'int batch_size = {str(int(batch_s))};\n\n'
-    	c_str = c_str + f'int channels = {str(int(channels))};\n\n'
-    	c_str = c_str + f'int input_height = {str(int(input_h))};\n\n'
-    	c_str = c_str + f'int input_width = {str(int(input_w))};\n\n'
-    	c_str = c_str + f'int filter_height = {str(int(filter_h))};\n\n'
-    	c_str = c_str + f'int filter_width = {str(int(filter_w))};\n\n'
+        tensor = torch_tensor_to_c(node.input_tensor)
+        weight = torch_tensor_to_c(node.weight)
+        
+        c_str += f"    int batch_size = {str(int(batch_s))};\n"
+        c_str += f"    int channels = {str(int(channels))};\n"
+        c_str += f"    int input_height = {str(int(input_h))};\n"
+        c_str += f"    int input_width = {str(int(input_w))};\n"
+        c_str += f"    int filter_height = {str(int(filter_h))};\n"
+        c_str += f"    int filter_width = {str(int(filter_w))};\n"
+        
+        c_str += f"    float input_data[{batch_s}][{channels}][{input_h}][{input_w}] = {tensor};\n"
+        c_str += f"    float weight[{batch_s}][{channels}][{filter_h}][{filter_w}] = {weight};\n"
+        c_str += f"    float bias = {bias};\n"
+        c_str += f"    float output[{batch_s}][{channels}][{filter_h}][{filter_h}];\n"
+        
+        c_str += """
+    convolution(input_data, weight, &bias, batch_size, channels, input_height, input_width, filter_height, filter_width, output);
 
-    	c_str = c_str + f'float input_data[{batch_s}][{channels}][{input_h}][{input_w}] = {tensor};\n\n'
-    	c_str = c_str + f'float weight[{batch_s}][{channels}][{filter_h}][{filter_w}] = {weight};\n\n'
-    	c_str = c_str + f'float bias = {bias};\n'
-    	c_str = c_str + f'float output[{batch_s}][{channels}][{filter_h}][{filter_h}];\n\n'
-    	c_print = "convolution(input_data, weight, &bias, batch_size, channels, input_height, input_width, filter_height, filter_width, output);\n\n"
-    	c_print = c_print + "for (int i = 0; i < batch_size; ++i) {\n"
-    	c_print = c_print + "  for (int j = 0; j < 1; ++j) {\n"
-    	c_print = c_print + " 	for (int k = 0; k < 3; ++k) {\n"
-    	c_print = c_print + "   	for (int l = 0; l < 3; ++l) {\n"
-    	c_print = c_print + '     	printf("%f ", output[i][j][k][l]);\n'
-    	c_print = c_print + "   	}\n"
-    	c_print = c_print + " 	}\n"
-    	c_print = c_print + "  }\n"
-    	c_print = c_print + "}\n"
-   
-    	c_str = c_str + c_print + 'return 0;\n}'
-    	return c_str
+    printf("%f", output[0][0][0][0]);
+       
+    return 0;
+}
+"""
+        return c_str
 
 def torch_tensor_to_c(tensor):
-	c_array = tensor.numpy()
-	c_array = c_array.tolist()
-	c_array = str(c_array)
-	print(c_array)
-	c_array = c_array.replace('[', '{').replace(']', '}')
-	return c_array
-
+    c_array = tensor.numpy().tolist()
+    c_array = str(c_array).replace('[', '{').replace(']', '}')
+    return c_array
 ```
 
-And here is the example that I ran:
+And here is the C code that my compiler generates:
 
-```python
-# == utils for the example ==
+```c
+#include "runtime.c"
+#include <stdio.h>
 
-def write_file(c_program, file_name):
-	with open(file_name, "w") as f:
-    	f.write(c_program)
+int main() {
+    int batch_size = 1;
+    int channels = 1;
+    int input_height = 3;
+    int input_width = 3;
+    int filter_height = 3;
+    int filter_width = 3;
+    float input_data[1][1][3][3] = {{{{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}}}};
+    float weight[1][1][3][3] = {{{{0.1206025704741478, 0.2804994285106659, 0.10350386798381805}, {-0.31444603204727173, -0.3109368085861206, -0.22286033630371094}, {-0.12215566635131836, 0.2765805721282959, 0.25621065497398376}}}};
+    float bias = -0.24808375537395477;
+    float output[1][1][3][3];
 
-def test_my_conv_fn(input_tensor, net):
-	module = torch.jit.trace(net, input_tensor)
-	state_dict = module.state_dict()
-	weight = state_dict['conv.weight']
-	bias = state_dict['conv.bias']
-	saved_module = module.save("test_conv.pth")
-	load_module = torch.jit.load("test_conv.pth")
+    convolution(input_data, weight, &bias, batch_size, channels, input_height, input_width, filter_height, filter_width, output);
 
-	with torch.no_grad():
-    	torch_output = load_module(input_tensor)
-
-	my_conv_output = convolution_torch(input_tensor, weight, bias)
-
-	print(f'torch_output: {torch_output}\n my_conv_output: {my_conv_output}')
-
-# == Example code for the compilation of a conv layer to C ===
-
-class Net(nn.Module):
-	def __init__(self):
-    	super().__init__()
-    	self.conv = nn.Conv2d(1, 1, 3).float()
-
-	def forward(self, x):
-    	return self.conv(x)
-
-net = Net()
-ones = np.ones((1,1,3,3), dtype=np.float32)
-input_tensor = torch.tensor(ones, dtype=torch.float32)
-
-nn_ast = torch_to_ast(net, input_tensor)
-c_program = to_c(nn_ast[0])
-
-print("\ntesting my conv fn....")
-test_my_conv_fn(input_tensor, net)
-
-print("\n\nwriting generated C file...")
-write_file(c_program, "../backend/conv.c")
+    printf("%f", output[0][0][0][0]);
+       
+    return 0;
+}
 ```
-
-So, given a model such as the following:
-
-```python
-class Net(nn.Module):
-	def __init__(self):
-    	super().__init__()
-    	self.conv = nn.Conv2d(1, 1, 3).float()
-
-	def forward(self, x):
-    	return self.conv(x)
-```
-
-My compiler generates the C code. You can take a look at the generate code for this example [here](https://github.com/Jobhdez/convolution-layer-to-C/blob/main/src/backend/conv.c). It does not generate idiomatic C (sorry about that) but it does run.
 
 ### How to improve it
 
@@ -249,3 +269,6 @@ Specifically, from that list, the Tiramisu, TVM, and Hidet papers are very good.
 
 [^1]: [The Deep Learning Compiler](https://arxiv.org/pdf/2002.03794.pdf)
 [^2]: [A Friendly Introduction to Machine Learning Compilers and Optimizers](https://huyenchip.com/2021/09/07/a-friendly-introduction-to-machine-learning-compilers-and-optimizers.html)
+[^3]: [Relay IR](https://tvm.apache.org/docs/v0.9.0/arch/relay_intro.html)
+[^4]: [The TVM Paper](https://www.usenix.org/system/files/osdi18-chen.pdf)
+[^5]: [My Deep Learning compiler](https://github.com/Jobhdez/Convy)
