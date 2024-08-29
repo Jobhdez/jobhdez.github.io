@@ -226,7 +226,7 @@ def torch_tensor_to_c(tensor):
 ```
 
 And here is the C code that my compiler generates:
-
+{% raw %}
 ```c
 #include "runtime.c"
 #include <stdio.h>
@@ -250,6 +250,7 @@ int main() {
     return 0;
 }
 ```
+{% endraw %}
 
 ### How to improve it
 
