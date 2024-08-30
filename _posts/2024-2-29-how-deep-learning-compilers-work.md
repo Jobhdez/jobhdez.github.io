@@ -10,16 +10,16 @@ tags: compilers
 
 ### Introduction
 
-Deep learning compilers are the key to deploy neural nets on different devices and architectures. And with the end of Moore's Law, they will be increasingly important. It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fined tuned to each computer architecture; as a result, when there is a new architecture all the operators need to be re-implemented for this architecture.
+Deep learning compilers are the key to deploy neural nets on different devices and architectures. And with the end of Moore's Law, they will be increasingly important. It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fined tuned to each computer architecture; as a result, when there is a new architecture all the deep learning operators need to be re-implemented for this architecture.
 
-In other words, deep learning compilers are important because they allow engineers to cope with the diversity of hardware.[^1] Libraries are slow in adapting with new hardware architectures so it is hard for these libraries to utilize all the power of these architectures; moreover, deep learning compilers enable graph level optimizations and operator level optimization.
+In other words, deep learning compilers are important because they allow engineers to cope with the diversity of hardware.[^1] Libraries are slow in adapting with new hardware architectures so it is hard for these libraries to utilize all the power of these architectures; moreover, deep learning compilers enable graph level optimizations and operator level optimizations.
 
 In her article[^2], Chip Huyen talks about how edge computing is becoming more important. So, if you want your models to run on people’s cell phones and computers then you will need to target different architectures.
 
 
 ### Computational Graphs
 
-A neural network is a computational graph whose nodes are deep learning operators such as convolution or tensors and the edges are dependencies among them. Technically speaking, a computational graph is a directed acyclic graph; for example, the expression:
+A neural network is a computational graph whose nodes are deep learning operators such as convolution and tensors and the edges are dependencies among them. Technically speaking, a computational graph is a directed acyclic graph; for example, the expression:
 
 $$ a + a \times (b - c) + (b - c) \times d $$
 
@@ -37,25 +37,23 @@ is represented as:
          b   c
 ```
 
-Notice that common sub expressions are only used once. DAGs as these types of graphs are called, work the same way in regular compilers and deep learning compilers. Sub expressions are eliminated because it enables better performance because give two common sub expressions, the sub expression is only computed once.
+Notice that common sub expressions are only used once. DAGs, as these types of graphs, are called, work the same way in regular compilers and deep learning compilers. Sub expressions are eliminated because it enables better performance because given two common sub expressions, only one is computed. This is essentially the difference between and AST and a DAG.
 
-If you take a look at the TVM[^3] documentation, it mentions that a lot of the optimizations are DAG based.
-
-### How do deep learning compilers?
-
-Deep learning compilers take a DAG consisting of deep learning operators such as convolution and relu and lowers this graph to low level code such as LLVM IR. Since in a deep learning compiler you do not need to optimize kernels manually, one can target different architectures which is why deep learning compilers scale better.
+If you take a look at the TVM[^3] documentation, then it mentions that a lot of the optimizations are DAG based.
 
 ### A simplified look into how deep learning compilers work
 
+Deep learning compilers take a DAG consisting of deep learning operators such as convolution and relu and lowers it to low level code such as LLVM IR. Since in a deep learning compiler you do not need to optimize kernels manually, one can target different architectures which is why deep learning compilers scale better.
+
 The following is based on this  deep learning survey.[^1] You should read it to get a better idea.
 
-The frontend of a deep learning compiler consists of a high level intermediate representation (IR). This IR is a directed acyclic graph (DAG). The nodes in this graph represent the deep learning operators such as convolution. On the other hand, the edges represent tensors. Several optimizations that are independent of the hardware are applied to this high level IR. In other words, this graph is indeed the computational graph we need to get from a given neural net model. Once we have this graph, we have access to the deep learning operators such as convolution and the tensors such as weights, and biases.
+The frontend of a deep learning compiler consists of a high level intermediate representation (IR). This IR is a directed acyclic graph (DAG). The nodes in this graph represent the deep learning operators such as convolution and tensors. On the other hand, the edges represent dependencies. Several optimizations that are independent of the hardware are applied to this high level IR. In other words, this graph is indeed the computational graph we need to get from a given neural net model. Once we have this graph, we have access to the deep learning operators such as convolution and the tensors such as weights, and biases.
 
-In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, one separates the computation from the schedule. Given a computation, one tries different schedules to get best performance. A schedule is a type of optimization that can be applied such as tiling or vectorization. The idea is that by applying a series of schedules one can get better performance. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
+In addition there's also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, the computation is seperated from the schedule. Given a computation, one tries different schedules to get the best performance. A schedule is a type of optimization that can be applied such as tiling or vectorization. The idea is that by applying a series of schedules one can get better performance. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.
 
 #### Example
 
-TVM[^4] is a state of the art deep learning compiler it compiles deep learning models defined in frameworks, e.g., Pytorch to different architectures. This compiler works by representing the computational graph in an IR called Relay IR; for example, consider the example in the TVM documenation[^5]:
+TVM[^4] is a state of the art deep learning compiler. TVM compiles deep learning models defined in frameworks, e.g., Pytorch, to different architectures. This compiler works by representing the computational graph in an IR called Relay; for example, consider the example from the TVM documenation[^5]:
 
 ```
 x = relay.var("x"
@@ -83,7 +81,7 @@ Before the Relay graph gets lowered to low level code, the Relay operators -- e.
 #### A minimal implementation of a deep learning compiler
 
 
-I built a deep learning compiler[^5] before having an idea of how the deep learning model graph was represented internally in the compiler but I think I guessed partly right. Here is the code that takes the following model and generates an AST
+I built a deep learning compiler[^5] before having an idea of how the deep learning model graph was represented internally in the compiler but I think I guessed partly right. Here is the code that takes the following model and generates an AST:
 
 ```python
 class Net(nn.Module):
@@ -116,11 +114,9 @@ Based on TVM’s implementation, I figured out the following implementation whic
 
 Here is how I manipulated the computational graph. The idea of my solution was to combine the graph information obtained from `torch.jit.trace` and `torch.fx.symbolic_trace` to get the appropriate information about the graph such as operators in the layers and actual tensors.
 
-I also had to experiment with TVM's API and read the Pytorch documentation but once I was able to manipulate the operators and tensors I only had figure out how a convolution operator is implemented and then write it in C as part of the runtime.
+I also had to experiment with TVM's API and read the Pytorch documentation but once I was able to manipulate the operators and tensors I only had to figure out how a convolution operator is implemented and then write it in C as part of the runtime. But I do not think the convolutional kernel is pre-defined this way in TVM. Instead the code for the kernel is generated from a high level specificiation. Otherwise you would just be building a fraemwork like system.
 
-I am not 100 percent sure if this is the approach taken by TVM. I was looking at the TVM compiler back-end code and some neural net operators are implemented but they looked like constructors instead of the actual computation. I will have to research this more.
-
-Anyways, although I did not construct a DAG, I still created an abstract syntax tree to represent the deep learning model. 
+Anyways, although I did not construct a DAG, I still created an abstract syntax tree to represent the deep learning model. Although a DAG can be constructed for a bigger model by not computing common sub-expressions. So, when a common sub-expression is reached, one that was already computed, we return the node. DAGs allow you to generate efficient code.
 
 ```python
 def torch_to_ast(net, input_tensor):
@@ -135,17 +131,14 @@ def torch_to_ast(net, input_tensor):
     	tensor_data.append({'name': node.name, 'dtype': node.meta['tensor_meta'].dtype, 'shape': node.meta['tensor_meta'].shape, 'tensor': node.meta['tensor_meta'].data})
 
 	layers_lst = [list(layer) for layer in layers]
-	print(layers_lst)
+
 	layers = layers_lst[1:]
-	print(layers)
+
 	layers = [{'name': layer[0], 'nn_obj': layer[1]} for layer in layers]
-	print(layers)
-	print(type(layers[0]['nn_obj']))
+
 	ast_nodes = []
 	for layer in range(len(layers)):
     	nn_obj = layers[layer]['nn_obj']
-    	print(nn_obj)
-    	print(type(nn_obj))
     	if isinstance(nn_obj, torch.nn.modules.conv.Conv2d):
         	input_tensor = None
         	weight_tensor = None
@@ -225,7 +218,7 @@ def torch_tensor_to_c(tensor):
     return c_array
 ```
 
-And here is the C code that my compiler generates:
+And here is the C code that my compiler generates for the above neural net:
 {% raw %}
 ```c
 #include "runtime.c"
@@ -254,7 +247,9 @@ int main() {
 
 ### How to improve it
 
-I have plans to keep working on this compiler but I need to study TVM more. Next, I want to compile a VGG block to C code. Now, we can manually write some of the optimizations that compilers use to help GCC generate faster code. And we can also generate vectorized C code. 
+I have plans to keep working on this compiler but I need to study TVM more. Next, I want to compile a VGG block to C code. Now, we can manually write some of the optimizations that compilers use to help GCC generate faster code. And we can also generate vectorized C code. In the paper "Achieving high performance the functional way"[^6], the authors observed that the approach taken in the construction of TVM is limited. The way the schedule and algorithm is seperated in TVM is limited because the users cannot formulate their own abstractons. TVM's API is not extensible; moreover, the authors observed that often its not sufficient to soley change the optimizations. Instead you also need to change the algorithm. So, TVM is not extensible. Instead, the authors proposed two DSLs that allow users to formulate their own schedules without changing the algorithm. I think, the key here is that by making the system more extensible you give more power to the user since the user does not have to modify the compiler itself.
+
+Speaking of extensibility, my conjecture is that this approach can be improved even more by building a DSL in Common Lisp. With the power of macros we can construct a DSL that inherits the whole Lisp language which will make such system even more extensible. Users can make new macros to extend the language and add new algorithms and schedules thereby extending the language to fit their needs. Common Lisp (SBCL) is a high performant language and is highly extensible; moreover, the standard library has functionality for SIMD instructions and as a result if we were to build a system in Lisp we could just generate Lisp with SIMD instructions enabled.
 
 ### Summary
 
@@ -273,3 +268,4 @@ Specifically, from that list, the Tiramisu, TVM, and Hidet papers are very good.
 [^3]: [Relay IR](https://tvm.apache.org/docs/v0.9.0/arch/relay_intro.html)
 [^4]: [The TVM Paper](https://www.usenix.org/system/files/osdi18-chen.pdf)
 [^5]: [My Deep Learning compiler](https://github.com/Jobhdez/Convy)
+[^6]: [Achieving High Performance the functional way](https://dl.acm.org/doi/pdf/10.1145/3408974)
