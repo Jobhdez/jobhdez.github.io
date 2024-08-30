@@ -53,7 +53,7 @@ In addition there's also a low level IR, which is part of the backend, to which 
 
 #### Example
 
-TVM[^4] is a state of the art deep learning compiler. TVM compiles deep learning models defined in frameworks, e.g., Pytorch, to different architectures. This compiler works by representing the computational graph in an IR called Relay; for example, consider the example from the TVM documenation[^5]:
+TVM[^4] is a state of the art deep learning compiler. TVM compiles deep learning models defined in frameworks, e.g., Pytorch, to different architectures. This compiler works by representing the computational graph in an IR called Relay; for example, consider the example from the TVM documenation[^3]:
 
 ```
 x = relay.var("x"
