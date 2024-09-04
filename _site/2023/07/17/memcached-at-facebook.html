@@ -1,24 +1,29 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>How facebook scaled memcached | (lambda () ‘(Jobs Blog))</title>
+<title>How facebook scaled Memcache | (lambda () ‘(Jobs Blog))</title>
 <meta name="generator" content="Jekyll v4.3.3" />
-<meta property="og:title" content="How facebook scaled memcached" />
-<meta name="author" content="Job Hernandez" />
+<meta property="og:title" content="How facebook scaled Memcache" />
+<meta name="author" content="Job Hernandez Lara" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="version 1.1: rephrased a few parts and added my interpretation, 7/20/23" />
-<meta property="og:description" content="version 1.1: rephrased a few parts and added my interpretation, 7/20/23" />
+<meta name="description" content="Introduction" />
+<meta property="og:description" content="Introduction" />
 <link rel="canonical" href="http://localhost:4000/2023/07/17/memcached-at-facebook.html" />
 <meta property="og:url" content="http://localhost:4000/2023/07/17/memcached-at-facebook.html" />
 <meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2023-07-17T00:00:00-07:00" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="How facebook scaled memcached" />
+<meta property="twitter:title" content="How facebook scaled Memcache" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-07-17T00:00:00-07:00","datePublished":"2023-07-17T00:00:00-07:00","description":"version 1.1: rephrased a few parts and added my interpretation, 7/20/23","headline":"How facebook scaled memcached","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/07/17/memcached-at-facebook.html"},"url":"http://localhost:4000/2023/07/17/memcached-at-facebook.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2023-07-17T00:00:00-07:00","datePublished":"2023-07-17T00:00:00-07:00","description":"Introduction","headline":"How facebook scaled Memcache","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/07/17/memcached-at-facebook.html"},"url":"http://localhost:4000/2023/07/17/memcached-at-facebook.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
 </head>
@@ -42,23 +47,19 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">How facebook scaled memcached</h1>
+    <h1 class="post-title p-name" itemprop="name headline">How facebook scaled Memcache</h1>
     <p class="post-meta"><time class="dt-published" datetime="2023-07-17T00:00:00-07:00" itemprop="datePublished">
         Jul 17, 2023
       </time>• 
       <span itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
   </header>
 
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p><em>version 1.1</em>: rephrased a few parts and added my interpretation, 7/20/23</p>
+    <h3 id="introduction">Introduction</h3>
 
-<p><em>version 1</em>: initial version, 7/17/23</p>
-
-<h3 id="introduction">Introduction</h3>
-
-<p>The following is my reflection of the paper <a href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf">Scaling Memcached at Facebook</a>. I am not an expert so please read the paper if you find my reflection interesting. In some parts of the following I included my interpretation of what I think is going on. So, again, please read the paper. It is a beautiful paper that will teach you a lot of things. I mainly wrote this to engage with the paper and enhance my understanding. After reading this experience paper I have learned that if I would like to work on similar stuff then I must know computer science fundamentals; for example, in the paper the authors talk about how they used UDP instead of TCP for get requests because UDP is connectionless and as a result each web server thread can communicate directly with memcached servers without establishing a connection thereby reducing latency. In my humble opinion this indicates that it pays to know backend engineering fundamentals such as communicating protocols – e.g., TCP, UDP. Without knowing the fundamentals, someone who is interested in working on distributed key-value stores will be significantly limited; moreover, reading about distributed systems is pretty interesting and expands your mind and arguably you can make better decisions as a backend programmer.</p>
+<p>The following is my reflection of the paper <a href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf">Scaling Memcache at Facebook</a>. I am not an expert so please read the paper if you find my reflection interesting. In some parts of the following I included my interpretation of what I think is going on. So, again, please read the paper. It is a beautiful paper that will teach you a lot of things. I mainly wrote this to engage with the paper and enhance my understanding. After reading this experience paper I have learned that if I would like to work on similar stuff then I must know computer science fundamentals; for example, in the paper the authors talk about how they used UDP instead of TCP for get requests because UDP is connectionless and as a result each web server thread can communicate directly with memcached servers without establishing a connection thereby reducing latency. In my humble opinion this indicates that it pays to know backend engineering fundamentals such as communicating protocols – e.g., TCP, UDP. Without knowing the fundamentals, someone who is interested in working on distributed key-value stores will be significantly limited; moreover, reading about distributed systems is pretty interesting and expands your mind and arguably you can make better decisions as a backend programmer.</p>
 
 <p>I find this type of infrastructure work really fascinating. I had already listened to an InfoQ Instagram <a href="https://www.youtube.com/watch?v=hnpzNAPiC0E">talk</a> about how Instagram engineers scaled the infrastructure of the respective website I think a lot of interesting problems arise from big websites at the scale of Facebook and Google.</p>
 

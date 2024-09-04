@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
@@ -45,50 +50,29 @@
   </header>
 
   <div class="post-content">
-    <p>Hello, I am Job Hernandez and I am a programmer from Seattle, WA. Some of my interests include compilers, functional programming, and pure mathematics; in addition, I also enjoy thinking about operating systems and distributed systems. But I also enjoy making Django backends. Fortunately, I have learned that programming is fun irrespective of the what you’re building or which programming language you are using. Personally, I get a kick out of solving problems and debugging – i.e., making a program run after spending some time debugging it.</p>
+    <p>Hello, I am Job and I am a programmer from Seattle and I get a kick out of solving problems. I am interested in compilers, server side programming, and pure math. I also love coffee :-)</p>
 
 <h3 id="software-projects">Software Projects</h3>
-<p>I write software as a hobby but for me programming is a serious hobby. Some of my projects include:</p>
-
-<h4 id="independent-projects">Independent projects</h4>
-
-<p>Here is my favorite compiler I have written based on “Essentials of Compilation” by Dr. Siek. This compiler is loosely based on this book but I used a different but similar language.</p>
+<p>I have contributed to:</p>
 
 <ul>
-  <li><a href="https://github.com/jobhdez/zettapy">zettapy</a>, a compiler that lowers the core of an imperative language to an x86 AST.</li>
+  <li><a href="https://github.com/coalton-lang/coalton">Coalton</a></li>
 </ul>
 
-<h4 id="open-source-contributions">Open Source contributions</h4>
-
-<p>I have also contributed to open source in non trivial ways; for example, Coalton is used in production for the development of a quantum compiler. My biggest contribution to Coalton and in open source in general is a library for automatic differentiation via dual numbers. You can see the original PR <a href="https://github.com/coalton-lang/coalton/pull/890">here</a>. It was merged by a core developer <a href="https://github.com/coalton-lang/coalton/pull/926">here</a>.</p>
+<p>a programming language used to build quantum computing software. I added support for automatic differentiation. See original PR <a href="https://github.com/coalton-lang/coalton/pull/890">here</a>. It was merged <a href="https://github.com/coalton-lang/coalton/pull/926">here</a>.</p>
 
 <ul>
-  <li><a href="https://github.com/coalton-lang/coalton">coalton</a>, a statically typed programming language embedded in Common Lisp.</li>
+  <li><a href="https://github.com/llvm/llvm-project">LLVM</a></li>
 </ul>
 
-<p>In addition I have also fixed some typos for TVM which is a compiler for deep learning. You can see my PRs <a href="https://github.com/apache/tvm/commits?author=jobhdez">here</a>. I chose to say something about these contributions despite these PRs being simple because the last typo I noticed and fixed was as a result of trying to figure out how a deep learning compiler such as TVM extracts the computational graph of a neural network model. What I learned was that for Pytorch models, TVM uses torchscript. From the torchscript representation I think you make the AST and continue from there.</p>
+<p>compiler infrastructure that enables you to build concrete compilers. LLVM is used by Google, Apple, Nvidia and many other companies.
+You can see my patches <a href="https://github.com/llvm/llvm-project/commits?author=Jobhdez">here</a>.</p>
 
-<h3 id="some-fascinating-quotes-about-programming">Some fascinating quotes about programming</h3>
+<ul>
+  <li><a href="https://github.com/Jobhdez/pyhs">x86 compiler</a></li>
+</ul>
 
-<p>I love programming and computer science and here are some of my favorite quotes:</p>
-
-<p><strong>This is a quote taken from SICP, which is one of the best CS textbooks, about what programming entails</strong>:</p>
-
-<blockquote>
-  <p>I think that it’s extraordinarily important that we in computer science keep fun in computing. When it started out, it was an awful lot of fun. Of course, the paying customers got shafted every now and then, and after a while we began to take their complaints seriously. We began to feel as if we really were responsible for the successful, error-free perfect use of these machines. I don’t think we are. I think we’re responsible for stretching them, setting them off in new directions, and keeping fun in the house. I hope the field of computer science never loses its sense of fun. Above all, I hope we don’t become missionaries. Don’t feel as if you’re Bible salesmen. the world has too many of those already. What you know about computing other people will learn. Don’t feel as if the key to successful computing is only in your hands. What’s in your hands, I think and hope, is intelligence: the ability to see the machine as more than when you were first led up to it, that you can make it more. - Alan Perlis</p>
-</blockquote>
-
-<p><strong>The following quote is taken from one of Paul Graham’s essays about how Lisp is analogous to the quicksort algorithm; so the idea that Lisp is outdated or obsolete is wrong because Lisp is a piece of math like quicksort. This quote gets me enthusiastic about Lisp</strong>.</p>
-
-<blockquote>
-  <p>Another way to show that Lisp was neater than Turing machines was to write a universal Lisp function and show that it is briefer and more comprehensible than the description of a universal Turing machine. This was the Lisp function eval…, which computes the value of a Lisp expression…. Writing eval required inventing a notation representing Lisp functions as Lisp data, and such a notation was devised for the purposes of the paper with no thought that it would be used to express Lisp programs in practice. - McCarthy</p>
-</blockquote>
-
-<p><strong>The following quote is really meaningful because I also love math and because this quote taught me that you can see programming languages and programs as mathematical objects. It is taken from Dr. Pierce’s Software Foundations course website</strong>.</p>
-
-<blockquote>
-  <p>This course introduces basic concepts and techniques in the foundational study of programming languages, as well as their formal logical underpinnings. The central theme is the view of individual programs and whole languages as mathematical objects about which precise claims may be made and proved.</p>
-</blockquote>
+<p>a compiler I wrote in Haskell that generates x86-64 runnable assembly for if expressions, tuples, let expressions, arithmetic, bool comparisons.</p>
 
   </div>
 

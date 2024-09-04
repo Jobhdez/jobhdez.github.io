@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Compiler problems and their implementation | (lambda () ‘(Jobs Blog))</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="Compiler problems and their implementation" />
+<meta name="author" content="Job Hernandez" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to A-Normal form, compiling tuples to x86, and floating point math." />
+<meta property="og:description" content="So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to A-Normal form, compiling tuples to x86, and floating point math." />
+<link rel="canonical" href="http://localhost:4000/2024/05/02/compilers-are-interesting.html" />
+<meta property="og:url" content="http://localhost:4000/2024/05/02/compilers-are-interesting.html" />
+<meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-02T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Compiler problems and their implementation" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2024-05-02T00:00:00-07:00","datePublished":"2024-05-02T00:00:00-07:00","description":"So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to A-Normal form, compiling tuples to x86, and floating point math.","headline":"Compiler problems and their implementation","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/05/02/compilers-are-interesting.html"},"url":"http://localhost:4000/2024/05/02/compilers-are-interesting.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">(lambda () &#39;(Jobs Blog))</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Compiler problems and their implementation</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-05-02T00:00:00-07:00" itemprop="datePublished">
+        May 2, 2024
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to <em>A-Normal form</em>, compiling tuples to x86, and floating point math.</p>
+
+<h3 id="compiling-without-continuations">Compiling without continuations</h3>
+
+<p>A-Normal form is an intermediate language for functional programming languages but it can be used to compile languages such as Python.</p>
+
+<p>It was introduced in a paper called “The Essence of Compiling with Continuations”<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>, in which the authors argued that ANF is equivalent to continuation passing style but much simpler.</p>
+
+<p>ANF consists of atomic and complex expressions. An atomic expression is an expression that is readily computable in x86 assembly.</p>
+
+<p>Recently, I built a compiler in Haskell for a subset of a language.</p>
+
+<p>Here is the grammar:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Exp : var  { Var $1 }
+| let var '=' Exp ';' { Let $2 $4 }
+| Exp '+' Exp ';' { Plus $1 $3 }
+| Exp '-' Exp ';' { Minus $1 $3 }
+| Exp '&lt;' Exp ';'   { LessThn $1 $3 }
+| Exp '&gt;' Exp ';' { GreaterThn $1 $3 }
+| if Exp then Exp else Exp ';' { IfExp $2 $4 $6 }
+| true { Bool $1 }
+| false { Bool $1 }
+| print '(' Exp ')' ';' { PrintExp $3 }
+| Exp ';' Exp  { Exps $1 $3 }
+| while Exp ':' Exp  { While $2 $4 }
+| defun Exp '(' Exp ')' '{' Exp '}'   { DefunExp $2 $4 $7 }
+| '(' Exp ')'   { TupleExp $2 }
+| Exp '[' int ']'   { TupleIndex $1 $3 }
+| int  { Int $1 }
+| '-' int { Negative $2 }
+</code></pre></div></div>
+
+<p>Once A-Normalization is applied you end up something like this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>atomic  :: number | boolean | var | &lt; | &gt; | + | -
+complex :: (atomic, atomic,..., atomic) | (if &lt;atomic&gt; &lt;complex&gt; &lt;complex&gt;) | (while &lt;atomic&gt; &lt;complex&gt;) | (tuple &lt;atomic&gt;)
+exp     :: (let var &lt;complex&gt;) | atomic | complex
+</code></pre></div></div>
+
+<p>The interesting conversion was the \(if expression\). It required some thought. I initially wrote it in Racket and then rewrote it in Haskell. Here is both of the implementations:</p>
+
+<p>Racket<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(define (syntax-&gt;anf ast)
+
+  (define counter (make-parameter 0))
+ 
+  (define (generate-temp-name name)
+	(let* [(current-counter (counter))
+       	(name* (string-append name (number-&gt;string current-counter)))]
+  	(counter (+ current-counter 1))
+  	name*))
+ 
+  (define (to-anf ast)
+	(match ast
+  	    ;; …
+           
+     	[(py-if-exp cnd thn els)
+      	(let* [(temp-name (generate-temp-name "temp-"))
+             	(temp-name2 (generate-temp-name "temp-"))]
+        	(list (atomic-assignment (atomic (py-id temp-name)) (to-anf cnd))
+              	(atomic-assignment (atomic (py-id temp-name2))
+                                 	(to-anf (py-if-exp (py-id temp-name)
+                                                    	thn
+                                                    	els)))
+              	(to-anf (py-if-exp (py-id temp-name2) then-exp else-exp))))])]
+
+</code></pre></div></div>
+
+<p>And here is my Haskell<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup> implementation:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">Bool</span> <span class="n">b</span><span class="p">)</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">counter</span> <span class="o">=</span>
+  <span class="kt">MonIf</span> <span class="p">(</span><span class="n">toMon</span> <span class="p">(</span><span class="kt">Bool</span> <span class="n">b</span><span class="p">)</span> <span class="n">counter</span><span class="p">)</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">thn</span> <span class="n">counter</span><span class="p">)</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">els</span> <span class="n">counter</span><span class="p">)</span>
+<span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">v</span><span class="p">)</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">counter</span> <span class="o">=</span>
+  <span class="kt">MonIf</span> <span class="p">(</span><span class="n">toMon</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">v</span><span class="p">)</span> <span class="n">counter</span><span class="p">)</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">thn</span> <span class="n">counter</span><span class="p">)</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">els</span> <span class="n">counter</span><span class="p">)</span>
+<span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="n">cnd</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">thn2</span> <span class="n">els2</span><span class="p">)</span> <span class="n">counter</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">tmpname</span> <span class="o">=</span> <span class="s">"temp_"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter</span> <span class="kr">in</span>
+	<span class="kr">let</span> <span class="n">counter2</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">1</span> <span class="kr">in</span>
+  	<span class="kr">let</span> <span class="n">tmpname2</span> <span class="o">=</span> <span class="s">"temp_"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter2</span> <span class="kr">in</span>
+    	<span class="kr">let</span> <span class="n">counter3</span> <span class="o">=</span> <span class="n">counter2</span> <span class="o">+</span> <span class="mi">1</span> <span class="kr">in</span>
+      	<span class="kr">let</span> <span class="n">counter4</span> <span class="o">=</span> <span class="n">counter3</span> <span class="o">+</span> <span class="mi">1</span> <span class="kr">in</span>
+        	<span class="kt">MonLstSeq</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="n">tmpname</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">cnd</span> <span class="n">counter3</span><span class="p">))</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="n">tmpname2</span> <span class="p">(</span><span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">tmpname</span><span class="p">)</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">counter4</span><span class="p">))</span> <span class="p">(</span><span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">tmpname2</span><span class="p">)</span> <span class="n">thn2</span> <span class="n">els2</span><span class="p">)</span> <span class="n">counter4</span><span class="p">)</span>
+   	 
+<span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="n">cnd</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">counter</span> <span class="o">=</span>
+  <span class="kt">MonIf</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">cnd</span> <span class="n">counter</span><span class="p">)</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">thn</span> <span class="n">counter</span><span class="p">)</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">els</span> <span class="n">counter</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This problem requires thinking recursively which I enjoyed. The main differences between these two solutions is that in the Racket version I use mutation to create the temp variables. On the other hand, the Haskell version required me to think recursively as well but I needed to pass a counter and increment this counter to create the temp variables.</p>
+
+<h3 id="interfacing-with-the-garbage-collector">Interfacing with the garbage collector</h3>
+
+<p>Tuples motivate the need for garbage collection. The garbage collector needs a way to identify tuples (pointers) from other data. As a result, a 64 bit tag gets placed in the front of tuple data.</p>
+
+<p>In the garbage collector, there are two regions: a fromSpace and toSpace region. When you allocate a tuple, a graph is constructed internally. To make space for new allocations all the tuples reachable from the root set of the graph gets copied into the toSpace region. After this the fromSpace region gets turned into the toSpace region and the toSpace becomes the fromSpace region.</p>
+
+<h4 id="example">Example</h4>
+
+<p>Suppose you have a tuple: (1,1,3).</p>
+
+<p>The 64 bit tag for this tuple would be 000 000011 1.In assembly I will be using instructions that manipulate 64 bits.</p>
+
+<p>The first three 0 bits are 0s because when processing a tuple you assign a 0 bit to an integer and  a 1 bit to a tuple.</p>
+
+<p>000011 on the other hand is the length of the tuple. In this case 3.</p>
+
+<p>The last bit represents whether it’s reachable from the root set.</p>
+
+<p>example using this code:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; makeTag (1;1;3)
+7
+</code></pre></div></div>
+<p>The tag 7 will be placed in front of the tuple.</p>
+
+<p>In my Haskell compiler, the example</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let x = (4;5;6);; print(x[1]);
+</code></pre></div></div>
+
+<p>Compiles to the following x86<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.globl main
+main:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $0, %rsp
+    movq $65536, %rdi
+    movq $65536, %rsi
+    callq initialize
+    movq rootstack_begin(%rip), %r15
+    movq $0, 0(%r15)
+    addq $8, %r15
+    jmp start
+start:
+    movq free_ptr(%rip),%rax
+    addq $24, %rax
+    movq fromspace_end(%rip),%r13
+    cmpq %r13,%rax
+    jl block_77
+    jmp block_78
+block_77:
+    movq $0,%r13
+    jmp block_80
+block_78:
+    movq %r15,%rdi
+    movq $24,%rsi
+    callq collect
+    jmp block_80
+block_80:
+    movq free_ptr(%rip),%r11
+    addq $32, free_ptr(%rip)
+    movq $7,0(%r11)
+    movq %r11,%r14
+    movq %r14,%r11
+    movq $4,8(%r11)
+    movq $5,16(%r11)
+    movq $6,24(%r11)
+    movq 16(%r11),%rdi
+    callq print_int
+    jmp conclusion
+conclusion:
+    subq $8, %r15
+    addq $0, %rsp
+    popq %rbp
+    retq
+</code></pre></div></div>
+
+<h3 id="floating-point-math">Floating point math</h3>
+
+<p>Before my contribution to LLVM, I took floating point numbers as granted but it turns out that floating point mathematics is an entire world.</p>
+
+<p>Floating point math is interesting because real numbers can be infinite but the machine is finite; as a result, one needs to represent an infinite number in a finite machine.</p>
+
+<p>The issue I did for LLVM is not floating point arithmetic but it was indeed a floating point issue.</p>
+
+<p>I implemented fmaximum and fminimum and their variants. In this type of problem I had to return NaN values in some cases.</p>
+
+<p>But working on this issue required me to change around 140 files! So, it was the most complex thing, engineering wise, that I had done. My git skills improved a lot and my emacs’ skills did to.</p>
+
+<p>But anyways, here is the code that I wrote<sup id="fnref:5" role="doc-noteref"><a href="#fn:5" class="footnote" rel="footnote">5</a></sup>:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fmaximum</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bity</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">sign</span><span class="p">()</span> <span class="o">!=</span> <span class="n">bity</span><span class="p">.</span><span class="n">sign</span><span class="p">())</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_neg</span><span class="p">()</span> <span class="o">?</span> <span class="n">y</span> <span class="o">:</span> <span class="n">x</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">y</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fminimum</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bity</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">sign</span><span class="p">()</span> <span class="o">!=</span> <span class="n">bity</span><span class="p">.</span><span class="n">sign</span><span class="p">())</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_neg</span><span class="p">())</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fmaximum_num</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_signaling_nan</span><span class="p">()</span> <span class="o">||</span> <span class="n">bity</span><span class="p">.</span><span class="n">is_signaling_nan</span><span class="p">())</span> <span class="p">{</span>
+	<span class="n">fputil</span><span class="o">::</span><span class="n">raise_except_if_required</span><span class="p">(</span><span class="n">FE_INVALID</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_nan</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">bity</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+  	<span class="k">return</span> <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;::</span><span class="n">quiet_nan</span><span class="p">().</span><span class="n">get_val</span><span class="p">();</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bity</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">sign</span><span class="p">()</span> <span class="o">!=</span> <span class="n">bity</span><span class="p">.</span><span class="n">sign</span><span class="p">())</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_neg</span><span class="p">()</span> <span class="o">?</span> <span class="n">y</span> <span class="o">:</span> <span class="n">x</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">y</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fminimum_num</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_signaling_nan</span><span class="p">()</span> <span class="o">||</span> <span class="n">bity</span><span class="p">.</span><span class="n">is_signaling_nan</span><span class="p">())</span> <span class="p">{</span>
+	<span class="n">fputil</span><span class="o">::</span><span class="n">raise_except_if_required</span><span class="p">(</span><span class="n">FE_INVALID</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_nan</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">bity</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+  	<span class="k">return</span> <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;::</span><span class="n">quiet_nan</span><span class="p">().</span><span class="n">get_val</span><span class="p">();</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bity</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">sign</span><span class="p">()</span> <span class="o">!=</span> <span class="n">bity</span><span class="p">.</span><span class="n">sign</span><span class="p">())</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">bitx</span><span class="p">.</span><span class="n">is_neg</span><span class="p">()</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">y</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">?</span> <span class="n">x</span> <span class="o">:</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fmaximum_mag</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">fmaximum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fminimum_mag</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">fminimum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fmaximum_mag_num</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">fmaximum_num</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="n">cpp</span><span class="o">::</span><span class="n">enable_if_t</span><span class="o">&lt;</span><span class="n">cpp</span><span class="o">::</span><span class="n">is_floating_point_v</span><span class="o">&lt;</span><span class="n">T</span><span class="p">&gt;,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+<span class="n">LIBC_INLINE</span> <span class="n">T</span> <span class="nf">fminimum_mag_num</span><span class="p">(</span><span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">FPBits</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">bitx</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">bity</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">fminimum_num</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="footnotes">Footnotes</h3>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p><a href="https://dl.acm.org/doi/pdf/10.1145/155090.155113">The Essence of Compiling with Continuations</a> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><a href="https://github.com/Jobhdez/To-A-Normal-Form/blob/main/src/toANF/to-anf.rkt#L138">Racket version</a> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p><a href="https://github.com/Jobhdez/pyhs/blob/main/src/ToMon.hs#L99">Haskell version</a> <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p><a href="https://github.com/Jobhdez/pyhs/blob/main/src/ToSelect.hs#L160">Interfacing with the garbage collector</a> <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:5" role="doc-endnote">
+      <p><a href="https://github.com/llvm/llvm-project/pull/86016">LLVM contribution</a> <a href="#fnref:5" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2024/05/02/compilers-are-interesting.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez Lara</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>Copyright &copy; 2024 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

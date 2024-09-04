@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>A minimal implementation of a deep learning compiler | (lambda () ‘(Jobs Blog))</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="A minimal implementation of a deep learning compiler" />
+<meta name="author" content="Job Hernandez Lara" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A technical blog about things I find interesting :)" />
+<meta property="og:description" content="A technical blog about things I find interesting :)" />
+<link rel="canonical" href="http://localhost:4000/2024/02/29/how-deep-learning-compilers-work.html" />
+<meta property="og:url" content="http://localhost:4000/2024/02/29/how-deep-learning-compilers-work.html" />
+<meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-02-29T00:00:00-08:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="A minimal implementation of a deep learning compiler" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2024-02-29T00:00:00-08:00","datePublished":"2024-02-29T00:00:00-08:00","description":"A technical blog about things I find interesting :)","headline":"A minimal implementation of a deep learning compiler","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/02/29/how-deep-learning-compilers-work.html"},"url":"http://localhost:4000/2024/02/29/how-deep-learning-compilers-work.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">(lambda () &#39;(Jobs Blog))</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">A minimal implementation of a deep learning compiler</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-02-29T00:00:00-08:00" itemprop="datePublished">
+        Feb 29, 2024
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#computational-graphs" id="markdown-toc-computational-graphs">Computational Graphs</a></li>
+  <li><a href="#a-simplified-look-into-how-deep-learning-compilers-work" id="markdown-toc-a-simplified-look-into-how-deep-learning-compilers-work">A simplified look into how deep learning compilers work</a>    <ul>
+      <li><a href="#example" id="markdown-toc-example">Example</a></li>
+      <li><a href="#a-minimal-implementation-of-a-deep-learning-compiler" id="markdown-toc-a-minimal-implementation-of-a-deep-learning-compiler">A minimal implementation of a deep learning compiler</a></li>
+    </ul>
+  </li>
+  <li><a href="#how-to-improve-it" id="markdown-toc-how-to-improve-it">How to improve it</a></li>
+  <li><a href="#summary" id="markdown-toc-summary">Summary</a></li>
+  <li><a href="#some-relevant-further-reading" id="markdown-toc-some-relevant-further-reading">Some relevant further reading</a></li>
+  <li><a href="#references" id="markdown-toc-references">References</a></li>
+</ul>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>Deep learning compilers are the key to deploy neural nets on different devices and architectures. And with the end of Moore’s Law, they will be increasingly important. It is my understanding that deep learning compilers are important because libraries and frameworks do not scale. It has been said by industry leaders that libraries and frameworks do not scale because the deep learning operators in these libraries are fined tuned to each computer architecture; as a result, when there is a new architecture all the deep learning operators need to be re-implemented for this architecture.</p>
+
+<p>In other words, deep learning compilers are important because they allow engineers to cope with the diversity of hardware.<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> Libraries are slow in adapting with new hardware architectures so it is hard for these libraries to utilize all the power of these architectures; moreover, deep learning compilers enable graph level optimizations and operator level optimizations.</p>
+
+<p>In her article<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>, Chip Huyen talks about how edge computing is becoming more important. So, if you want your models to run on people’s cell phones and computers then you will need to target different architectures.</p>
+
+<h3 id="computational-graphs">Computational Graphs</h3>
+
+<p>A neural network is a computational graph whose nodes are deep learning operators such as convolution and tensors and the edges are dependencies among them. Technically speaking, a computational graph is a directed acyclic graph; for example, the expression:</p>
+
+\[a + a \times (b - c) + (b - c) \times d\]
+
+<p>is represented as:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	   +
+        /     \
+       +        *
+     /  \      / \
+    /     *   /   d
+    \   /  \ /
+      a    -
+          / \
+         b   c
+</code></pre></div></div>
+
+<p>Notice that common sub expressions are only used once. DAGs, as these types of graphs, are called, work the same way in regular compilers and deep learning compilers. Sub expressions are eliminated because it enables better performance because given two common sub expressions, only one is computed. This is essentially the difference between and AST and a DAG.</p>
+
+<p>If you take a look at the TVM<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup> documentation, then it mentions that a lot of the optimizations are DAG based.</p>
+
+<h3 id="a-simplified-look-into-how-deep-learning-compilers-work">A simplified look into how deep learning compilers work</h3>
+
+<p>Deep learning compilers take a DAG consisting of deep learning operators such as convolution and relu and lowers it to low level code such as LLVM IR. Since in a deep learning compiler you do not need to optimize kernels manually, one can target different architectures which is why deep learning compilers scale better.</p>
+
+<p>The following is based on this  deep learning survey.<sup id="fnref:1:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> You should read it to get a better idea.</p>
+
+<p>The frontend of a deep learning compiler consists of a high level intermediate representation (IR). This IR is a directed acyclic graph (DAG). The nodes in this graph represent the deep learning operators such as convolution and tensors. On the other hand, the edges represent dependencies. Several optimizations that are independent of the hardware are applied to this high level IR. In other words, this graph is indeed the computational graph we need to get from a given neural net model. Once we have this graph, we have access to the deep learning operators such as convolution and the tensors such as weights, and biases.</p>
+
+<p>In addition there’s also a low level IR, which is part of the backend, to which target dependent optimizations are applied. One type of low level IR is based on Halide. When a Halide based IR is used, the computation is seperated from the schedule. Given a computation, one tries different schedules to get the best performance. A schedule is a type of optimization that can be applied such as tiling or vectorization. The idea is that by applying a series of schedules one can get better performance. This is the approach taken by TVM. In addition, the backend is also responsible for generating the actual code for the different hardware architectures.</p>
+
+<h4 id="example">Example</h4>
+
+<p>TVM<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup> is a state of the art deep learning compiler. TVM compiles deep learning models defined in frameworks, e.g., Pytorch, to different architectures. This compiler works by representing the computational graph in an IR called Relay; for example, consider the example from the TVM documenation<sup id="fnref:3:1" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>x = relay.var("x"
+v1 = relay.log(x)
+v2 = relay.add(v1 v1)
+f = relay.Function([x], v2)
+</code></pre></div></div>
+
+<p>This example corresponds to the following computation graph</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+            var
+	     |
+	    log
+	   /  \
+           \  /
+   result&lt;-add
+</code></pre></div></div>
+
+<p>In the TVM paper<sup id="fnref:4:1" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup>, it talks about the type of optimizations that are applied to this Relay IR. According to the TVM paper, some of these optimizations consist of <em>operation fusion</em> whereby multiple operators are fused into a single kernel. Operation fusion improves execution time because intermediate computations do not get saved in memory. In addition to operation fusion, <em>constant fold</em> is applied as well. Constant fold is an optimization that precomputes parts of the graph.</p>
+
+<p>Before the Relay graph gets lowered to low level code, the Relay operators – e.g., relay.conv2d – get mapped to a high level tensor expression language. The corresponding LLVM IR gets generated from this.</p>
+
+<h4 id="a-minimal-implementation-of-a-deep-learning-compiler">A minimal implementation of a deep learning compiler</h4>
+
+<p>I built a deep learning compiler<sup id="fnref:5" role="doc-noteref"><a href="#fn:5" class="footnote" rel="footnote">5</a></sup> before having an idea of how the deep learning model graph was represented internally in the compiler but I think I guessed partly right. Here is the code that takes the following model and generates an AST:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="nf">super</span><span class="p">().</span><span class="nf">__init__</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">).</span><span class="nf">float</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></div>
+<p>Internally, in the AST the Conv2d is represented with this node:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Conv2dNode</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">input_height</span><span class="p">,</span> <span class="n">input_width</span><span class="p">,</span> <span class="n">filter_height</span><span class="p">,</span> <span class="n">filter_width</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">channels</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">input_tensor</span> <span class="o">=</span> <span class="n">input_tensor</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">bias</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">input_height</span> <span class="o">=</span> <span class="n">input_height</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">input_width</span> <span class="o">=</span> <span class="n">input_width</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">filter_height</span> <span class="o">=</span> <span class="n">filter_height</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">filter_width</span> <span class="o">=</span> <span class="n">filter_width</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span>
+</code></pre></div></div>
+
+<p>If you take a look at TVM’s Pytorch frontend which is defined <a href="https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5282">here</a> in line 5282. If you scroll down to line <a href="https://github.com/apache/tvm/blob/main/python/tvm/relay/frontend/pytorch.py#L5360">5360</a> you will also notice how TVM gets the computational graph from a given Pytorch model.</p>
+
+<p>Based on TVM’s implementation, I figured out the following implementation which takes a convolutional layer defined in Pytorch and gets the computational graph and generates C code.</p>
+
+<p>Here is how I manipulated the computational graph. The idea of my solution was to combine the graph information obtained from <code class="language-plaintext highlighter-rouge">torch.jit.trace</code> and <code class="language-plaintext highlighter-rouge">torch.fx.symbolic_trace</code> to get the appropriate information about the graph such as operators in the layers and actual tensors.</p>
+
+<p>I also had to experiment with TVM’s API and read the Pytorch documentation but once I was able to manipulate the operators and tensors I only had to figure out how a convolution operator is implemented and then write it in C as part of the runtime. But I do not think the convolutional kernel is pre-defined this way in TVM. Instead the code for the kernel is generated from a high level specificiation. Otherwise you would just be building a fraemwork like system.</p>
+
+<p>Anyways, although I did not construct a DAG, I still created an abstract syntax tree to represent the deep learning model. Although a DAG can be constructed for a bigger model by not computing common sub-expressions. So, when a common sub-expression is reached, one that was already computed, we return the node. DAGs allow you to generate efficient code.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">torch_to_ast</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">):</span>
+	<span class="n">module</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">jit</span><span class="p">.</span><span class="nf">trace</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">)</span>
+	<span class="n">gm</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">fx</span><span class="p">.</span><span class="nf">symbolic_trace</span><span class="p">(</span><span class="n">net</span><span class="p">)</span>
+	<span class="n">layers</span> <span class="o">=</span> <span class="nf">get_layers</span><span class="p">(</span><span class="n">gm</span><span class="p">)</span>
+	<span class="n">nodes</span> <span class="o">=</span> <span class="nc">ShapeProp</span><span class="p">(</span><span class="n">gm</span><span class="p">)</span>
+	<span class="n">nodes</span><span class="p">.</span><span class="nf">propagate</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">)</span>
+    
+	<span class="n">tensor_data</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">gm</span><span class="p">.</span><span class="n">graph</span><span class="p">.</span><span class="n">nodes</span><span class="p">:</span>
+    	<span class="n">tensor_data</span><span class="p">.</span><span class="nf">append</span><span class="p">({</span><span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">:</span> <span class="n">node</span><span class="p">.</span><span class="n">name</span><span class="p">,</span> <span class="sh">'</span><span class="s">dtype</span><span class="sh">'</span><span class="p">:</span> <span class="n">node</span><span class="p">.</span><span class="n">meta</span><span class="p">[</span><span class="sh">'</span><span class="s">tensor_meta</span><span class="sh">'</span><span class="p">].</span><span class="n">dtype</span><span class="p">,</span> <span class="sh">'</span><span class="s">shape</span><span class="sh">'</span><span class="p">:</span> <span class="n">node</span><span class="p">.</span><span class="n">meta</span><span class="p">[</span><span class="sh">'</span><span class="s">tensor_meta</span><span class="sh">'</span><span class="p">].</span><span class="n">shape</span><span class="p">,</span> <span class="sh">'</span><span class="s">tensor</span><span class="sh">'</span><span class="p">:</span> <span class="n">node</span><span class="p">.</span><span class="n">meta</span><span class="p">[</span><span class="sh">'</span><span class="s">tensor_meta</span><span class="sh">'</span><span class="p">].</span><span class="n">data</span><span class="p">})</span>
+
+	<span class="n">layers_lst</span> <span class="o">=</span> <span class="p">[</span><span class="nf">list</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">]</span>
+
+	<span class="n">layers</span> <span class="o">=</span> <span class="n">layers_lst</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+	<span class="n">layers</span> <span class="o">=</span> <span class="p">[{</span><span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">:</span> <span class="n">layer</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sh">'</span><span class="s">nn_obj</span><span class="sh">'</span><span class="p">:</span> <span class="n">layer</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">]</span>
+
+	<span class="n">ast_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)):</span>
+    	<span class="n">nn_obj</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="n">layer</span><span class="p">][</span><span class="sh">'</span><span class="s">nn_obj</span><span class="sh">'</span><span class="p">]</span>
+    	<span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">nn_obj</span><span class="p">,</span> <span class="n">torch</span><span class="p">.</span><span class="n">nn</span><span class="p">.</span><span class="n">modules</span><span class="p">.</span><span class="n">conv</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">):</span>
+        	<span class="n">input_tensor</span> <span class="o">=</span> <span class="bp">None</span>
+        	<span class="n">weight_tensor</span> <span class="o">=</span> <span class="bp">None</span>
+        	<span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">tensor_data</span><span class="p">:</span>
+            	<span class="k">if</span> <span class="n">tensor</span><span class="p">[</span><span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">]</span> <span class="o">==</span> <span class="sh">'</span><span class="s">x</span><span class="sh">'</span><span class="p">:</span>
+                	<span class="n">input_tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[</span><span class="sh">'</span><span class="s">tensor</span><span class="sh">'</span><span class="p">]</span>
+            	<span class="k">elif</span> <span class="n">tensor</span><span class="p">[</span><span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">]</span> <span class="o">==</span> <span class="n">layers</span><span class="p">[</span><span class="n">layer</span><span class="p">][</span><span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">]:</span>
+                	<span class="n">input_name</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[</span><span class="sh">'</span><span class="s">name</span><span class="sh">'</span><span class="p">]</span>
+                	<span class="n">weight_tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[</span><span class="sh">'</span><span class="s">tensor</span><span class="sh">'</span><span class="p">]</span>
+        	<span class="n">state_dict</span> <span class="o">=</span> <span class="n">module</span><span class="p">.</span><span class="nf">state_dict</span><span class="p">()</span>
+        	<span class="n">bias_name</span> <span class="o">=</span> <span class="n">input_name</span> <span class="o">+</span> <span class="sh">"</span><span class="s">.bias</span><span class="sh">"</span>
+        	<span class="n">weight</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">input_name</span> <span class="o">+</span> <span class="sh">"</span><span class="s">.weight</span><span class="sh">"</span><span class="p">]</span>
+        	<span class="n">bias_tensor</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">bias_name</span><span class="p">]</span>
+        	<span class="n">batch_size</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">input_height</span><span class="p">,</span> <span class="n">input_width</span> <span class="o">=</span> <span class="n">input_tensor</span><span class="p">.</span><span class="n">shape</span>
+        	<span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="p">,</span> <span class="n">filter_height</span><span class="p">,</span> <span class="n">filter_width</span> <span class="o">=</span> <span class="n">weight</span><span class="p">.</span><span class="n">shape</span>
+        	<span class="n">bias</span> <span class="o">=</span> <span class="bp">None</span>
+        	<span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">bias_tensor</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nf">isinstance</span><span class="p">(</span><span class="nf">float</span><span class="p">(</span><span class="n">bias_tensor</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">):</span>
+            	<span class="n">bias</span> <span class="o">=</span> <span class="nf">float</span><span class="p">(</span><span class="n">bias_tensor</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        	<span class="k">else</span><span class="p">:</span>
+            	<span class="n">bias</span> <span class="o">=</span> <span class="n">bias_tensor</span>
+        	<span class="n">ast_nodes</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="nc">Conv2dNode</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">input_height</span><span class="p">,</span> <span class="n">input_width</span><span class="p">,</span> <span class="n">filter_height</span><span class="p">,</span> <span class="n">filter_width</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">channels</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">ast_nodes</span>
+
+<span class="k">def</span> <span class="nf">get_layers</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>
+    
+	<span class="k">return</span> <span class="nf">list</span><span class="p">(</span><span class="n">graph</span><span class="p">.</span><span class="nf">named_modules</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>And here is how I generated the C code.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>            
+<span class="k">def</span> <span class="nf">to_c</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nf">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Conv2dNode</span><span class="p">):</span>
+        <span class="n">c_str</span> <span class="o">=</span> <span class="sh">"""</span><span class="s">
+#include </span><span class="sh">"</span><span class="s">runtime.c</span><span class="sh">"</span><span class="s">
+#include &lt;stdio.h&gt;
+
+int main() {
+</span><span class="sh">"""</span>
+        <span class="n">bias</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">bias</span><span class="p">)</span>
+        <span class="n">input_h</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">input_height</span><span class="p">)</span>
+        <span class="n">input_w</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">input_width</span><span class="p">)</span>
+        <span class="n">filter_h</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">filter_height</span><span class="p">)</span>
+        <span class="n">filter_w</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">filter_width</span><span class="p">)</span>
+        <span class="n">batch_s</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">channels</span><span class="p">)</span>
+
+        <span class="n">tensor</span> <span class="o">=</span> <span class="nf">torch_tensor_to_c</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">input_tensor</span><span class="p">)</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="nf">torch_tensor_to_c</span><span class="p">(</span><span class="n">node</span><span class="p">.</span><span class="n">weight</span><span class="p">)</span>
+        
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    int batch_size = </span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">batch_s</span><span class="p">))</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    int channels = </span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">channels</span><span class="p">))</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    int input_height = </span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">input_h</span><span class="p">))</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    int input_width = </span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">input_w</span><span class="p">))</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    int filter_height = </span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">filter_h</span><span class="p">))</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    int filter_width = </span><span class="si">{</span><span class="nf">str</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">filter_w</span><span class="p">))</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    float input_data[</span><span class="si">{</span><span class="n">batch_s</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">input_h</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">input_w</span><span class="si">}</span><span class="s">] = </span><span class="si">{</span><span class="n">tensor</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    float weight[</span><span class="si">{</span><span class="n">batch_s</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">filter_h</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">filter_w</span><span class="si">}</span><span class="s">] = </span><span class="si">{</span><span class="n">weight</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    float bias = </span><span class="si">{</span><span class="n">bias</span><span class="si">}</span><span class="s">;</span><span class="se">\n</span><span class="sh">"</span>
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">    float output[</span><span class="si">{</span><span class="n">batch_s</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">filter_h</span><span class="si">}</span><span class="s">][</span><span class="si">{</span><span class="n">filter_h</span><span class="si">}</span><span class="s">];</span><span class="se">\n</span><span class="sh">"</span>
+        
+        <span class="n">c_str</span> <span class="o">+=</span> <span class="sh">"""</span><span class="s">
+    convolution(input_data, weight, &amp;bias, batch_size, channels, input_height, input_width, filter_height, filter_width, output);
+
+    printf(</span><span class="sh">"</span><span class="s">%f</span><span class="sh">"</span><span class="s">, output[0][0][0][0]);
+       
+    return 0;
+}
+</span><span class="sh">"""</span>
+        <span class="k">return</span> <span class="n">c_str</span>
+
+<span class="k">def</span> <span class="nf">torch_tensor_to_c</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+    <span class="n">c_array</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">.</span><span class="nf">numpy</span><span class="p">().</span><span class="nf">tolist</span><span class="p">()</span>
+    <span class="n">c_array</span> <span class="o">=</span> <span class="nf">str</span><span class="p">(</span><span class="n">c_array</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">'</span><span class="s">[</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">{</span><span class="sh">'</span><span class="p">).</span><span class="nf">replace</span><span class="p">(</span><span class="sh">'</span><span class="s">]</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">}</span><span class="sh">'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">c_array</span>
+</code></pre></div></div>
+
+<p>And here is the C code that my compiler generates for the above neural net:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">"runtime.c"</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">channels</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">input_height</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">input_width</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">filter_height</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">filter_width</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="kt">float</span> <span class="n">input_data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">{{{{</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">0</span><span class="p">}}}};</span>
+    <span class="kt">float</span> <span class="n">weight</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">{{{{</span><span class="mi">0</span><span class="p">.</span><span class="mi">1206025704741478</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">2804994285106659</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">10350386798381805</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">31444603204727173</span><span class="p">,</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">3109368085861206</span><span class="p">,</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">22286033630371094</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">12215566635131836</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">2765805721282959</span><span class="p">,</span> <span class="mi">0</span><span class="p">.</span><span class="mi">25621065497398376</span><span class="p">}}}};</span>
+    <span class="kt">float</span> <span class="n">bias</span> <span class="o">=</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">24808375537395477</span><span class="p">;</span>
+    <span class="kt">float</span> <span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="mi">3</span><span class="p">];</span>
+
+    <span class="n">convolution</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bias</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">input_height</span><span class="p">,</span> <span class="n">input_width</span><span class="p">,</span> <span class="n">filter_height</span><span class="p">,</span> <span class="n">filter_width</span><span class="p">,</span> <span class="n">output</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"%f"</span><span class="p">,</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]);</span>
+       
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="how-to-improve-it">How to improve it</h3>
+
+<p>I have plans to keep working on this compiler but I need to study TVM more. Next, I want to compile a VGG block to C code. Now, we can manually write some of the optimizations that compilers use to help GCC generate faster code. And we can also generate vectorized C code. In the paper “Achieving high performance the functional way”<sup id="fnref:6" role="doc-noteref"><a href="#fn:6" class="footnote" rel="footnote">6</a></sup>, the authors observed that the approach taken in the construction of TVM is limited. The way the schedule and algorithm is seperated in TVM is limited because the users cannot formulate their own abstractons. TVM’s API is not extensible; moreover, the authors observed that often its not sufficient to soley change the optimizations. Instead you also need to change the algorithm. So, TVM is not extensible. Instead, the authors proposed two DSLs that allow users to formulate their own schedules without changing the algorithm. I think, the key here is that by making the system more extensible you give more power to the user since the user does not have to modify the compiler itself.</p>
+
+<p>Speaking of extensibility, my conjecture is that this approach can be improved even more by building a DSL in Common Lisp. With the power of macros we can construct a DSL that inherits the whole Lisp language which will make such system even more extensible. Users can make new macros to extend the language and add new algorithms and schedules thereby extending the language to fit their needs. Common Lisp (SBCL) is a high performant language and is highly extensible; moreover, the standard library has functionality for SIMD instructions and as a result if we were to build a system in Lisp we could just generate Lisp with SIMD instructions enabled.</p>
+
+<h3 id="summary">Summary</h3>
+
+<p>Hopefully, you have a better idea of how, at least, a minimal deep learning compiler works in practice. I left out the optimizations but you can learn more about the optimizations from the “The Deep Learning Compiler: A Comprehensive Survey” that is listed in the references. The basic idea is that given a deep learning model defined in Pytorch, the first thing to do is build the computational graph consisting of deep learning operators such as convolution and the tensors. Once you have the graph then you apply machine independent optimizations. After this you  build a low level IR to which machine dependent optimizations are applied and finally you generate the code.</p>
+
+<h3 id="some-relevant-further-reading">Some relevant further reading</h3>
+
+<p>If you want to explore this further I recommend the repo: <a href="https://github.com/merrymercy/awesome-tensor-compilers">Awesome Tensor Compilers</a>.</p>
+
+<p>Specifically, from that list, the Tiramisu, TVM, and Hidet papers are very good.</p>
+
+<h3 id="references">References</h3>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p><a href="https://arxiv.org/pdf/2002.03794.pdf">The Deep Learning Compiler</a> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a> <a href="#fnref:1:1" class="reversefootnote" role="doc-backlink">&#8617;<sup>2</sup></a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><a href="https://huyenchip.com/2021/09/07/a-friendly-introduction-to-machine-learning-compilers-and-optimizers.html">A Friendly Introduction to Machine Learning Compilers and Optimizers</a> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p><a href="https://tvm.apache.org/docs/v0.9.0/arch/relay_intro.html">Relay IR</a> <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a> <a href="#fnref:3:1" class="reversefootnote" role="doc-backlink">&#8617;<sup>2</sup></a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p><a href="https://www.usenix.org/system/files/osdi18-chen.pdf">The TVM Paper</a> <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a> <a href="#fnref:4:1" class="reversefootnote" role="doc-backlink">&#8617;<sup>2</sup></a></p>
+    </li>
+    <li id="fn:5" role="doc-endnote">
+      <p><a href="https://github.com/Jobhdez/Convy">My Deep Learning compiler</a> <a href="#fnref:5" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:6" role="doc-endnote">
+      <p><a href="https://dl.acm.org/doi/pdf/10.1145/3408974">Achieving High Performance the functional way</a> <a href="#fnref:6" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2024/02/29/how-deep-learning-compilers-work.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez Lara</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>Copyright &copy; 2024 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

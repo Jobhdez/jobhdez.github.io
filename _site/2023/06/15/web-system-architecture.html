@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
@@ -8,8 +13,8 @@
 <meta property="og:title" content="Web System Architecture" />
 <meta name="author" content="Job Hernandez" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="version 1.1: June 16 2023, added more detail, and diagrams" />
-<meta property="og:description" content="version 1.1: June 16 2023, added more detail, and diagrams" />
+<meta name="description" content="Intro One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a talk by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted." />
+<meta property="og:description" content="Intro One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a talk by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted." />
 <link rel="canonical" href="http://localhost:4000/2023/06/15/web-system-architecture.html" />
 <meta property="og:url" content="http://localhost:4000/2023/06/15/web-system-architecture.html" />
 <meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
@@ -18,7 +23,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Web System Architecture" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-06-15T00:00:00-07:00","datePublished":"2023-06-15T00:00:00-07:00","description":"version 1.1: June 16 2023, added more detail, and diagrams","headline":"Web System Architecture","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/06/15/web-system-architecture.html"},"url":"http://localhost:4000/2023/06/15/web-system-architecture.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2023-06-15T00:00:00-07:00","datePublished":"2023-06-15T00:00:00-07:00","description":"Intro One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a talk by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted.","headline":"Web System Architecture","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2023/06/15/web-system-architecture.html"},"url":"http://localhost:4000/2023/06/15/web-system-architecture.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
 </head>
@@ -52,11 +57,7 @@
 
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p><em>version 1.1</em>: June 16 2023, added more detail, and diagrams</p>
-
-<p><em>version 1</em>: June 15 2023, initial release</p>
-
-<h3 id="intro">Intro</h3>
+    <h3 id="intro">Intro</h3>
 <p>One of the most interesting parts about web development is web system architecture. I do not know why but when I hear people talking about a given architecture I get excited. My first exposure to architecture was a <a href="https://www.youtube.com/watch?v=hnpzNAPiC0E&amp;t">talk</a> by an Instagram engineer in which she spoke about how they scaled the infrastructure at Instagram. I found it interesting because she spoke about how to scale by using multicore programming and I liked how the components of the Instagram architecture interacted.</p>
 
 <p>So, I naturally enjoyed my time reading <code class="language-plaintext highlighter-rouge">Scalable Web Architecture and Distributed Systems</code>, the first chapter in the book <code class="language-plaintext highlighter-rouge">The Architecture of Open Source Applications</code>.</p>

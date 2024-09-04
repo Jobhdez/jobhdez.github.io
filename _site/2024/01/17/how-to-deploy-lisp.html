@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
@@ -8,8 +13,8 @@
 <meta property="og:title" content="How to deploy a Lisp server to AWS" />
 <meta name="author" content="Job Hernandez" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="Hello!" />
-<meta property="og:description" content="Hello!" />
+<meta name="description" content="Intoduction" />
+<meta property="og:description" content="Intoduction" />
 <link rel="canonical" href="http://localhost:4000/2024/01/17/how-to-deploy-lisp.html" />
 <meta property="og:url" content="http://localhost:4000/2024/01/17/how-to-deploy-lisp.html" />
 <meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
@@ -18,7 +23,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="How to deploy a Lisp server to AWS" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2024-01-17T00:00:00-08:00","datePublished":"2024-01-17T00:00:00-08:00","description":"Hello!","headline":"How to deploy a Lisp server to AWS","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/01/17/how-to-deploy-lisp.html"},"url":"http://localhost:4000/2024/01/17/how-to-deploy-lisp.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2024-01-17T00:00:00-08:00","datePublished":"2024-01-17T00:00:00-08:00","description":"Intoduction","headline":"How to deploy a Lisp server to AWS","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/01/17/how-to-deploy-lisp.html"},"url":"http://localhost:4000/2024/01/17/how-to-deploy-lisp.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
 </head>
@@ -52,15 +57,31 @@
 
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>Hello!</p>
+    <h3 id="intoduction">Intoduction</h3>
 
-<h3 id="intoduction">Intoduction</h3>
-<p>I have been programming server side programs with Lisp and the Hunchentoot web server. I am writing this blog post as a future reminder for myself and help anybody out there with the basics.</p>
+<p>I have been programming server side programs with Lisp and the Hunchentoot web server for a while. I am writing this blog post as a future reminder for myself and help anybody out there with the basics.</p>
 
-<p>The way I managed to deploy my lisp server was by using docker and building the image within the EC2 instance. Once you run the image you just navigate to the EC2 instance’s public IP and you will see your server there.</p>
+<p>The way I managed to deploy my Lisp server was by using docker and building the image within the EC2 instance. Once you run the image you  navigate to the EC2 instance’s public IP and you will see your server there.</p>
+
+<p>But some disclaimers:</p>
+
+<p>My friend who has around 20 years of experience and is really good said that for production you probably do not need to manage docker yourself. This is what he said:</p>
+
+<blockquote>
+  <p>specifically the thing that makes it not for production is that you probably don’t want to be managing docker yourself on an ec2 instance. It’s not completely out of the question if you really really know what you’re doing, but you need to deal with things like the ec2 instance rebooting, or the process crashing, or the docker host process crashing.
+ECS and EKS are services (one native to amazon, the other using kubernetes) that will manage a lot of that for you and more</p>
+</blockquote>
+
+<p>The problem with this is that if you use this approach for an app that cannot go down then if the EC2 instance restarts your app will be down because you have type <code class="language-plaintext highlighter-rouge">docker run</code> to restart your server again. But since my app is not critical I used an EC2 instance.</p>
+
+<p>My friend did offer an alternative:</p>
+
+<blockquote>
+  <p>next time around, rather than using ec2 at all, I would push the image to ecr (its a private image repository) and then build an ecs instance that starts that image - that way you don’t have to worry about docker at all beyond builiding the image</p>
+</blockquote>
 
 <h3 id="the-dockerfile">The Dockerfile</h3>
-<p>I happened to stumble accorss this <a href="https://www.youtube.com/watch?v=QuG2ByK-Cwg&amp;t=390s">video</a> and I was able to make the following dockerfile for my project:</p>
+<p>I happened to stumble accross this <a href="https://www.youtube.com/watch?v=QuG2ByK-Cwg&amp;t=390s">video</a> and I was able to make the following Dockerfile for my project:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM clfoundation/sbcl:alpine3.14 as builder
 
@@ -103,7 +124,7 @@ ENTRYPOINT [ "sbcl", "--core", "core" ]
 
 <p>Once you have the Dockerfile you then need to make an AWS account and launch an EC2 instance. You should keep it within the free tier limits and use a linux instance.</p>
 
-<p>Once you have launched the EC2 instance you need install git and docker. To this type:</p>
+<p>Once you have launched the EC2 instance you need to install git and docker:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>* sudo yum update -y
 * sudo yum install docker -y
@@ -122,17 +143,20 @@ ENTRYPOINT [ "sbcl", "--core", "core" ]
 * sudo docker run -p 80:4243 --rm compiler-web
 </code></pre></div></div>
 
-<p>By doing <code class="language-plaintext highlighter-rouge">-t</code> you are tagging your image. In my case the tag for my image is <code class="language-plaintext highlighter-rouge">compiler-web</code>. You can change this as wish. My lisp server is listening at the port <code class="language-plaintext highlighter-rouge">4243</code> so you need to change this to your port. But keep the port 80 since this the port of your EC2 instance I believe.</p>
+<p>By doing <code class="language-plaintext highlighter-rouge">-t</code> you are tagging your image. In my case the tag for my image is <code class="language-plaintext highlighter-rouge">compiler-web</code>. You can change this as you wish. My Lisp server is listening at the port <code class="language-plaintext highlighter-rouge">4243</code> so you need to change this to your port. But keep the port 80 since this the port of your EC2 instance I believe.</p>
 
 <p>After trying to rebuild your image again you may get a cache error. To solve this you can build it like this:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>* sudo docker build --no-cache -t compiler-web .
 </code></pre></div></div>
 
-<p>After you have ran the docker image you just need to point the the EC2’s public IP and you should be able to see your server.</p>
+<p>After you have built the docker image you just need to point to the EC2’s public IP and you should be able to see your server.</p>
 
-<p>To be able up a domain you need to buy a domain and within your EC2 instance you need to setup an Elastic IP and then go to your account whereever you bought it and in the DNS settings you need to associate your Elastic IP to an A record with a <code class="language-plaintext highlighter-rouge">@</code>. After this you just wait.</p>
+<p>To deploy, you need to setup an Elastic IP within your EC2 instance and then associate the Elastic IP to an A record, in your domain provider’s DNS settings, with a <code class="language-plaintext highlighter-rouge">@</code>. After this you just wait until the changes propagates.</p>
 
+<h3 id="conclusion">Conclusion</h3>
+
+<p>I hope this was helpful :-). Have a nice day.</p>
 
     <script src="https://utteranc.es/client.js"
         repo="jobhdez/jobhdez.github.io"

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Compiling core programming constructs | (lambda () ‘(Jobs Blog))</title>
+<meta name="generator" content="Jekyll v4.3.3" />
+<meta property="og:title" content="Compiling core programming constructs" />
+<meta name="author" content="Job Hernandez Lara" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic." />
+<meta property="og:description" content="I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic." />
+<link rel="canonical" href="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html" />
+<meta property="og:url" content="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html" />
+<meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-12T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Compiling core programming constructs" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2024-06-12T00:00:00-07:00","datePublished":"2024-06-12T00:00:00-07:00","description":"I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.","headline":"Compiling core programming constructs","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html"},"url":"http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">(lambda () &#39;(Jobs Blog))</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Compiling core programming constructs</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-06-12T00:00:00-07:00" itemprop="datePublished">
+        Jun 12, 2024
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.</p>
+
+<p>Compilers have been traditionally broken up into three main components, namely, the frontend, optimizer, and the backend; nevertheless, in my project, I did not implemented an optimizer.</p>
+
+<h3 id="front-end">Front-end</h3>
+
+<p>The purpose of the front-end is to create an intermediate representation. A compiler front-end consists of lexical analysis whereby the source program is broken up into tokens, the parse tree whereby the tokens get composed into a tree based on the grammar of the language; for example, the tokens of my small language are the following:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">token</span>
+<span class="kr">if</span>         <span class="p">{</span> <span class="kt">TokenIf</span> <span class="p">}</span>
+<span class="kr">let</span>        <span class="p">{</span> <span class="kt">TokenLet</span> <span class="p">}</span>
+<span class="kr">then</span>       <span class="p">{</span> <span class="kt">TokenThen</span> <span class="p">}</span>
+<span class="kr">else</span>       <span class="p">{</span> <span class="kt">TokenElse</span> <span class="p">}</span>
+<span class="n">while</span>      <span class="p">{</span> <span class="kt">TokenWhile</span> <span class="p">}</span>
+<span class="n">var</span>        <span class="p">{</span> <span class="kt">TokenVar</span> <span class="o">$$</span> <span class="p">}</span>
+<span class="n">int</span>        <span class="p">{</span> <span class="kt">TokenInt</span> <span class="o">$$</span> <span class="p">}</span>
+<span class="n">print</span>      <span class="p">{</span> <span class="kt">TokenPrint</span> <span class="p">}</span>
+<span class="n">true</span>       <span class="p">{</span> <span class="kt">TokenTrue</span> <span class="o">$$</span><span class="p">}</span>
+<span class="n">false</span>      <span class="p">{</span> <span class="kt">TokenFalse</span> <span class="o">$$</span><span class="p">}</span>
+<span class="n">defun</span>      <span class="p">{</span> <span class="kt">TokenDefun</span> <span class="p">}</span>
+<span class="sc">'='</span>        <span class="p">{</span> <span class="kt">TokenEq</span> <span class="p">}</span>
+<span class="sc">'+'</span>        <span class="p">{</span> <span class="kt">TokenPlus</span> <span class="p">}</span>
+<span class="sc">'-'</span>        <span class="p">{</span> <span class="kt">TokenMinus</span> <span class="p">}</span>
+<span class="sc">'{'</span>        <span class="p">{</span> <span class="kt">TokenCurlyL</span> <span class="p">}</span>
+<span class="sc">'}'</span>        <span class="p">{</span> <span class="kt">TokenCurlyR</span> <span class="p">}</span>
+<span class="sc">'('</span>        <span class="p">{</span> <span class="kt">TokenOP</span> <span class="p">}</span>
+<span class="sc">')'</span>        <span class="p">{</span> <span class="kt">TokenCP</span> <span class="p">}</span>
+<span class="sc">']'</span>        <span class="p">{</span> <span class="kt">TokenSqBR</span> <span class="p">}</span>
+<span class="sc">'['</span>        <span class="p">{</span> <span class="kt">TokenSqBL</span> <span class="p">}</span>
+<span class="sc">'&lt;'</span>        <span class="p">{</span> <span class="kt">TokenLess</span> <span class="p">}</span>
+<span class="sc">'&gt;'</span>        <span class="p">{</span> <span class="kt">TokenGreater</span> <span class="p">}</span>
+<span class="sc">':'</span>        <span class="p">{</span> <span class="kt">TokenColon</span> <span class="p">}</span>
+<span class="sc">';'</span>        <span class="p">{</span> <span class="kt">TokenSemicolon</span> <span class="p">}</span>
+<span class="o">%%</span>
+</code></pre></div></div>
+
+<p>and this is the grammar, which gives the semantics:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">Exp</span> <span class="o">:</span> <span class="n">var</span>  <span class="p">{</span> <span class="kt">Var</span> <span class="o">$</span><span class="mi">1</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kr">let</span> <span class="n">var</span> <span class="sc">'='</span> <span class="kt">Exp</span> <span class="sc">';'</span> <span class="p">{</span> <span class="kt">Let</span> <span class="o">$</span><span class="mi">2</span> <span class="o">$</span><span class="mi">4</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kt">Exp</span> <span class="sc">'+'</span> <span class="kt">Exp</span> <span class="sc">';'</span> <span class="p">{</span> <span class="kt">Plus</span> <span class="o">$</span><span class="mi">1</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kt">Exp</span> <span class="sc">'-'</span> <span class="kt">Exp</span> <span class="sc">';'</span> <span class="p">{</span> <span class="kt">Minus</span> <span class="o">$</span><span class="mi">1</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kt">Exp</span> <span class="sc">'&lt;'</span> <span class="kt">Exp</span> <span class="sc">';'</span>   <span class="p">{</span> <span class="kt">LessThn</span> <span class="o">$</span><span class="mi">1</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kt">Exp</span> <span class="sc">'&gt;'</span> <span class="kt">Exp</span> <span class="sc">';'</span> <span class="p">{</span> <span class="kt">GreaterThn</span> <span class="o">$</span><span class="mi">1</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kr">if</span> <span class="kt">Exp</span> <span class="kr">then</span> <span class="kt">Exp</span> <span class="kr">else</span> <span class="kt">Exp</span> <span class="sc">';'</span> <span class="p">{</span> <span class="kt">IfExp</span> <span class="o">$</span><span class="mi">2</span> <span class="o">$</span><span class="mi">4</span> <span class="o">$</span><span class="mi">6</span> <span class="p">}</span>
+<span class="o">|</span> <span class="n">true</span> <span class="p">{</span> <span class="kt">Bool</span> <span class="o">$</span><span class="mi">1</span> <span class="p">}</span>
+<span class="o">|</span> <span class="n">false</span> <span class="p">{</span> <span class="kt">Bool</span> <span class="o">$</span><span class="mi">1</span> <span class="p">}</span>
+<span class="o">|</span> <span class="n">print</span> <span class="sc">'('</span> <span class="kt">Exp</span> <span class="sc">')'</span> <span class="sc">';'</span> <span class="p">{</span> <span class="kt">PrintExp</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kt">Exp</span> <span class="sc">';'</span> <span class="kt">Exp</span>  <span class="p">{</span> <span class="kt">Exps</span> <span class="o">$</span><span class="mi">1</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="n">while</span> <span class="kt">Exp</span> <span class="sc">':'</span> <span class="kt">Exp</span>  <span class="p">{</span> <span class="kt">While</span> <span class="o">$</span><span class="mi">2</span> <span class="o">$</span><span class="mi">4</span> <span class="p">}</span>
+<span class="o">|</span> <span class="n">defun</span> <span class="kt">Exp</span> <span class="sc">'('</span> <span class="kt">Exp</span> <span class="sc">')'</span> <span class="sc">'{'</span> <span class="kt">Exp</span> <span class="sc">'}'</span>   <span class="p">{</span> <span class="kt">DefunExp</span> <span class="o">$</span><span class="mi">2</span> <span class="o">$</span><span class="mi">4</span> <span class="o">$</span><span class="mi">7</span> <span class="p">}</span> 
+<span class="o">|</span> <span class="sc">'('</span> <span class="kt">Exp</span> <span class="sc">')'</span>   <span class="p">{</span> <span class="kt">TupleExp</span> <span class="o">$</span><span class="mi">2</span> <span class="p">}</span>
+<span class="o">|</span> <span class="kt">Exp</span> <span class="sc">'['</span> <span class="n">int</span> <span class="sc">']'</span>   <span class="p">{</span> <span class="kt">TupleIndex</span> <span class="o">$</span><span class="mi">1</span> <span class="o">$</span><span class="mi">3</span> <span class="p">}</span>
+<span class="o">|</span> <span class="n">int</span>  <span class="p">{</span> <span class="kt">Int</span> <span class="o">$</span><span class="mi">1</span> <span class="p">}</span>
+<span class="o">|</span> <span class="sc">'-'</span> <span class="n">int</span> <span class="p">{</span> <span class="kt">Negative</span> <span class="o">$</span><span class="mi">2</span> <span class="p">}</span>
+<span class="p">{</span>
+</code></pre></div></div>
+
+<p>Consider the expression:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"let x = 0;; while x &lt; 4;: if x &lt; 5; then print(x);; let x = x + 1;; else print(3);;"
+</code></pre></div></div>
+
+<p>The lexer, which breaks programs such as this into tokens would produce the following tokens:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span>
+    <span class="kt">TokenLet</span><span class="p">,</span>
+    <span class="kt">TokenVar</span> <span class="s">"x"</span><span class="p">,</span>
+    <span class="kt">TokenEq</span><span class="p">,</span>
+    <span class="kt">TokenInt</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenWhile</span><span class="p">,</span>
+    <span class="kt">TokenVar</span> <span class="s">"x"</span><span class="p">,</span>
+    <span class="kt">TokenLess</span><span class="p">,</span>
+    <span class="kt">TokenInt</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenColon</span><span class="p">,</span>
+    <span class="kt">TokenIf</span><span class="p">,</span>
+    <span class="kt">TokenVar</span> <span class="s">"x"</span><span class="p">,</span>
+    <span class="kt">TokenLess</span><span class="p">,</span>
+    <span class="kt">TokenInt</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenThen</span><span class="p">,</span>
+    <span class="kt">TokenPrint</span><span class="p">,</span>
+    <span class="kt">TokenOP</span><span class="p">,</span>
+    <span class="kt">TokenVar</span> <span class="s">"x"</span><span class="p">,</span>
+    <span class="kt">TokenCP</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenLet</span><span class="p">,</span>
+    <span class="kt">TokenVar</span> <span class="s">"x"</span><span class="p">,</span>
+    <span class="kt">TokenEq</span><span class="p">,</span>
+    <span class="kt">TokenVar</span> <span class="s">"x"</span><span class="p">,</span>
+    <span class="kt">TokenPlus</span><span class="p">,</span>
+    <span class="kt">TokenInt</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenElse</span><span class="p">,</span>
+    <span class="kt">TokenPrint</span><span class="p">,</span>
+    <span class="kt">TokenOP</span><span class="p">,</span>
+    <span class="kt">TokenInt</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="kt">TokenCP</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span><span class="p">,</span>
+    <span class="kt">TokenSemicolon</span>
+<span class="p">]</span>
+</code></pre></div></div>
+
+<p>and using the above grammar, the parser generator creates the following abstract syntax tree:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">Exps</span> <span class="p">(</span><span class="kt">Let</span> <span class="s">"x"</span> <span class="p">(</span><span class="kt">Int</span> <span class="mi">0</span><span class="p">))</span> <span class="p">(</span><span class="kt">While</span> <span class="p">(</span><span class="kt">LessThn</span> <span class="p">(</span><span class="kt">Var</span> <span class="s">"x"</span><span class="p">)</span> <span class="p">(</span><span class="kt">Int</span> <span class="mi">4</span><span class="p">))</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">LessThn</span> <span class="p">(</span><span class="kt">Var</span> <span class="s">"x"</span><span class="p">)</span> <span class="p">(</span><span class="kt">Int</span> <span class="mi">5</span><span class="p">))</span> <span class="p">(</span><span class="kt">Exps</span> <span class="p">(</span><span class="kt">PrintExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="s">"x"</span><span class="p">))</span> <span class="p">(</span><span class="kt">Let</span> <span class="s">"x"</span> <span class="p">(</span><span class="kt">Plus</span> <span class="p">(</span><span class="kt">Var</span> <span class="s">"x"</span><span class="p">)</span> <span class="p">(</span><span class="kt">Int</span> <span class="mi">1</span><span class="p">))))</span> <span class="p">(</span><span class="kt">PrintExp</span> <span class="p">(</span><span class="kt">Int</span> <span class="mi">3</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>In other words, one of the main purposes of the compiler’s front-end is to translate concrete syntax – i.e., the text of the program – to an abstract syntax tree which is a representation used inside the compiler.</p>
+
+<p>After generating the parse tree, the other purpose of the front-end is to generate a machine independent intermediate representation; this could be a graph or an abstract syntax tree.</p>
+
+<p>In my compiler, I used an intermediate language called <em>A Normal Form</em> which lowers the AST generated by the parser to a language consisting of only atomic and complex expressions. Atomic expressions are expressions that have no side effects and can essentially be part of assembly instructions.</p>
+
+<p>For example, consider the AST generated for this expression:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let x = 4 + -3
+</code></pre></div></div>
+
+<p>The <em>A Normal Form</em> generated for this is the following:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">SeqMon</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="s">"temp_0"</span> <span class="p">(</span><span class="kt">MonNegative</span> <span class="mi">3</span><span class="p">))</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="s">"x"</span> <span class="p">(</span><span class="kt">MonPlus</span> <span class="p">(</span><span class="kt">AtmInt</span> <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="kt">AtmVar</span> <span class="s">"temp_0"</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<p>But a more interesting problem from an implementation side is generating the <em>A Normal Form</em> for the following expression:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if if true then true else false; then 1 else 2;
+</code></pre></div></div>
+
+<p>Given that the condition of the <em>if</em> expression can be another <em>if</em> expression you need a cool recursive algorithm:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="n">cnd</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">thn2</span> <span class="n">els2</span><span class="p">)</span> <span class="n">counter</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">tmpname</span> <span class="o">=</span> <span class="s">"temp_"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter</span> <span class="kr">in</span>
+    <span class="kr">let</span> <span class="n">counter2</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">1</span> <span class="kr">in</span>
+      <span class="kr">let</span> <span class="n">tmpname2</span> <span class="o">=</span> <span class="s">"temp_"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter2</span> <span class="kr">in</span>
+        <span class="kr">let</span> <span class="n">counter3</span> <span class="o">=</span> <span class="n">counter2</span> <span class="o">+</span> <span class="mi">1</span> <span class="kr">in</span>
+          <span class="kr">let</span> <span class="n">counter4</span> <span class="o">=</span> <span class="n">counter3</span> <span class="o">+</span> <span class="mi">1</span> <span class="kr">in</span>
+            <span class="kt">MonLstSeq</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="n">tmpname</span> <span class="p">(</span><span class="n">toMon</span> <span class="n">cnd</span> <span class="n">counter3</span><span class="p">))</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="n">tmpname2</span> <span class="p">(</span><span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">tmpname</span><span class="p">)</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="n">counter4</span><span class="p">))</span> <span class="p">(</span><span class="n">toMon</span> <span class="p">(</span><span class="kt">IfExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">tmpname2</span><span class="p">)</span> <span class="n">thn2</span> <span class="n">els2</span><span class="p">)</span> <span class="n">counter4</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>which generates the following A Normal Form for the <em>if</em> expression above</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">MonLstSeq</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="s">"temp_0"</span> <span class="p">(</span><span class="kt">AtmVar</span> <span class="s">"true"</span><span class="p">))</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="s">"temp_1"</span> <span class="p">(</span><span class="kt">MonIf</span> <span class="p">(</span><span class="kt">AtmVar</span> <span class="s">"temp_0"</span><span class="p">)</span> <span class="p">(</span><span class="kt">AtmVar</span> <span class="s">"true"</span><span class="p">)</span> <span class="p">(</span><span class="kt">AtmVar</span> <span class="s">"false"</span><span class="p">)))</span> <span class="p">(</span><span class="kt">MonIf</span> <span class="p">(</span><span class="kt">AtmVar</span> <span class="s">"temp_1"</span><span class="p">)</span> <span class="p">(</span><span class="kt">AtmInt</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="kt">AtmInt</span> <span class="mi">3</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h4 id="directed-acyclic-graph">Directed Acyclic Graph</h4>
+
+<p>The ANF that you see above is an abstract syntax tree but instead of an AST you can lower the AST of the parse tree to a directed acyclic graph (DAG). A DAG is similar to a tree so it can be constructed similary and, although I have not implemented a DAG, the way to do it is while traversing the AST of the parse tree, you can check whether a node has been constructed in the DAG. If it is you can just return that. The advantage of DAGs over ASTs is that you do not create a node for identical sub expressions and as a result you can generate assembly consisting of less instructions.</p>
+
+<h3 id="back-end">Back-end</h3>
+
+<p>Lets continue with the above example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let x = 0;; while x &lt; 4;: if x &lt; 5; then print(x);; let x = x + 1;; else print(3);;
+</code></pre></div></div>
+
+<p>The ANF generated for the above example is this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SeqMon (MonLet "x" (AtmInt 0)) (MonWhile (MonLessThn (AtmVar "x") (AtmInt 4)) (MonIf (MonLessThn (AtmVar "x") (AtmInt 5)) (SeqMon (MonPrint (AtmVar "x")) (MonLet "x" (MonPlus (AtmVar "x") (AtmInt 1)))) (MonPrint (AtmInt 3))))
+</code></pre></div></div>
+
+<p>After the ANF pass, the instruction selection pass is next. The purpose of the instructor selector is to <em>select</em> the appropriate x86 instructions. The intermediate language for this will be <em>three address code</em> which models assembly instructions such as:</p>
+
+<pre><code class="language-x86asm">movq $1, %rax
+</code></pre>
+
+<p>As you can see, the instruction above has three components.</p>
+
+<p>The instruction selection pass generates the following for the running example:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span>
+    <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">0</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"x"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletestlabel"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">":"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">4</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"x"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jge"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"iftest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"iftest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"iftestlabel"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">5</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"x"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"block_0"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"je"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"block_1"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"block_0"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"blkdummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"x"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"incq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"x"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"thanks"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"block_1"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"thanks"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"retq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)</span>
+<span class="p">]</span>
+
+</code></pre></div></div>
+
+<p>The relevant code that generates this is as follows:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="n">toSelect</span> <span class="p">(</span><span class="kt">MonLet</span> <span class="n">var</span> <span class="p">(</span><span class="kt">AtmInt</span> <span class="n">n</span><span class="p">))</span> <span class="o">=</span>
+  <span class="p">[(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">var</span><span class="p">)]</span>
+
+<span class="n">toSelect</span> <span class="p">(</span><span class="kt">MonWhile</span> <span class="n">cnd</span> <span class="n">exps</span><span class="p">)</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">selectcnd</span> <span class="o">=</span> <span class="n">toSelect</span> <span class="n">cnd</span> <span class="kr">in</span>
+    <span class="kr">let</span> <span class="n">selectexps</span> <span class="o">=</span> <span class="n">toSelect</span> <span class="n">exps</span> <span class="kr">in</span>
+      <span class="p">[(</span><span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span> <span class="o">++</span> <span class="n">selectcnd</span> <span class="o">++</span> <span class="p">[(</span><span class="s">"jge"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span> <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"loop"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span><span class="o">++</span><span class="p">[(</span><span class="s">"loop"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"tst"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"tstdummy"</span><span class="p">)]</span> <span class="o">++</span> <span class="n">selectexps</span> <span class="o">++</span> <span class="p">[(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span> <span class="o">++</span> <span class="p">[(</span><span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"retq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span>
+
+<span class="n">toSelect</span> <span class="p">(</span><span class="kt">MonLessThn</span> <span class="p">(</span><span class="kt">AtmInt</span> <span class="n">n</span><span class="p">)</span> <span class="p">(</span><span class="kt">AtmInt</span> <span class="n">n2</span><span class="p">))</span> <span class="o">=</span>
+  <span class="p">[(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n2</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="p">(</span><span class="n">show</span> <span class="n">n</span><span class="p">))]</span>
+<span class="kt">In</span> <span class="n">this</span> <span class="n">pass</span><span class="p">,</span> <span class="n">instead</span> <span class="kr">of</span> <span class="n">using</span> <span class="n">stack</span> <span class="n">locations</span> <span class="n">or</span> <span class="n">registers</span> <span class="n">we</span> <span class="n">use</span> <span class="n">the</span> <span class="n">actual</span> <span class="n">variable</span> <span class="n">names</span><span class="o">.</span> <span class="kt">In</span> <span class="n">the</span> <span class="n">next</span> <span class="n">pass</span> <span class="n">we</span> <span class="n">assign</span> <span class="n">stack</span> <span class="n">locations</span>
+
+<span class="n">toSelect</span> <span class="p">(</span><span class="kt">MonWhile</span> <span class="n">cnd</span> <span class="p">(</span><span class="kt">MonIf</span> <span class="n">cnd2</span> <span class="n">thn</span> <span class="n">els</span><span class="p">))</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="n">cif</span> <span class="o">=</span> <span class="n">toCLikewhile</span> <span class="p">(</span><span class="kt">MonIf</span> <span class="n">cnd2</span> <span class="n">thn</span> <span class="n">els</span><span class="p">)</span> <span class="mi">0</span> <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="s">"to"</span><span class="p">,</span> <span class="kt">MonBlock</span> <span class="s">"whiletest"</span><span class="p">,</span> <span class="s">"thanks"</span><span class="p">,</span> <span class="s">":)"</span><span class="p">)</span><span class="kr">in</span>
+    <span class="kr">let</span> <span class="n">cselect</span> <span class="o">=</span> <span class="n">toSelect</span> <span class="n">cif</span> <span class="kr">in</span>
+      <span class="kr">let</span> <span class="n">selectcnd</span> <span class="o">=</span> <span class="n">toSelect</span> <span class="n">cnd</span> <span class="kr">in</span>
+      <span class="p">[(</span><span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletestlabel"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">":"</span><span class="p">)]</span> <span class="o">++</span> <span class="n">selectcnd</span> <span class="o">++</span> <span class="p">[(</span><span class="s">"jge"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span> <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"iftest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span> <span class="o">++</span> <span class="p">[(</span><span class="s">"iftest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"iftestlabel"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span> <span class="o">++</span> <span class="n">cselect</span> <span class="o">++</span> <span class="p">[(</span><span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"retq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)]</span>
+
+</code></pre></div></div>
+
+<p>Note: the dummy arguments are one of the weaknesses of my implementation. In the next iteration of the project I am going to build a much cleaner design.</p>
+
+<p>Anyways, the instruction selection pass generates three address code whose addresses are variables from the source program.</p>
+
+<p>Since I did not implement register allocation, I have another pass which assigns stack locations:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span>
+    <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">0</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="s">"-8(%rbp)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletestlabel"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">":"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">4</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="s">"-8(%rbp)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jge"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"iftest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"iftest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"iftestlabel"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="mi">5</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="s">"-8(%rbp)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"block_0"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"je"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"block_1"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"block_0"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"blkdummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="s">"-8(%rbp)"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"incq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="s">"-8(%rbp)"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"thanks"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"block_1"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"3"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"whiletest"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"thanks"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"retq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)</span>
+<span class="p">]</span>
+
+</code></pre></div></div>
+
+<p>And the code that generates stack locations is here:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">toStackHelper</span> <span class="o">::</span> <span class="p">[(</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">)]</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Map</span><span class="o">.</span><span class="kt">Map</span> <span class="kt">String</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="p">[(</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">)]</span>
+<span class="n">toStackHelper</span> <span class="kt">[]</span> <span class="kr">_</span> <span class="kr">_</span> <span class="o">=</span> <span class="kt">[]</span>
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="p">(</span><span class="n">show</span> <span class="n">n</span><span class="p">),</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter</span> <span class="n">hashmap</span>
+  
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">imm1</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+    <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span>
+            <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">tmp1</span> <span class="n">hashmap</span>
+            <span class="kr">then</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+            <span class="kr">else</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                     <span class="n">stacklocation'</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                     <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">tmp1</span> <span class="n">stacklocation'</span> <span class="n">hashmap</span>
+                 <span class="kr">in</span> <span class="p">(</span><span class="n">stacklocation'</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span>
+    <span class="kr">in</span>
+        <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">imm1</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"addq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">imm1</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span>
+        <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">tmp1</span> <span class="n">hashmap</span>
+        <span class="kr">then</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+        <span class="kr">else</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                 <span class="n">stacklocation'</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                 <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">tmp1</span> <span class="n">stacklocation'</span> <span class="n">hashmap</span>
+               <span class="kr">in</span> <span class="p">(</span><span class="n">stacklocation'</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span>
+   <span class="kr">in</span>
+    <span class="p">(</span><span class="s">"addq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="p">(</span><span class="n">show</span> <span class="n">imm1</span><span class="p">),</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"addq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">imm1</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">,</span> <span class="n">stacklocation2</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">,</span> <span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">imm1</span><span class="p">)</span>
+       
+   <span class="kr">in</span>
+     <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">stacklocation</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rax"</span><span class="p">)</span> <span class="o">:</span> <span class="p">(</span><span class="s">"addq"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rax"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation2</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"incq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">x</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">x</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+  <span class="kr">in</span>
+    <span class="p">(</span><span class="s">"incq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+  
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"subq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span>
+        <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">tmp1</span> <span class="n">hashmap</span>
+        <span class="kr">then</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+        <span class="kr">else</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                 <span class="n">stacklocation'</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                 <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">tmp1</span> <span class="n">stacklocation'</span> <span class="n">hashmap</span>
+               <span class="kr">in</span> <span class="p">(</span><span class="n">stacklocation'</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span>
+   <span class="kr">in</span>
+    <span class="p">(</span><span class="s">"subq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+    
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"True"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+    <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span>
+            <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">tmp1</span> <span class="n">hashmap</span>
+            <span class="kr">then</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+            <span class="kr">else</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                     <span class="n">stacklocation'</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                     <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">tmp1</span> <span class="n">stacklocation'</span> <span class="n">hashmap</span>
+                 <span class="kr">in</span> <span class="p">(</span><span class="n">stacklocation'</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span>
+    <span class="kr">in</span>
+        <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"True"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"False"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+    <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span>
+            <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">tmp1</span> <span class="n">hashmap</span>
+            <span class="kr">then</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+            <span class="kr">else</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                     <span class="n">stacklocation'</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                     <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">tmp1</span> <span class="n">stacklocation'</span> <span class="n">hashmap</span>
+                 <span class="kr">in</span> <span class="p">(</span><span class="n">stacklocation'</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span>
+    <span class="kr">in</span>
+        <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"True"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+        
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">bool</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+       
+   <span class="kr">in</span>
+     <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">bool</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">tmp1</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+       
+   <span class="kr">in</span>
+     <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">imm1</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+    <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span> <span class="o">=</span>
+            <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">imm1</span> <span class="n">hashmap</span>
+            <span class="kr">then</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">imm1</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">)</span>
+            <span class="kr">else</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                     <span class="n">stacklocation'</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                     <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">imm1</span> <span class="n">stacklocation'</span> <span class="n">hashmap</span>
+                 <span class="kr">in</span> <span class="p">(</span><span class="n">stacklocation'</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">)</span>
+    <span class="kr">in</span>
+        <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rdi"</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"dummy"</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter</span> <span class="n">hashmap</span>
+
+<span class="n">toStackHelper</span> <span class="p">((</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">v2</span><span class="p">)</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+   <span class="kr">let</span> <span class="p">(</span><span class="n">stacklocation</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">,</span> <span class="n">stacklocation2</span><span class="p">)</span> <span class="o">=</span>
+            <span class="kr">if</span> <span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">v</span> <span class="n">hashmap</span> <span class="o">&amp;&amp;</span> <span class="n">not</span> <span class="p">(</span><span class="kt">Map</span><span class="o">.</span><span class="n">member</span> <span class="n">v2</span> <span class="n">hashmap</span><span class="p">)</span>
+            <span class="kr">then</span> <span class="kr">let</span> <span class="n">counter'</span> <span class="o">=</span> <span class="n">counter</span> <span class="o">+</span> <span class="mi">8</span>
+                     <span class="n">stacklocation2</span> <span class="o">=</span> <span class="s">"-"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">counter'</span> <span class="o">++</span> <span class="s">"(%rbp)"</span>
+                     <span class="n">hashmap'</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">v2</span> <span class="n">stacklocation2</span> <span class="n">hashmap</span>
+                 <span class="kr">in</span>
+                   <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">v</span><span class="p">,</span> <span class="n">counter'</span><span class="p">,</span> <span class="n">hashmap'</span><span class="p">,</span> <span class="n">stacklocation2</span><span class="p">)</span>
+            <span class="kr">else</span> <span class="p">(</span><span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">v</span><span class="p">,</span> <span class="n">counter</span><span class="p">,</span> <span class="n">hashmap</span><span class="p">,</span> <span class="n">hashmap</span> <span class="kt">Map</span><span class="o">.!</span> <span class="n">v2</span><span class="p">)</span>
+    <span class="kr">in</span>
+     <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rax"</span><span class="p">)</span> <span class="o">:</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="s">"%rax"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stacklocation2</span><span class="p">)</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter'</span> <span class="n">hashmap'</span>
+
+<span class="n">toStackHelper</span> <span class="p">(</span><span class="n">x</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">counter</span> <span class="n">hashmap</span> <span class="o">=</span>
+  <span class="n">x</span> <span class="o">:</span> <span class="n">toStackHelper</span> <span class="n">xs</span> <span class="n">counter</span> <span class="n">hashmap</span>
+
+</code></pre></div></div>
+
+<p>And finally we generate the actual x86:</p>
+
+<pre><code class="language-x86asm">    .globl main
+main:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $8, %rsp
+    movq $0, -8(%rbp)
+whiletest:
+    cmpq $4, -8(%rbp)
+    jge exit
+    jmp iftest
+iftest:
+    cmpq $5, -8(%rbp)
+    jmp block_0
+    je block_1
+block_0:
+    movq -8(%rbp), %rdi
+    callq print_int
+    incq -8(%rbp)
+    jmp whiletest
+block_1:
+    movq $3, %rdi
+    callq print_int
+    jmp whiletest
+exit:
+    addq $8, %rsp
+    popq %rbp
+    retq
+
+</code></pre>
+
+<p>which is associated with this code:</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">toX86'</span> <span class="o">::</span> <span class="p">[(</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">)]</span> <span class="o">-&gt;</span> <span class="kt">String</span>
+<span class="n">toX86'</span> <span class="kt">[]</span> <span class="o">=</span> <span class="s">""</span>
+
+<span class="n">toX86'</span> <span class="p">(</span><span class="n">x</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="o">=</span>
+  <span class="n">toX86W</span> <span class="n">x</span> <span class="o">++</span> <span class="n">toX86'</span> <span class="n">xs</span>
+  
+<span class="n">toX86W</span> <span class="o">::</span> <span class="p">(</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">,</span> <span class="kt">Imm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">String</span>
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"start"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy2</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">.globl main</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span> <span class="s">"main:</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span> <span class="s">"</span><span class="se">\t</span><span class="s">pushq %rbp</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span> <span class="s">"</span><span class="se">\t</span><span class="s">movq %rsp, %rbp</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span> <span class="s">"</span><span class="se">\t</span><span class="s">subq $8, %rsp</span><span class="se">\n</span><span class="s">"</span> 
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"True"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stack</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">movq $1, "</span> <span class="o">++</span> <span class="n">stack</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span> 
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"True"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stack</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">cmpq $1, "</span> <span class="o">++</span> <span class="n">stack</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span> 
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg2</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">cmpq "</span> <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">","</span> <span class="o">++</span> <span class="n">reg2</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+  
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"jmp"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">block</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">jmp "</span> <span class="o">++</span> <span class="n">block</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span> 
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"je"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">block</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">je "</span> <span class="o">++</span> <span class="n">block</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"jge"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">block</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">jge "</span> <span class="o">++</span> <span class="n">block</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"jl"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">block</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">jl "</span> <span class="o">++</span> <span class="n">block</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span> 
+  
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"exit"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="s">"retq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dmy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"exit:</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span> <span class="s">"</span><span class="se">\t</span><span class="s">addq $8, %rsp</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span> <span class="s">"</span><span class="se">\t</span><span class="s">popq %rbp</span><span class="se">\n</span><span class="s">"</span> <span class="o">++</span>  <span class="s">"</span><span class="se">\t</span><span class="s">retq</span><span class="se">\n</span><span class="s">"</span>
+  
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg2</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">movq "</span>  <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">","</span> <span class="o">++</span> <span class="n">reg2</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">TupleMem</span> <span class="n">tmp</span><span class="p">)</span> <span class="o">=</span>
+   <span class="s">"</span><span class="se">\t</span><span class="s">movq "</span>  <span class="o">++</span> <span class="s">"$"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">n</span> <span class="o">++</span> <span class="s">","</span> <span class="o">++</span> <span class="n">tmp</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+   
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">TupleMem</span> <span class="n">tmp</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">)</span> <span class="o">=</span>
+   <span class="s">"</span><span class="se">\t</span><span class="s">movq "</span> <span class="o">++</span> <span class="n">tmp</span> <span class="o">++</span> <span class="s">","</span> <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+   
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">movq "</span>  <span class="o">++</span> <span class="n">n</span> <span class="o">++</span> <span class="s">","</span> <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+   
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">movq "</span>  <span class="o">++</span> <span class="s">"$"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">n</span> <span class="o">++</span> <span class="s">","</span> <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+  
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stk</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">movq $"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">n</span> <span class="o">++</span> <span class="s">", "</span> <span class="o">++</span> <span class="n">stk</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"movq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stk</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">movq "</span> <span class="o">++</span> <span class="n">stk</span> <span class="o">++</span> <span class="s">", "</span> <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"incq"</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stk</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dummy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">incq "</span> <span class="o">++</span> <span class="n">stk</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"callq"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">fn</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dmy</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">callq "</span> <span class="o">++</span> <span class="n">fn</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+  
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"cmpq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStack</span> <span class="n">stk</span><span class="p">)</span> <span class="o">=</span>
+    <span class="s">"</span><span class="se">\t</span><span class="s">cmpq $"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">n</span> <span class="o">++</span> <span class="s">", "</span> <span class="o">++</span> <span class="n">stk</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dm</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dm2</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">callq "</span> <span class="o">++</span> <span class="s">"print_int</span><span class="se">\n</span><span class="s">"</span> 
+  
+<span class="n">toX86W</span> <span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dm</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">dm2</span><span class="p">)</span><span class="o">=</span>
+  <span class="n">b1</span> <span class="o">++</span> <span class="s">":</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"addq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmReg</span> <span class="n">reg</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">addq "</span> <span class="o">++</span> <span class="s">"$"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">n</span> <span class="o">++</span> <span class="s">", "</span> <span class="o">++</span> <span class="n">reg</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">toX86W</span> <span class="p">(</span><span class="s">"addq"</span><span class="p">,</span> <span class="kt">ImmInt</span> <span class="n">n</span><span class="p">,</span> <span class="kt">ImmStr</span> <span class="n">fp</span><span class="p">)</span> <span class="o">=</span>
+  <span class="s">"</span><span class="se">\t</span><span class="s">addq "</span> <span class="o">++</span> <span class="s">"$"</span> <span class="o">++</span> <span class="n">show</span> <span class="n">n</span> <span class="o">++</span> <span class="s">", "</span> <span class="o">++</span>  <span class="n">fp</span> <span class="o">++</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+</code></pre></div></div>
+
+<h3 id="tuples">Tuples</h3>
+
+<p>It was fun compiling tuples. Tuples motivate garbage collector. The garbage collector of my system (which was not written by me) is a two space collector. The collector is divided into regions: <em>ToSpace</em> and <em>FromSpace</em>. To make room, the garbage collector, moves the reachable objects from the <em>FromSpace</em> to <em>ToSpace</em>.</p>
+
+<p>To compile tuples you need to make a 64 bit tag for the garbage collector to distinguish it.
+Tuples go through the same passes as above. In the 64 bit tag, there are bits corresponding to the size of the tuple, bits that corresponds to whether an element of the tuple is a number or another tuple and bits that correspond to whether the tuple is reachable from the root set.</p>
+
+<p>A given tuple containing expression</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let x = (4;5;6);; print(x[1]);
+</code></pre></div></div>
+
+<p>it generates the following x86</p>
+
+<pre><code class="language-x86asm">    .globl main
+main:
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $0, %rsp
+    movq $65536, %rdi
+    movq $65536, %rsi
+    callq initialize
+    movq rootstack_begin(%rip), %r15
+    movq $0, 0(%r15)
+    addq $8, %r15
+    jmp start
+start:
+    movq free_ptr(%rip), %rax
+    addq $24, %rax
+    movq fromspace_end(%rip), %r13
+    cmpq %r13, %rax
+    jl block_77
+    jmp block_78
+block_77:
+    movq $0, %r13
+    jmp block_80
+block_78:
+    movq %r15, %rdi
+    movq $24, %rsi
+    callq collect
+    jmp block_80
+block_80:
+    movq free_ptr(%rip), %r11
+    addq $32, free_ptr(%rip)
+    movq $7, 0(%r11)
+    movq %r11, %r14
+    movq %r14, %r11
+    movq $4, 8(%r11)
+    movq $5, 16(%r11)
+    movq $6, 24(%r11)
+    movq 16(%r11), %rdi
+    callq print_int
+    jmp conclusion
+conclusion:
+    subq $8, %r15
+    addq $0, %rsp
+    popq %rbp
+    retq
+
+</code></pre>
+
+<h3 id="lessons-from-using-haskell">Lessons from using Haskell</h3>
+
+<p>I have written compilers in Common Lisp and after writing a compiler in  Haskell I noticed that I was able to structure my code better. In compilers you deal with a lot of abstract syntax tree transformations. Defining data types with <code class="language-plaintext highlighter-rouge">data</code> enables you to manipulate ASTs better. Haskell’s pattern matching facility makes AST transformation feasible as well. I liked how I can break down a function into small modules based on the AST pattern. All of this enables you to structure your code.</p>
+
+<p>Haskell lets you write:</p>
+
+<p>Correct code, if a Haskell program compiles then it just works. Why is this? It has to do with the type system. By defining data types for each intermediate language and a signature enforced by the type system, you are forced to write more complete/less sloppy code and you are also guaranteed correctness. In addition, since the type system is about proving certain aspects of your program, when developing a program in Haskell, if the given program does not compile then the type errors will guide you to, in essence, prove your program correct iteratively.</p>
+
+<p>If type checkers are primitive proof systems then type checkers prove parts of your system correct. If type checkers prove parts of you’re program correct then type errors will guide you prove the correctness of some parts of your program correct iteratively.</p>
+
+<p>There are a few things I would do differently next time. I think I need to think ahead of time the structure of my data; for example, the instruction selection pass (ToSelect.hs) returns an Imm data type. An Imm is either an ImmStr, ImmReg, or ImmTupMem. Some ImmStr’s contain dummy variables “dummy”.</p>
+
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2024/06/12/compiling-core-programming-constructs.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez Lara</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>Copyright &copy; 2024 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

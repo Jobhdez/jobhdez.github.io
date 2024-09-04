@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
@@ -8,8 +13,8 @@
 <meta property="og:title" content="Why you should build a compiler :)" />
 <meta name="author" content="Job Hernandez" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="version 1.1: July 3 2023 - add better support for my claim" />
-<meta property="og:description" content="version 1.1: July 3 2023 - add better support for my claim" />
+<meta name="description" content="My background Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as while loops, if statements, assignments and variables, tuples and functions to x86-64; nevertheless, it is not quite done; for example, as of 7/3/23 it lowers the source language to an x86 AST. The x86 AST is mostly correct so I just now have to create the x86 file and finish up tuples which require a 64 bit tag." />
+<meta property="og:description" content="My background Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as while loops, if statements, assignments and variables, tuples and functions to x86-64; nevertheless, it is not quite done; for example, as of 7/3/23 it lowers the source language to an x86 AST. The x86 AST is mostly correct so I just now have to create the x86 file and finish up tuples which require a 64 bit tag." />
 <link rel="canonical" href="http://localhost:4000/2022/11/13/compilers-are-fun.html" />
 <meta property="og:url" content="http://localhost:4000/2022/11/13/compilers-are-fun.html" />
 <meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
@@ -18,7 +23,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Why you should build a compiler :)" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2022-11-13T00:00:00-08:00","datePublished":"2022-11-13T00:00:00-08:00","description":"version 1.1: July 3 2023 - add better support for my claim","headline":"Why you should build a compiler :)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/11/13/compilers-are-fun.html"},"url":"http://localhost:4000/2022/11/13/compilers-are-fun.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez"},"dateModified":"2022-11-13T00:00:00-08:00","datePublished":"2022-11-13T00:00:00-08:00","description":"My background Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as while loops, if statements, assignments and variables, tuples and functions to x86-64; nevertheless, it is not quite done; for example, as of 7/3/23 it lowers the source language to an x86 AST. The x86 AST is mostly correct so I just now have to create the x86 file and finish up tuples which require a 64 bit tag.","headline":"Why you should build a compiler :)","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/11/13/compilers-are-fun.html"},"url":"http://localhost:4000/2022/11/13/compilers-are-fun.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
 </head>
@@ -52,11 +57,7 @@
 
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p><em>version 1.1</em>: July 3 2023 - add better support for my claim</p>
-
-<p><em>version 1</em>: Nov 13 2022 - initial version</p>
-
-<h2 id="my-background">My background</h2>
+    <h2 id="my-background">My background</h2>
 <p>Lately, I have been working on toy small compilers and I am having a lot of fun; for example, I have been working on a compiler that compiles core imperative features such as <code class="language-plaintext highlighter-rouge">while loops</code>, <code class="language-plaintext highlighter-rouge">if statements</code>, <code class="language-plaintext highlighter-rouge">assignments</code> and <code class="language-plaintext highlighter-rouge">variables</code>, <code class="language-plaintext highlighter-rouge">tuples</code> and <code class="language-plaintext highlighter-rouge">functions</code> to x86-64; nevertheless, it is not quite done; for example, as of <code class="language-plaintext highlighter-rouge">7/3/23</code> it lowers the source language to an x86 AST. The x86 AST is mostly correct so I just now have to create the x86 file and finish up tuples which require a 64 bit tag.</p>
 
 <p>So, as you can see I am not an expert compiler engineer but I have done some work and as a result I have learned a lot. So, the following statements are based on my observations from implementing my compiler and studying compiler textbooks.</p>
