@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="assets/style.scss">
+
+  
+</head><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Improving the performance of fmul with double-double arithmetic | (lambda () ‘(Jobs Blog))</title>
+<meta name="generator" content="Jekyll v4.3.4" />
+<meta property="og:title" content="Improving the performance of fmul with double-double arithmetic" />
+<meta name="author" content="Job Hernandez Lara" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc." />
+<meta property="og:description" content="Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc." />
+<link rel="canonical" href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" />
+<meta property="og:url" content="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" />
+<meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-09-21T00:00:00-07:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Improving the performance of fmul with double-double arithmetic" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2024-09-21T00:00:00-07:00","datePublished":"2024-09-21T00:00:00-07:00","description":"Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.","headline":"Improving the performance of fmul with double-double arithmetic","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"},"url":"http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">(lambda () &#39;(Jobs Blog))</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a><a class="page-link" href="/expository-writing/">Expository Writing</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Improving the performance of fmul with double-double arithmetic</h1>
+    <p class="post-meta"><time class="dt-published" datetime="2024-09-21T00:00:00-07:00" itemprop="datePublished">
+        Sep 21, 2024
+      </time>• 
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-author h-card" itemprop="name">Job Hernandez Lara</span></span></p>
+  </header>
+
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
+
+<p>If \(x_{1}\) and \(x_{2}\) are radix-2 precision-p floating point numbers, whose exponents \(e_{x1}\) and \(e_{x2}\) satisfy \(e_{x1} + e_{x2} &lt;  e_{min} + p - 1\) and if \(r\) is \(R(x_{1} x_{2})\) where R is a rounding function then \(t = x_{1}x_{2} - r\) is a radix 2 precision-p floating point number.</p>
+
+<p>Using the <em>2MultFMA</em> algorithm we can compute \(t\):</p>
+
+<p>\(r_{1} + r_{2} = x_{1} * x_{2}\) and \(r_{1} = RN(x_{1} * x_{2})\).</p>
+
+<p>More specifically:</p>
+
+<p>Ensure: \(r_{1} + r_{2} = x_{1}x_{2}\)</p>
+
+<p>R1 &lt;-  \(RN(x_{1} * x_{2})\)</p>
+
+<p>R2 &lt;- RN(x_{1} * x_{2} - r1)</p>
+
+<p>Return (r1, r2)</p>
+
+<p>So, the algorithm we have for <code class="language-plaintext highlighter-rouge">exact_mult</code> in C++ is essentially:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="n">prod_hi</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">);</span>
+   <span class="n">prod_lo</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">fma</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="n">prod_hi</span><span class="p">);</span> <span class="c1">// a * b - prod_hi exactly</span>
+</code></pre></div></div>
+
+<p>Or in sollya:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; prod_hi = round(a * b, D, RN);
+&gt; prod_lo = a * b - prod_hi;
+</code></pre></div></div>
+
+<p>The product of <code class="language-plaintext highlighter-rouge">a * b</code> might not fit in a double precision, so <em>exact mult</em> will return <code class="language-plaintext highlighter-rouge">prod.hi</code> and <code class="language-plaintext highlighter-rouge">prod.lo</code> so that \(a \* b = prod.hi + prod.lo\).</p>
+
+<p>Example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; a = 2^8 + 1 + 2^-16 + 2^-31;
+&gt; b = 2^15 - 1;
+&gt; display = binary;
+&gt; a * b;
+1.000000001111110111111110111111111111111111111111111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>Basically round to the nearest 24 bits. That’s what happens when you round to <code class="language-plaintext highlighter-rouge">float</code>, i.e., <code class="language-plaintext highlighter-rouge">float</code> is 23 bit mantissa + 1 hidden bit.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 0111111111111111111111111111111_2
+</code></pre></div></div>
+
+<p>And when we use round to nearest, the 24 bit precision will be?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111
+</code></pre></div></div>
+
+<p>Then we look at the rounding bit, the one right after the separator you added which is <code class="language-plaintext highlighter-rouge">0</code> in this case so you will round down, and the answer is the same as the “integer part”</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111
+</code></pre></div></div>
+
+<p>If it’s 1, we need to check the sticky bits. If the sticky bits are non-zero, we round up.</p>
+
+<p>If the sticky bits are zero, we have a tie. And the default rounding mode is round-to-nearest, <em>tie-to-even</em> so you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.</p>
+
+<p>Now can you try to round:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.000000001111110111111110111111111111111111111111111111_2
+</code></pre></div></div>
+
+<p>to the nearest 53-bit ?</p>
+
+<p><code class="language-plaintext highlighter-rouge">1.0000000011111101111111101111111111111111111111111111|11_2</code></p>
+
+<p>All the bits on the left of <code class="language-plaintext highlighter-rouge">|</code> are integer part, the bit right on the right of <code class="language-plaintext highlighter-rouge">| </code> is the rounding bit
+the remaining bits on the right of rounding bit are sticky bits.</p>
+
+<p>When we round up, we simply increase the “integer part” by 1 and the integer part above is:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111101111111111111111111111111111
+</code></pre></div></div>
+
+<p>and if you add the whole thing by 1 lowest bit, it will be?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111101111111111111111111111111111
+-&gt;
+1.0000000011111101111111110000000000000000000000000000
+</code></pre></div></div>
+
+<p>and that will be the bits when we do <code class="language-plaintext highlighter-rouge">round(a*b, D, RN)</code></p>
+
+<p>Which is the same as <code class="language-plaintext highlighter-rouge">prod.hi</code> now, your next step is to round that (<code class="language-plaintext highlighter-rouge">prod.hi</code>) to 24 bits.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111110000000000000000000000000000
+</code></pre></div></div>
+
+<p>to nearest 24 bits, following the same process</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; round(a * b, SG, RN); // round to 24-bit precision
+&gt; round(a * b, D, RN); // round to 53-bit precision
+</code></pre></div></div>
+
+<p>So the rounding process, should always start with picking the “integral part”</p>
+
+<p>so the exact mult will return prod.hi and prod.lo so that a * b = prod.hi + prod.lo mathematically</p>
+
+<p>you can actually see it in action with Sollya</p>
+
+<blockquote>
+  <p>a = 2^52 + 1; b = 2^52 + 1;
+prod_hi = round(a<em>b, D, RN); prod_lo = a</em>b - prod_hi;
+a * b;
+prod_hi;
+prod_lo;
+prod_hi + prod_lo;</p>
+</blockquote>
+
+<p>do you see that</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>prod_hi = round(a*b, D, RN);
+</code></pre></div></div>
+
+<p>so ill round that bit string to 24 bits
+this one <code class="language-plaintext highlighter-rouge">1.0000000011111101111111110000000000000000000000000000</code>
+<code class="language-plaintext highlighter-rouge">1.00000000111111011111111|10000000000000000000000000000</code>
+so we need to round to even
+since the round bit is non zero and the sticky bits is 0
+round to even means that the last significant value is 0</p>
+
+<p>So first
+first we get the leading 24 bit (“integer part”):</p>
+
+<p><code class="language-plaintext highlighter-rouge">1.00000000111111011111111</code></p>
+
+<p>then we look at the rounding bit, which is?
+The 1 after the bar and the sticky bits are?</p>
+
+<p>The 0s after that</p>
+
+<p>So you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.</p>
+
+<p>In this case, up or down (i.e. keep the integer part) will give you even bits?</p>
+
+<p>So, we have the bits,</p>
+
+<p><code class="language-plaintext highlighter-rouge">1.00000000111111011111111</code></p>
+
+<p>Round down:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 10000000000 -&gt; 1.00000000111111011111111
+</code></pre></div></div>
+
+<p>Round up:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 10000000000 -&gt; 1.00000000111111011111111 + 1 ULP
+</code></pre></div></div>
+
+<p>but the least sig val needs to be a 0 right?
+So the round up it is:</p>
+
+<p>1.00000000111111100000000</p>
+
+<p>So, as I said above, the algorithm we have for <code class="language-plaintext highlighter-rouge">exact_mult</code> in C++ is essentially:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   prod_hi = static_cast&lt;double&gt;(a * b);
+   prod_lo = std::fma(a, b, -prod_hi); // a * b - prod_hi exactly
+</code></pre></div></div>
+
+<p>Or in Sollya:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; prod_hi = round(a * b, D, RN);
+&gt; prod_lo = a * b - prod_hi; // Notice that I don't need to round here, because it's exact in double precision
+
+&gt; prod_hi;
+1.000000001111110111111111_2 * 2^(23)
+
+&gt; prod_hi + prod_lo;
+1.000000001111110111111110111111111111111111111111111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>That will calculate the exact result which is <code class="language-plaintext highlighter-rouge">a*b</code>.</p>
+
+<p>In C++ <code class="language-plaintext highlighter-rouge">prod_hi + prod_lo</code> will round the exact result to <code class="language-plaintext highlighter-rouge">double</code>
+so how do you do that in Sollya, and what will the answer be?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>round(prod_hi+prod_lo, D, RN);
+1.000000001111110111111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>Round to single precision:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; round(val, SG, RN);
+1.000000001111111_2 * 2^(23)
+&gt; round(a*b, SG, RN);
+1.00000000111111011111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>so whats happening here is that we are rounding one extra time?
+And that’s why this type of errors is called <code class="language-plaintext highlighter-rouge">double-rounding errors</code>.</p>
+
+<p>The fix of the double rounding errors is handling <code class="language-plaintext highlighter-rouge">prod.lo</code>.</p>
+
+<p>So now, we will handle 3 cases: <code class="language-plaintext highlighter-rouge">lo &gt; 0, lo = 0, lo &lt; 0</code>
+Ok, lets start with \(lo = 0\). When \(lo = 0\) we have \(hi + lo = hi\).</p>
+
+<p>Ok, so now lets say we have <code class="language-plaintext highlighter-rouge">hi + lo</code>
+both of which are double precision. What does this mean?</p>
+
+<p>When \(lo = 0\) — i.e., \(hi + lo = hi\) —
+means that \(result = prod_hi\) is enough to get correctly rounding to single precision.</p>
+
+<p>On the other hand when \(lo &lt; 0\), let’s compare <code class="language-plaintext highlighter-rouge">round(hi + lo, SG, RN)</code> and <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>​​&gt; hi = 1 + 2^-23 + 2^-24;
+&gt; lo = -2^-55;
+&gt; hi = 1 + 2^-23 + 2^-24;
+&gt; lo = -2^-55;
+&gt; hi;
+1.000000000000000000000011_2
+&gt; lo;
+-1_2 * 2^(-55)
+
+</code></pre></div></div>
+
+<p>Now, let’s do the rounding — i.e., <code class="language-plaintext highlighter-rouge">round(hi + lo, SG, RN)</code> and <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> —</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; hi = 1 + 2^-23 + 2^-24;
+&gt; lo = -2^-55;
+&gt; round(hi + lo, SG, RN);
+1.00000000000000000000001_2
+&gt; round(hi, SG, RN);
+1.0000000000000000000001_2
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> did round up, but actually it needs to round down to match <code class="language-plaintext highlighter-rouge">round(hi + lo, SG, RN)</code>, the correct result</p>
+
+<p>so, in order for <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> to round up, we must have:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- rb in hi is 1
+and at least
+1) lsb in hi is 1, or
+2) remaining sticky bits in hi is &gt; 0
+</code></pre></div></div>
+
+<p>so for the default rounding modes, after getting (truncating) the “integer part”, we will round up if:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rb &amp;&amp; (lsb || (r != 0))
+</code></pre></div></div>
+
+<p>where</p>
+
+<p><code class="language-plaintext highlighter-rouge">rb</code> is the rounding bit; <code class="language-plaintext highlighter-rouge">lsb</code> is the least significant bit (of the integer part) and <code class="language-plaintext highlighter-rouge">r != 0</code> is just <code class="language-plaintext highlighter-rouge">sticky bits</code> are positive.</p>
+
+<p>So, in order for <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> to round up, we must have:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- rb in hi is 1
+and at least
+1) lsb in hi is 1, or
+2) remaining sticky bits in hi is &gt; 0
+</code></pre></div></div>
+
+<p>now, if it is case 2: <code class="language-plaintext highlighter-rouge">remaining sticky bits in hi is &gt; 0</code>
+because <code class="language-plaintext highlighter-rouge">|lo| &lt;= ulp(hi) / 2</code>,
+<code class="language-plaintext highlighter-rouge">remaining sticky bits in (hi + lo)</code> is still &gt; 0</p>
+
+<p>so the rounding action we take with respect to <code class="language-plaintext highlighter-rouge">hi + lo</code> is still round up,</p>
+
+<p>i.e. <code class="language-plaintext highlighter-rouge">round(hi, SG, RN) = round(hi + lo, SG, RN)</code> in that case.
+Right? Yes</p>
+
+<p>so now, let consider the case <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> is round-up because:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- rb is 1,
+- lsb is 1,
+- but sticky bits of hi is 0
+</code></pre></div></div>
+
+<p>(which is exactly what we have with <code class="language-plaintext highlighter-rouge">hi = 1 + 2^-23 + 2^-24</code>)
+so now, because <code class="language-plaintext highlighter-rouge">lo &lt; 0</code>, if you look at the exact bits of <code class="language-plaintext highlighter-rouge">hi + lo</code>, you will see that:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- lsb is still 1
+- rb is 0
+- sticky bits of hi + lo are &gt; 0
+</code></pre></div></div>
+
+<p>so because <code class="language-plaintext highlighter-rouge">rb</code> of <code class="language-plaintext highlighter-rouge">hi + lo</code> is 0, the correct rounding of <code class="language-plaintext highlighter-rouge">hi + lo</code> is round down, not round up</p>
+
+<p>so to highlight it:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; hi;
+1.000000000000000000000011_2
+&gt; hi + lo;
+1.0000000000000000000000101111111111111111111111111111111_2
+</code></pre></div></div>
+
+<p>and lets highlight rounding bit with <code class="language-plaintext highlighter-rouge">[ ]</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; hi;
+1.00000000000000000000001[1]_2
+&gt; hi + lo;
+1.00000000000000000000001[0]1111111111111111111111111111111_2
+</code></pre></div></div>
+
+<p>so in the first case, the logic is something like:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// At this point, hi is not 0, and lo is smaller than hi.
+FPBits&lt;double&gt; hi_bits(hi), lo_bits(lo);
+if (lo_bits.sign() != hi_bits.sign()) {
+  // Check if sticky bit of hi are all 0
+  constexpr uint64_t STICKY_MASK = 0xFFF'FFFF;  // Lower (52 - 23 - 1 = 28 bits)
+  uint64_t sticky_bits = (hi_bits.uintval() &amp; STICKY_MASK);
+  uint64_t result_bits = (sticky_bits == 0) ? (hi_bits.uintval() - 1) : hi_bits.uintval();
+  double result = FPBits&lt;double&gt;(result_bits).get_val();
+  return static_cast&lt;float&gt;(result);
+}
+</code></pre></div></div>
+
+    <script src="https://utteranc.es/client.js"
+        repo="jobhdez/jobhdez.github.io"
+        issue-term="pathname"label="utteranc.es"theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+  </div><a class="u-url" href="/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+        <ul class="contact-list">
+          <li class="p-name">Job Hernandez Lara</li>
+          <li><a class="u-email" href="mailto:hj93@protonmail.com">hj93@protonmail.com</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p>A technical blog about things I find interesting :)
+</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/jobhdez" target="_blank" title="jobhdez"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/sphere_in_space" target="_blank" title="sphere_in_space"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+    <div>
+      <p>Copyright &copy; 2024 Job Hernandez Lara. All rights reserved.</p>
+    </div>
+
+
+  </div>
+
+</footer>
+</body>
+
+</html>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

@@ -1,224 +1,315 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-04T14:49:54-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
-</subtitle><author><name>Job Hernandez Lara</name><email>hj93@protonmail.com</email></author><entry><title type="html">Adding floating point multiplication to LLVM libc</title><link href="http://localhost:4000/2024/06/12/implementing-fmul-for-llvm.html" rel="alternate" type="text/html" title="Adding floating point multiplication to LLVM libc" /><published>2024-06-12T00:00:00-07:00</published><updated>2024-06-12T00:00:00-07:00</updated><id>http://localhost:4000/2024/06/12/implementing-fmul-for-llvm</id><content type="html" xml:base="http://localhost:4000/2024/06/12/implementing-fmul-for-llvm.html"><![CDATA[<p>Recently, my <em>fmul</em> pr got merged into LLVM. And I would like to talk about my contribution. You can see my pr <a href="https://github.com/llvm/llvm-project/pull/91537">here</a>.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T17:24:25-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
+</subtitle><author><name>Job Hernandez Lara</name><email>hj93@protonmail.com</email></author><entry><title type="html">Improving the performance of fmul with double-double arithmetic</title><link href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" rel="alternate" type="text/html" title="Improving the performance of fmul with double-double arithmetic" /><published>2024-09-21T00:00:00-07:00</published><updated>2024-09-21T00:00:00-07:00</updated><id>http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic</id><content type="html" xml:base="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"><![CDATA[<p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
 
-<p>The problem was to multiply two double precision numbers and return a single precision number – i.e.,</p>
+<p>If \(x_{1}\) and \(x_{2}\) are radix-2 precision-p floating point numbers, whose exponents \(e_{x1}\) and \(e_{x2}\) satisfy \(e_{x1} + e_{x2} &lt;  e_{min} + p - 1\) and if \(r\) is \(R(x_{1} x_{2})\) where R is a rounding function then \(t = x_{1}x_{2} - r\) is a radix 2 precision-p floating point number.</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">float</span> <span class="nf">fmul</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">,</span> <span class="kt">double</span> <span class="n">y</span><span class="p">);</span>
+<p>Using the <em>2MultFMA</em> algorithm we can compute \(t\):</p>
+
+<p>\(r_{1} + r_{2} = x_{1} * x_{2}\) and \(r_{1} = RN(x_{1} * x_{2})\).</p>
+
+<p>More specifically:</p>
+
+<p>Ensure: \(r_{1} + r_{2} = x_{1}x_{2}\)</p>
+
+<p>R1 &lt;-  \(RN(x_{1} * x_{2})\)</p>
+
+<p>R2 &lt;- RN(x_{1} * x_{2} - r1)</p>
+
+<p>Return (r1, r2)</p>
+
+<p>So, the algorithm we have for <code class="language-plaintext highlighter-rouge">exact_mult</code> in C++ is essentially:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="n">prod_hi</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">);</span>
+   <span class="n">prod_lo</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">fma</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="n">prod_hi</span><span class="p">);</span> <span class="c1">// a * b - prod_hi exactly</span>
 </code></pre></div></div>
 
-<p>Before I go over my implementation I am going to introduce some terms.</p>
+<p>Or in sollya:</p>
 
-<p>A floating point number is made of three bit fields: the sign field, exponent field, and mantissa field. The sign field is always one bit irrespective of the type. In contrast the exponent field and mantissa field vary with the type.</p>
-
-<p>For example, for double precision, the mantissa field is 53 bits, and the exponent field is 11 bits. The maximum exponent of a double precision is 1023 and minimum exponent is -1022. You will see how these maximum and minimum exponents are used in a second.</p>
-
-<p>On the other hand, for single precision, the mantissa field is 23 bits, and the exponent field is 8 bits. The maximum exponent is 127 and the minimum exponent is -126.</p>
-
-<h3 id="the-implementation">The implementation</h3>
-
-<p>First, we need to get the bit representation of the double precision inputs and compute the sign bit of the result.</p>
-
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">auto</span> <span class="n">x_bits</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
-
- <span class="k">auto</span> <span class="n">y_bits</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
-
- <span class="k">auto</span> <span class="n">output_sign</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">sign</span><span class="p">()</span> <span class="o">!=</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">sign</span><span class="p">())</span> <span class="o">?</span> <span class="n">Sign</span><span class="o">::</span><span class="n">NEG</span> <span class="o">:</span> <span class="n">Sign</span><span class="o">::</span><span class="n">POS</span><span class="p">;</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; prod_hi = round(a * b, D, RN);
+&gt; prod_lo = a * b - prod_hi;
 </code></pre></div></div>
 
-<p>Here,</p>
+<p>The product of <code class="language-plaintext highlighter-rouge">a * b</code> might not fit in a double precision, so <em>exact mult</em> will return <code class="language-plaintext highlighter-rouge">prod.hi</code> and <code class="language-plaintext highlighter-rouge">prod.lo</code> so that \(a \* b = prod.hi + prod.lo\).</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span>
+<p>Example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; a = 2^8 + 1 + 2^-16 + 2^-31;
+&gt; b = 2^15 - 1;
+&gt; display = binary;
+&gt; a * b;
+1.000000001111110111111110111111111111111111111111111111_2 * 2^(23)
 </code></pre></div></div>
 
-<p>Is internal LLVM code that can help you manipulate bits.</p>
+<p>Basically round to the nearest 24 bits. That’s what happens when you round to <code class="language-plaintext highlighter-rouge">float</code>, i.e., <code class="language-plaintext highlighter-rouge">float</code> is 23 bit mantissa + 1 hidden bit.</p>
 
-<p>Next, we have the following that checks for special values like <em>NaNs</em> and <em>infinities</em>:</p>
-
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="n">LIBC_UNLIKELY</span><span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">is_inf_or_nan</span><span class="p">()</span> <span class="o">||</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">is_inf_or_nan</span><span class="p">()</span> <span class="o">||</span>
-                	<span class="n">x_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()</span> <span class="o">||</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()))</span> <span class="p">{</span>
-	<span class="k">if</span> <span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
-  	<span class="k">return</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
-	<span class="k">if</span> <span class="p">(</span><span class="n">y_bits</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
-  	<span class="k">return</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
-	<span class="k">if</span> <span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">is_inf</span><span class="p">())</span>
-  	<span class="k">return</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()</span>
-             	<span class="o">?</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">quiet_nan</span><span class="p">().</span><span class="n">get_val</span><span class="p">()</span>
-             	<span class="o">:</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">inf</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
-	<span class="k">if</span> <span class="p">(</span><span class="n">y_bits</span><span class="p">.</span><span class="n">is_inf</span><span class="p">())</span>
-  	<span class="k">return</span> <span class="n">x_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()</span>
-             	<span class="o">?</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">quiet_nan</span><span class="p">().</span><span class="n">get_val</span><span class="p">()</span>
-             	<span class="o">:</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">inf</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
-	<span class="c1">// Now either x or y is zero, and the other one is finite.</span>
-	<span class="k">return</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">zero</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
-  <span class="p">}</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 0111111111111111111111111111111_2
 </code></pre></div></div>
 
-<p>After that, you need to extract the mantissa of the inputs and extract the exponents and then compute the leading zeros of the mantissas. Why do we compute the leading zeros. We do this to normalize the inputs. After the following lines of code is executed the highest bits of <em>mx</em> and <em>my</em> are both 1. As a result, when we compute the product of the mantissas the leading one of the full product will be either the highest bit or the second highest bit. Then in the next step we know we need to shift by some amount. If we had not shifted the zeros of <em>mx</em> and <em>my</em> the leading one could be anywhere.</p>
+<p>And when we use round to nearest, the 24 bit precision will be?</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-  <span class="kt">uint64_t</span> <span class="n">mx</span><span class="p">,</span> <span class="n">my</span><span class="p">;</span>
-
-  <span class="c1">// Get mantissa and append the hidden bit if needed.</span>
-  <span class="n">mx</span> <span class="o">=</span> <span class="n">x_bits</span><span class="p">.</span><span class="n">get_explicit_mantissa</span><span class="p">();</span>
-  <span class="n">my</span> <span class="o">=</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">get_explicit_mantissa</span><span class="p">();</span>
-
-  <span class="c1">// Get the corresponding biased exponent.</span>
-  <span class="kt">int</span> <span class="n">ex</span> <span class="o">=</span> <span class="n">x_bits</span><span class="p">.</span><span class="n">get_explicit_exponent</span><span class="p">();</span>
-  <span class="kt">int</span> <span class="n">ey</span> <span class="o">=</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">get_explicit_exponent</span><span class="p">();</span>
-
-  <span class="c1">// Count the number of leading zeros of the explicit mantissas.</span>
-  <span class="kt">int</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">cpp</span><span class="o">::</span><span class="n">countl_zero</span><span class="p">(</span><span class="n">mx</span><span class="p">);</span>
-  <span class="kt">int</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">cpp</span><span class="o">::</span><span class="n">countl_zero</span><span class="p">(</span><span class="n">my</span><span class="p">);</span>
-  <span class="c1">// Shift the leading 1 bit to the most significant bit.</span>
-  <span class="n">mx</span> <span class="o">&lt;&lt;=</span> <span class="n">nx</span><span class="p">;</span>
-  <span class="n">my</span> <span class="o">&lt;&lt;=</span> <span class="n">ny</span><span class="p">;</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111
 </code></pre></div></div>
 
-<p>If <em>x</em> is normal then <em>mx’s</em> leading bit is at the 53rd bit. This associated with the fact that the mantissa field of a double precision is 53 bits long. But since we shifted the leading bit to the 64th bit for normalization we need to shift it left by 11 bits.</p>
+<p>Then we look at the rounding bit, the one right after the separator you added which is <code class="language-plaintext highlighter-rouge">0</code> in this case so you will round down, and the answer is the same as the “integer part”</p>
 
-<p>If x is normal nothing changes because the leading bit is not lower than the 53rd bit. So, if its normal, <em>ex</em> represents the real value of the leading 1 bit. But if x is denormal then the leading 1 bit is lower than the 53rd bit so it does not represent  the real value of the leading bit of <em>mx</em> anymore.</p>
-
-<p>So, we adjust the exponent accordingly:</p>
-
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Adjust exponent accordingly: If x or y are normal, we will only need to</span>
-  <span class="c1">// shift by (exponent length + sign bit = 11 bits. If x or y are denormal, we</span>
-  <span class="c1">// will need to shift more than 11 bits.</span>
-  <span class="n">ex</span> <span class="o">-=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">-</span> <span class="mi">11</span><span class="p">);</span>
-  <span class="n">ey</span> <span class="o">-=</span> <span class="p">(</span><span class="n">ny</span> <span class="o">-</span> <span class="mi">11</span><span class="p">);</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111
 </code></pre></div></div>
 
-<p>Now, we need to prepare the actual computation of the product’s mantissa.</p>
+<p>If it’s 1, we need to check the sticky bits. If the sticky bits are non-zero, we round up.</p>
 
-<p>For that, since the product of two 64 bit numbers is a 128 bit number we need to store the highest 64 bits and the lowest 64 bits in two variables. And we need a way to detect if the product is normal is denormal:</p>
+<p>If the sticky bits are zero, we have a tie. And the default rounding mode is round-to-nearest, <em>tie-to-even</em> so you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">UInt128</span> <span class="n">product</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="n">UInt128</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mx</span><span class="p">)</span> <span class="o">*</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="n">UInt128</span><span class="o">&gt;</span><span class="p">(</span><span class="n">my</span><span class="p">);</span>
-  <span class="kt">int32_t</span> <span class="n">dm1</span><span class="p">;</span>
-  <span class="kt">uint64_t</span> <span class="n">highs</span><span class="p">,</span> <span class="n">lows</span><span class="p">;</span>
-  <span class="kt">uint64_t</span> <span class="n">g</span><span class="p">,</span> <span class="n">hight</span><span class="p">,</span> <span class="n">lowt</span><span class="p">;</span>
-  <span class="kt">uint32_t</span> <span class="n">m</span><span class="p">;</span>
-  <span class="kt">uint32_t</span> <span class="n">b</span><span class="p">;</span>
-  <span class="kt">int</span> <span class="n">c</span><span class="p">;</span>
+<p>Now can you try to round:</p>
 
-  <span class="n">highs</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint64_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">product</span> <span class="o">&gt;&gt;</span> <span class="mi">64</span><span class="p">);</span> <span class="c1">// top highest 64 bit of the product</span>
-  <span class="n">c</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;=</span> <span class="mh">0x8000000000000000</span><span class="p">);</span> <span class="c1">// leading 1 bit is at bit 64 or not</span>
-  <span class="n">lows</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint64_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">product</span><span class="p">);</span> <span class="c1">// lowest 64 bits of the product</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.000000001111110111111110111111111111111111111111111111_2
+</code></pre></div></div>
 
-  <span class="n">lowt</span> <span class="o">=</span> <span class="p">(</span><span class="n">lows</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// sticky bit which will be used for rounding</span>
+<p>to the nearest 53-bit ?</p>
 
-  <span class="n">dm1</span> <span class="o">=</span> <span class="n">ex</span> <span class="o">+</span> <span class="n">ey</span> <span class="o">+</span> <span class="n">c</span> <span class="o">+</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">EXP_BIAS</span><span class="p">;</span> <span class="c1">// biased exponent of the product</span>
+<p><code class="language-plaintext highlighter-rouge">1.0000000011111101111111101111111111111111111111111111|11_2</code></p>
+
+<p>All the bits on the left of <code class="language-plaintext highlighter-rouge">|</code> are integer part, the bit right on the right of <code class="language-plaintext highlighter-rouge">| </code> is the rounding bit
+the remaining bits on the right of rounding bit are sticky bits.</p>
+
+<p>When we round up, we simply increase the “integer part” by 1 and the integer part above is:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111101111111111111111111111111111
+</code></pre></div></div>
+
+<p>and if you add the whole thing by 1 lowest bit, it will be?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111101111111111111111111111111111
+-&gt;
+1.0000000011111101111111110000000000000000000000000000
+</code></pre></div></div>
+
+<p>and that will be the bits when we do <code class="language-plaintext highlighter-rouge">round(a*b, D, RN)</code></p>
+
+<p>Which is the same as <code class="language-plaintext highlighter-rouge">prod.hi</code> now, your next step is to round that (<code class="language-plaintext highlighter-rouge">prod.hi</code>) to 24 bits.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111110000000000000000000000000000
+</code></pre></div></div>
+
+<p>to nearest 24 bits, following the same process</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; round(a * b, SG, RN); // round to 24-bit precision
+&gt; round(a * b, D, RN); // round to 53-bit precision
+</code></pre></div></div>
+
+<p>So the rounding process, should always start with picking the “integral part”</p>
+
+<p>so the exact mult will return prod.hi and prod.lo so that a * b = prod.hi + prod.lo mathematically</p>
+
+<p>you can actually see it in action with Sollya</p>
+
+<blockquote>
+  <p>a = 2^52 + 1; b = 2^52 + 1;
+prod_hi = round(a<em>b, D, RN); prod_lo = a</em>b - prod_hi;
+a * b;
+prod_hi;
+prod_lo;
+prod_hi + prod_lo;</p>
+</blockquote>
+
+<p>do you see that</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>prod_hi = round(a*b, D, RN);
+</code></pre></div></div>
+
+<p>so ill round that bit string to 24 bits
+this one <code class="language-plaintext highlighter-rouge">1.0000000011111101111111110000000000000000000000000000</code>
+<code class="language-plaintext highlighter-rouge">1.00000000111111011111111|10000000000000000000000000000</code>
+so we need to round to even
+since the round bit is non zero and the sticky bits is 0
+round to even means that the last significant value is 0</p>
+
+<p>So first
+first we get the leading 24 bit (“integer part”):</p>
+
+<p><code class="language-plaintext highlighter-rouge">1.00000000111111011111111</code></p>
+
+<p>then we look at the rounding bit, which is?
+The 1 after the bar and the sticky bits are?</p>
+
+<p>The 0s after that</p>
+
+<p>So you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.</p>
+
+<p>In this case, up or down (i.e. keep the integer part) will give you even bits?</p>
+
+<p>So, we have the bits,</p>
+
+<p><code class="language-plaintext highlighter-rouge">1.00000000111111011111111</code></p>
+
+<p>Round down:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 10000000000 -&gt; 1.00000000111111011111111
+</code></pre></div></div>
+
+<p>Round up:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 10000000000 -&gt; 1.00000000111111011111111 + 1 ULP
+</code></pre></div></div>
+
+<p>but the least sig val needs to be a 0 right?
+So the round up it is:</p>
+
+<p>1.00000000111111100000000</p>
+
+<p>So, as I said above, the algorithm we have for <code class="language-plaintext highlighter-rouge">exact_mult</code> in C++ is essentially:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   prod_hi = static_cast&lt;double&gt;(a * b);
+   prod_lo = std::fma(a, b, -prod_hi); // a * b - prod_hi exactly
+</code></pre></div></div>
+
+<p>Or in Sollya:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; prod_hi = round(a * b, D, RN);
+&gt; prod_lo = a * b - prod_hi; // Notice that I don't need to round here, because it's exact in double precision
+
+&gt; prod_hi;
+1.000000001111110111111111_2 * 2^(23)
+
+&gt; prod_hi + prod_lo;
+1.000000001111110111111110111111111111111111111111111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>That will calculate the exact result which is <code class="language-plaintext highlighter-rouge">a*b</code>.</p>
+
+<p>In C++ <code class="language-plaintext highlighter-rouge">prod_hi + prod_lo</code> will round the exact result to <code class="language-plaintext highlighter-rouge">double</code>
+so how do you do that in Sollya, and what will the answer be?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>round(prod_hi+prod_lo, D, RN);
+1.000000001111110111111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>Round to single precision:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; round(val, SG, RN);
+1.000000001111111_2 * 2^(23)
+&gt; round(a*b, SG, RN);
+1.00000000111111011111111_2 * 2^(23)
+</code></pre></div></div>
+
+<p>so whats happening here is that we are rounding one extra time?
+And that’s why this type of errors is called <code class="language-plaintext highlighter-rouge">double-rounding errors</code>.</p>
+
+<p>The fix of the double rounding errors is handling <code class="language-plaintext highlighter-rouge">prod.lo</code>.</p>
+
+<p>So now, we will handle 3 cases: <code class="language-plaintext highlighter-rouge">lo &gt; 0, lo = 0, lo &lt; 0</code>
+Ok, lets start with \(lo = 0\). When \(lo = 0\) we have \(hi + lo = hi\).</p>
+
+<p>Ok, so now lets say we have <code class="language-plaintext highlighter-rouge">hi + lo</code>
+both of which are double precision. What does this mean?</p>
+
+<p>When \(lo = 0\) — i.e., \(hi + lo = hi\) —
+means that \(result = prod_hi\) is enough to get correctly rounding to single precision.</p>
+
+<p>On the other hand when \(lo &lt; 0\), let’s compare <code class="language-plaintext highlighter-rouge">round(hi + lo, SG, RN)</code> and <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>​​&gt; hi = 1 + 2^-23 + 2^-24;
+&gt; lo = -2^-55;
+&gt; hi = 1 + 2^-23 + 2^-24;
+&gt; lo = -2^-55;
+&gt; hi;
+1.000000000000000000000011_2
+&gt; lo;
+-1_2 * 2^(-55)
 
 </code></pre></div></div>
 
-<p>In the textbook “Handbook of Floating Point Arithmetic” the reference implementation was for single precision:</p>
+<p>Now, let’s do the rounding — i.e., <code class="language-plaintext highlighter-rouge">round(hi + lo, SG, RN)</code> and <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> —</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">float</span> <span class="nf">fmul</span><span class="p">(</span><span class="kt">float</span> <span class="n">x</span><span class="p">,</span> <span class="kt">float</span> <span class="n">y</span><span class="p">);</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; hi = 1 + 2^-23 + 2^-24;
+&gt; lo = -2^-55;
+&gt; round(hi + lo, SG, RN);
+1.00000000000000000000001_2
+&gt; round(hi, SG, RN);
+1.0000000000000000000001_2
 </code></pre></div></div>
 
-<p>So the formula for <em>dm1</em> was different. It needed to be changed because since the result is a 32 bit number and hence the exponent field is 8 bits, <em>dm1</em> needs to be a number that is within the range of what an 8 bit number can represent.</p>
+<p><code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> did round up, but actually it needs to round down to match <code class="language-plaintext highlighter-rouge">round(hi + lo, SG, RN)</code>, the correct result</p>
 
-<p>And now we need to actually round the and get the products mantissa.</p>
+<p>so, in order for <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> to round up, we must have:</p>
 
-<p>When a number underflows or overflows we need to wrap around by returning the highest value that a given n-bit number can represent. Well, similarly, floating point multiplication overflows when \(dm1 \gt 255\) because <em>dm1</em> is 8 bits and an 8 bit number has a range of up to 255.</p>
-
-<p>If \(dm1 \lt 0\) then the value is denormal.</p>
-
-<p>If <em>dm1</em> is 0 the mantissa needs to be right shifted by one. If it is one it needs to be right shifted by two.</p>
-
-<p>So, if for the normal case you have:</p>
-
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">m</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">39</span> <span class="o">+</span> <span class="n">c</span><span class="p">));</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- rb in hi is 1
+and at least
+1) lsb in hi is 1, or
+2) remaining sticky bits in hi is &gt; 0
 </code></pre></div></div>
 
-<p>Then for the denormal case you have:</p>
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="n">m_shift</span> <span class="o">=</span> <span class="mi">40</span> <span class="o">+</span> <span class="n">c</span> <span class="o">-</span> <span class="n">dm1</span><span class="p">;</span>
-<span class="kt">int</span> <span class="n">g_shift</span> <span class="o">=</span> <span class="n">m_shift</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
-<span class="kt">int</span> <span class="n">h_shift</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">g_shift</span><span class="p">;</span>
-<span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">m_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="n">m_shift</span><span class="p">);</span>
+<p>so for the default rounding modes, after getting (truncating) the “integer part”, we will round up if:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rb &amp;&amp; (lsb || (r != 0))
 </code></pre></div></div>
 
-<p>Compared to the normal case, the extra shift for the denormal case is \(1 - dm1\) – i.e., \(m_shift =  39 + c + 1 - dm1 = 40 + c - dm1\).</p>
+<p>where</p>
 
-<p>To get the round bit, which will be used to round to all rounding modes, you shift by what you shifted <em>highs</em> minus one.</p>
+<p><code class="language-plaintext highlighter-rouge">rb</code> is the rounding bit; <code class="language-plaintext highlighter-rouge">lsb</code> is the least significant bit (of the integer part) and <code class="language-plaintext highlighter-rouge">r != 0</code> is just <code class="language-plaintext highlighter-rouge">sticky bits</code> are positive.</p>
 
-<p>We manipulate <em>highs</em> only because when we normalized the inputs the leading 1 bit will be in the top most bits so you only need to shift <em>highs</em> to get the products mantissa <em>m</em>.</p>
+<p>So, in order for <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> to round up, we must have:</p>
 
-<p>The <em>h_shift</em> has to do with clearing the mantissa and round bit so that only sticky bits are left.</p>
-
-<p>In contrast for the normal case, you have this:</p>
-
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">m</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">39</span> <span class="o">+</span> <span class="n">c</span><span class="p">));</span>
- <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">38</span> <span class="o">+</span> <span class="n">c</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
- <span class="n">hight</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">26</span> <span class="o">-</span> <span class="n">c</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- rb in hi is 1
+and at least
+1) lsb in hi is 1, or
+2) remaining sticky bits in hi is &gt; 0
 </code></pre></div></div>
 
-<p>So, <em>highs</em> is 64 bits. In the normal case we know that the leading 1 bit is either at the 63rd or 64th bit. We want to shift that down to bit 24 to get the product’s mantissa because the mantissa bit field of a single precision number is 24 bits.</p>
+<p>now, if it is case 2: <code class="language-plaintext highlighter-rouge">remaining sticky bits in hi is &gt; 0</code>
+because <code class="language-plaintext highlighter-rouge">|lo| &lt;= ulp(hi) / 2</code>,
+<code class="language-plaintext highlighter-rouge">remaining sticky bits in (hi + lo)</code> is still &gt; 0</p>
 
-<p>If \(c = 0\) if the leading 1 is at bit 63. If \(c = 1\) then the leading bit is at bit 64.</p>
+<p>so the rounding action we take with respect to <code class="language-plaintext highlighter-rouge">hi + lo</code> is still round up,</p>
 
-<p>Here is the code for the above:</p>
+<p>i.e. <code class="language-plaintext highlighter-rouge">round(hi, SG, RN) = round(hi + lo, SG, RN)</code> in that case.
+Right? Yes</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kt">int</span> <span class="n">round_mode</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">quick_get_round</span><span class="p">();</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">dm1</span> <span class="o">&gt;=</span> <span class="mi">255</span><span class="p">)</span> <span class="p">{</span>
-	<span class="k">if</span> <span class="p">((</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_TOWARDZERO</span><span class="p">)</span> <span class="o">||</span>
-    	<span class="p">(</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_UPWARD</span> <span class="o">&amp;&amp;</span> <span class="n">output_sign</span><span class="p">.</span><span class="n">is_neg</span><span class="p">())</span> <span class="o">||</span>
-    	<span class="p">(</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_DOWNWARD</span> <span class="o">&amp;&amp;</span> <span class="n">output_sign</span><span class="p">.</span><span class="n">is_pos</span><span class="p">()))</span> <span class="p">{</span>
-  	<span class="k">return</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">max_normal</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
-	<span class="p">}</span>
-	<span class="k">return</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">inf</span><span class="p">().</span><span class="n">get_val</span><span class="p">();</span>
-  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">dm1</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<p>so now, let consider the case <code class="language-plaintext highlighter-rouge">round(hi, SG, RN)</code> is round-up because:</p>
 
-	<span class="kt">int</span> <span class="n">m_shift</span> <span class="o">=</span> <span class="mi">40</span> <span class="o">+</span> <span class="n">c</span> <span class="o">-</span> <span class="n">dm1</span><span class="p">;</span>
-	<span class="kt">int</span> <span class="n">g_shift</span> <span class="o">=</span> <span class="n">m_shift</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
-	<span class="kt">int</span> <span class="n">h_shift</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">g_shift</span><span class="p">;</span>
-	<span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">m_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="n">m_shift</span><span class="p">);</span>
-
-	<span class="n">g</span> <span class="o">=</span> <span class="n">g_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="n">g_shift</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
-	<span class="n">hight</span> <span class="o">=</span> <span class="n">h_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span> <span class="o">?</span> <span class="n">highs</span> <span class="o">:</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&lt;&lt;</span> <span class="n">h_shift</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
-
-	<span class="n">dm1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-	<span class="n">m</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">39</span> <span class="o">+</span> <span class="n">c</span><span class="p">));</span>
-	<span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">38</span> <span class="o">+</span> <span class="n">c</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
-	<span class="n">hight</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">26</span> <span class="o">-</span> <span class="n">c</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
-  <span class="p">}</span>
-
-  <span class="k">if</span> <span class="p">(</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_TONEAREST</span><span class="p">)</span> <span class="p">{</span>
-	<span class="n">b</span> <span class="o">=</span> <span class="n">g</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">hight</span> <span class="o">&amp;&amp;</span> <span class="n">lowt</span><span class="p">)</span> <span class="o">||</span> <span class="p">((</span><span class="n">m</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">));</span>
-  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">((</span><span class="n">output_sign</span><span class="p">.</span><span class="n">is_neg</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_DOWNWARD</span><span class="p">)</span> <span class="o">||</span>
-         	<span class="p">(</span><span class="n">output_sign</span><span class="p">.</span><span class="n">is_pos</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_UPWARD</span><span class="p">))</span> <span class="p">{</span>
-	<span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">g</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">hight</span> <span class="o">&amp;&amp;</span> <span class="n">lowt</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="mi">1</span><span class="p">;</span>
-  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-	<span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-  <span class="p">}</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- rb is 1,
+- lsb is 1,
+- but sticky bits of hi is 0
 </code></pre></div></div>
 
-<p>Finally, we compute the exponent and cast the result to float:</p>
+<p>(which is exactly what we have with <code class="language-plaintext highlighter-rouge">hi = 1 + 2^-23 + 2^-24</code>)
+so now, because <code class="language-plaintext highlighter-rouge">lo &lt; 0</code>, if you look at the exact bits of <code class="language-plaintext highlighter-rouge">hi + lo</code>, you will see that:</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">uint32_t</span> <span class="n">exp16</span> <span class="o">=</span> <span class="p">(</span><span class="n">dm1</span> <span class="o">&lt;&lt;</span> <span class="mi">23</span><span class="p">);</span>
-
-<span class="kt">uint32_t</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">m</span> <span class="o">&amp;</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">FRACTION_MASK</span><span class="p">;</span>
-
-<span class="kt">uint32_t</span> <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">exp16</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span>
-
-<span class="k">auto</span> <span class="n">result_bits</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
-<span class="n">result_bits</span><span class="p">.</span><span class="n">set_sign</span><span class="p">(</span><span class="n">output_sign</span><span class="p">);</span>
-<span class="k">return</span> <span class="n">result_bits</span><span class="p">.</span><span class="n">get_val</span><span class="p">();</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>- lsb is still 1
+- rb is 0
+- sticky bits of hi + lo are &gt; 0
 </code></pre></div></div>
 
-<p>And there you have it: the implementation of:</p>
+<p>so because <code class="language-plaintext highlighter-rouge">rb</code> of <code class="language-plaintext highlighter-rouge">hi + lo</code> is 0, the correct rounding of <code class="language-plaintext highlighter-rouge">hi + lo</code> is round down, not round up</p>
 
-<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">float</span> <span class="nf">fmul</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">,</span> <span class="kt">double</span> <span class="n">y</span><span class="p">);</span>
+<p>so to highlight it:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; hi;
+1.000000000000000000000011_2
+&gt; hi + lo;
+1.0000000000000000000000101111111111111111111111111111111_2
 </code></pre></div></div>
 
-<p>I enjoyed doing this.</p>
+<p>and lets highlight rounding bit with <code class="language-plaintext highlighter-rouge">[ ]</code>:</p>
 
-<h3 id="acknowledgements">Acknowledgements</h3>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; hi;
+1.00000000000000000000001[1]_2
+&gt; hi + lo;
+1.00000000000000000000001[0]1111111111111111111111111111111_2
+</code></pre></div></div>
 
-<p>I want to thank Tue, the libc maintainer, for explaining a lot of this to me.</p>
+<p>so in the first case, the logic is something like:</p>
 
-<h3 id="references">References</h3>
-
-<p>Handbook of Floating Point Arithmetic</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="computer-science" /><category term="floating-point-arithmetic" /><category term="llvm" /><summary type="html"><![CDATA[Recently, my fmul pr got merged into LLVM. And I would like to talk about my contribution. You can see my pr here.]]></summary></entry><entry><title type="html">Compiling core programming constructs</title><link href="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html" rel="alternate" type="text/html" title="Compiling core programming constructs" /><published>2024-06-12T00:00:00-07:00</published><updated>2024-06-12T00:00:00-07:00</updated><id>http://localhost:4000/2024/06/12/compiling-core-programming-constructs</id><content type="html" xml:base="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html"><![CDATA[<p>I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// At this point, hi is not 0, and lo is smaller than hi.
+FPBits&lt;double&gt; hi_bits(hi), lo_bits(lo);
+if (lo_bits.sign() != hi_bits.sign()) {
+  // Check if sticky bit of hi are all 0
+  constexpr uint64_t STICKY_MASK = 0xFFF'FFFF;  // Lower (52 - 23 - 1 = 28 bits)
+  uint64_t sticky_bits = (hi_bits.uintval() &amp; STICKY_MASK);
+  uint64_t result_bits = (sticky_bits == 0) ? (hi_bits.uintval() - 1) : hi_bits.uintval();
+  double result = FPBits&lt;double&gt;(result_bits).get_val();
+  return static_cast&lt;float&gt;(result);
+}
+</code></pre></div></div>]]></content><author><name>Job Hernandez Lara</name></author><category term="computer-science" /><category term="floating-point-arithmetic" /><category term="llvm" /><summary type="html"><![CDATA[Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.]]></summary></entry><entry><title type="html">Compiling core programming constructs</title><link href="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html" rel="alternate" type="text/html" title="Compiling core programming constructs" /><published>2024-06-12T00:00:00-07:00</published><updated>2024-06-12T00:00:00-07:00</updated><id>http://localhost:4000/2024/06/12/compiling-core-programming-constructs</id><content type="html" xml:base="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html"><![CDATA[<p>I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.</p>
 
 <p>Compilers have been traditionally broken up into three main components, namely, the frontend, optimizer, and the backend; nevertheless, in my project, I did not implemented an optimizer.</p>
 
@@ -768,7 +859,226 @@ conclusion:
 
 <p>If type checkers are primitive proof systems then type checkers prove parts of your system correct. If type checkers prove parts of you’re program correct then type errors will guide you prove the correctness of some parts of your program correct iteratively.</p>
 
-<p>There are a few things I would do differently next time. I think I need to think ahead of time the structure of my data; for example, the instruction selection pass (ToSelect.hs) returns an Imm data type. An Imm is either an ImmStr, ImmReg, or ImmTupMem. Some ImmStr’s contain dummy variables “dummy”.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="compilers" /><category term="internals" /><summary type="html"><![CDATA[I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.]]></summary></entry><entry><title type="html">Compiler problems and their implementation</title><link href="http://localhost:4000/2024/05/02/compilers-are-interesting.html" rel="alternate" type="text/html" title="Compiler problems and their implementation" /><published>2024-05-02T00:00:00-07:00</published><updated>2024-05-02T00:00:00-07:00</updated><id>http://localhost:4000/2024/05/02/compilers-are-interesting</id><content type="html" xml:base="http://localhost:4000/2024/05/02/compilers-are-interesting.html"><![CDATA[<p>So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to <em>A-Normal form</em>, compiling tuples to x86, and floating point math.</p>
+<p>There are a few things I would do differently next time. I think I need to think ahead of time the structure of my data; for example, the instruction selection pass (ToSelect.hs) returns an Imm data type. An Imm is either an ImmStr, ImmReg, or ImmTupMem. Some ImmStr’s contain dummy variables “dummy”.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="compilers" /><category term="internals" /><summary type="html"><![CDATA[I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.]]></summary></entry><entry><title type="html">Adding floating point multiplication to LLVM libc</title><link href="http://localhost:4000/2024/06/12/implementing-fmul-for-llvm.html" rel="alternate" type="text/html" title="Adding floating point multiplication to LLVM libc" /><published>2024-06-12T00:00:00-07:00</published><updated>2024-06-12T00:00:00-07:00</updated><id>http://localhost:4000/2024/06/12/implementing-fmul-for-llvm</id><content type="html" xml:base="http://localhost:4000/2024/06/12/implementing-fmul-for-llvm.html"><![CDATA[<p>Recently, my <em>fmul</em> pr got merged into LLVM. And I would like to talk about my contribution. You can see my pr <a href="https://github.com/llvm/llvm-project/pull/91537">here</a>.</p>
+
+<p>The problem was to multiply two double precision numbers and return a single precision number – i.e.,</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">float</span> <span class="nf">fmul</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">,</span> <span class="kt">double</span> <span class="n">y</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Before I go over my implementation I am going to introduce some terms.</p>
+
+<p>A floating point number is made of three bit fields: the sign field, exponent field, and mantissa field. The sign field is always one bit irrespective of the type. In contrast the exponent field and mantissa field vary with the type.</p>
+
+<p>For example, for double precision, the mantissa field is 53 bits, and the exponent field is 11 bits. The maximum exponent of a double precision is 1023 and minimum exponent is -1022. You will see how these maximum and minimum exponents are used in a second.</p>
+
+<p>On the other hand, for single precision, the mantissa field is 23 bits, and the exponent field is 8 bits. The maximum exponent is 127 and the minimum exponent is -126.</p>
+
+<h3 id="the-implementation">The implementation</h3>
+
+<p>First, we need to get the bit representation of the double precision inputs and compute the sign bit of the result.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">auto</span> <span class="n">x_bits</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
+
+ <span class="k">auto</span> <span class="n">y_bits</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+
+ <span class="k">auto</span> <span class="n">output_sign</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">sign</span><span class="p">()</span> <span class="o">!=</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">sign</span><span class="p">())</span> <span class="o">?</span> <span class="n">Sign</span><span class="o">::</span><span class="n">NEG</span> <span class="o">:</span> <span class="n">Sign</span><span class="o">::</span><span class="n">POS</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Here,</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span>
+</code></pre></div></div>
+
+<p>Is internal LLVM code that can help you manipulate bits.</p>
+
+<p>Next, we have the following that checks for special values like <em>NaNs</em> and <em>infinities</em>:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="n">LIBC_UNLIKELY</span><span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">is_inf_or_nan</span><span class="p">()</span> <span class="o">||</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">is_inf_or_nan</span><span class="p">()</span> <span class="o">||</span>
+                	<span class="n">x_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()</span> <span class="o">||</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()))</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+  	<span class="k">return</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">y_bits</span><span class="p">.</span><span class="n">is_nan</span><span class="p">())</span>
+  	<span class="k">return</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">x_bits</span><span class="p">.</span><span class="n">is_inf</span><span class="p">())</span>
+  	<span class="k">return</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()</span>
+             	<span class="o">?</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">quiet_nan</span><span class="p">().</span><span class="n">get_val</span><span class="p">()</span>
+             	<span class="o">:</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">inf</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">y_bits</span><span class="p">.</span><span class="n">is_inf</span><span class="p">())</span>
+  	<span class="k">return</span> <span class="n">x_bits</span><span class="p">.</span><span class="n">is_zero</span><span class="p">()</span>
+             	<span class="o">?</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">quiet_nan</span><span class="p">().</span><span class="n">get_val</span><span class="p">()</span>
+             	<span class="o">:</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">inf</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
+	<span class="c1">// Now either x or y is zero, and the other one is finite.</span>
+	<span class="k">return</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">zero</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
+  <span class="p">}</span>
+</code></pre></div></div>
+
+<p>After that, you need to extract the mantissa of the inputs and extract the exponents and then compute the leading zeros of the mantissas. Why do we compute the leading zeros. We do this to normalize the inputs. After the following lines of code is executed the highest bits of <em>mx</em> and <em>my</em> are both 1. As a result, when we compute the product of the mantissas the leading one of the full product will be either the highest bit or the second highest bit. Then in the next step we know we need to shift by some amount. If we had not shifted the zeros of <em>mx</em> and <em>my</em> the leading one could be anywhere.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+  <span class="kt">uint64_t</span> <span class="n">mx</span><span class="p">,</span> <span class="n">my</span><span class="p">;</span>
+
+  <span class="c1">// Get mantissa and append the hidden bit if needed.</span>
+  <span class="n">mx</span> <span class="o">=</span> <span class="n">x_bits</span><span class="p">.</span><span class="n">get_explicit_mantissa</span><span class="p">();</span>
+  <span class="n">my</span> <span class="o">=</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">get_explicit_mantissa</span><span class="p">();</span>
+
+  <span class="c1">// Get the corresponding biased exponent.</span>
+  <span class="kt">int</span> <span class="n">ex</span> <span class="o">=</span> <span class="n">x_bits</span><span class="p">.</span><span class="n">get_explicit_exponent</span><span class="p">();</span>
+  <span class="kt">int</span> <span class="n">ey</span> <span class="o">=</span> <span class="n">y_bits</span><span class="p">.</span><span class="n">get_explicit_exponent</span><span class="p">();</span>
+
+  <span class="c1">// Count the number of leading zeros of the explicit mantissas.</span>
+  <span class="kt">int</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">cpp</span><span class="o">::</span><span class="n">countl_zero</span><span class="p">(</span><span class="n">mx</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">cpp</span><span class="o">::</span><span class="n">countl_zero</span><span class="p">(</span><span class="n">my</span><span class="p">);</span>
+  <span class="c1">// Shift the leading 1 bit to the most significant bit.</span>
+  <span class="n">mx</span> <span class="o">&lt;&lt;=</span> <span class="n">nx</span><span class="p">;</span>
+  <span class="n">my</span> <span class="o">&lt;&lt;=</span> <span class="n">ny</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>If <em>x</em> is normal then <em>mx’s</em> leading bit is at the 53rd bit. This associated with the fact that the mantissa field of a double precision is 53 bits long. But since we shifted the leading bit to the 64th bit for normalization we need to shift it left by 11 bits.</p>
+
+<p>If x is normal nothing changes because the leading bit is not lower than the 53rd bit. So, if its normal, <em>ex</em> represents the real value of the leading 1 bit. But if x is denormal then the leading 1 bit is lower than the 53rd bit so it does not represent  the real value of the leading bit of <em>mx</em> anymore.</p>
+
+<p>So, we adjust the exponent accordingly:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Adjust exponent accordingly: If x or y are normal, we will only need to</span>
+  <span class="c1">// shift by (exponent length + sign bit = 11 bits. If x or y are denormal, we</span>
+  <span class="c1">// will need to shift more than 11 bits.</span>
+  <span class="n">ex</span> <span class="o">-=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">-</span> <span class="mi">11</span><span class="p">);</span>
+  <span class="n">ey</span> <span class="o">-=</span> <span class="p">(</span><span class="n">ny</span> <span class="o">-</span> <span class="mi">11</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Now, we need to prepare the actual computation of the product’s mantissa.</p>
+
+<p>For that, since the product of two 64 bit numbers is a 128 bit number we need to store the highest 64 bits and the lowest 64 bits in two variables. And we need a way to detect if the product is normal is denormal:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">UInt128</span> <span class="n">product</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="n">UInt128</span><span class="o">&gt;</span><span class="p">(</span><span class="n">mx</span><span class="p">)</span> <span class="o">*</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="n">UInt128</span><span class="o">&gt;</span><span class="p">(</span><span class="n">my</span><span class="p">);</span>
+  <span class="kt">int32_t</span> <span class="n">dm1</span><span class="p">;</span>
+  <span class="kt">uint64_t</span> <span class="n">highs</span><span class="p">,</span> <span class="n">lows</span><span class="p">;</span>
+  <span class="kt">uint64_t</span> <span class="n">g</span><span class="p">,</span> <span class="n">hight</span><span class="p">,</span> <span class="n">lowt</span><span class="p">;</span>
+  <span class="kt">uint32_t</span> <span class="n">m</span><span class="p">;</span>
+  <span class="kt">uint32_t</span> <span class="n">b</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">c</span><span class="p">;</span>
+
+  <span class="n">highs</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint64_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">product</span> <span class="o">&gt;&gt;</span> <span class="mi">64</span><span class="p">);</span> <span class="c1">// top highest 64 bit of the product</span>
+  <span class="n">c</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;=</span> <span class="mh">0x8000000000000000</span><span class="p">);</span> <span class="c1">// leading 1 bit is at bit 64 or not</span>
+  <span class="n">lows</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint64_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">product</span><span class="p">);</span> <span class="c1">// lowest 64 bits of the product</span>
+
+  <span class="n">lowt</span> <span class="o">=</span> <span class="p">(</span><span class="n">lows</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// sticky bit which will be used for rounding</span>
+
+  <span class="n">dm1</span> <span class="o">=</span> <span class="n">ex</span> <span class="o">+</span> <span class="n">ey</span> <span class="o">+</span> <span class="n">c</span> <span class="o">+</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">EXP_BIAS</span><span class="p">;</span> <span class="c1">// biased exponent of the product</span>
+
+</code></pre></div></div>
+
+<p>In the textbook “Handbook of Floating Point Arithmetic” the reference implementation was for single precision:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">float</span> <span class="nf">fmul</span><span class="p">(</span><span class="kt">float</span> <span class="n">x</span><span class="p">,</span> <span class="kt">float</span> <span class="n">y</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>So the formula for <em>dm1</em> was different. It needed to be changed because since the result is a 32 bit number and hence the exponent field is 8 bits, <em>dm1</em> needs to be a number that is within the range of what an 8 bit number can represent.</p>
+
+<p>And now we need to actually round the and get the products mantissa.</p>
+
+<p>When a number underflows or overflows we need to wrap around by returning the highest value that a given n-bit number can represent. Well, similarly, floating point multiplication overflows when \(dm1 \gt 255\) because <em>dm1</em> is 8 bits and an 8 bit number has a range of up to 255.</p>
+
+<p>If \(dm1 \lt 0\) then the value is denormal.</p>
+
+<p>If <em>dm1</em> is 0 the mantissa needs to be right shifted by one. If it is one it needs to be right shifted by two.</p>
+
+<p>So, if for the normal case you have:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">m</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">39</span> <span class="o">+</span> <span class="n">c</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p>Then for the denormal case you have:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="n">m_shift</span> <span class="o">=</span> <span class="mi">40</span> <span class="o">+</span> <span class="n">c</span> <span class="o">-</span> <span class="n">dm1</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">g_shift</span> <span class="o">=</span> <span class="n">m_shift</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">h_shift</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">g_shift</span><span class="p">;</span>
+<span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">m_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="n">m_shift</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Compared to the normal case, the extra shift for the denormal case is \(1 - dm1\) – i.e., \(m_shift =  39 + c + 1 - dm1 = 40 + c - dm1\).</p>
+
+<p>To get the round bit, which will be used to round to all rounding modes, you shift by what you shifted <em>highs</em> minus one.</p>
+
+<p>We manipulate <em>highs</em> only because when we normalized the inputs the leading 1 bit will be in the top most bits so you only need to shift <em>highs</em> to get the products mantissa <em>m</em>.</p>
+
+<p>The <em>h_shift</em> has to do with clearing the mantissa and round bit so that only sticky bits are left.</p>
+
+<p>In contrast for the normal case, you have this:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">m</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">39</span> <span class="o">+</span> <span class="n">c</span><span class="p">));</span>
+ <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">38</span> <span class="o">+</span> <span class="n">c</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
+ <span class="n">hight</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">26</span> <span class="o">-</span> <span class="n">c</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>So, <em>highs</em> is 64 bits. In the normal case we know that the leading 1 bit is either at the 63rd or 64th bit. We want to shift that down to bit 24 to get the product’s mantissa because the mantissa bit field of a single precision number is 24 bits.</p>
+
+<p>If \(c = 0\) if the leading 1 is at bit 63. If \(c = 1\) then the leading bit is at bit 64.</p>
+
+<p>Here is the code for the above:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kt">int</span> <span class="n">round_mode</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">quick_get_round</span><span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">dm1</span> <span class="o">&gt;=</span> <span class="mi">255</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="p">((</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_TOWARDZERO</span><span class="p">)</span> <span class="o">||</span>
+    	<span class="p">(</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_UPWARD</span> <span class="o">&amp;&amp;</span> <span class="n">output_sign</span><span class="p">.</span><span class="n">is_neg</span><span class="p">())</span> <span class="o">||</span>
+    	<span class="p">(</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_DOWNWARD</span> <span class="o">&amp;&amp;</span> <span class="n">output_sign</span><span class="p">.</span><span class="n">is_pos</span><span class="p">()))</span> <span class="p">{</span>
+  	<span class="k">return</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">max_normal</span><span class="p">(</span><span class="n">output_sign</span><span class="p">).</span><span class="n">get_val</span><span class="p">();</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">inf</span><span class="p">().</span><span class="n">get_val</span><span class="p">();</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">dm1</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+
+	<span class="kt">int</span> <span class="n">m_shift</span> <span class="o">=</span> <span class="mi">40</span> <span class="o">+</span> <span class="n">c</span> <span class="o">-</span> <span class="n">dm1</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">g_shift</span> <span class="o">=</span> <span class="n">m_shift</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="n">h_shift</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">g_shift</span><span class="p">;</span>
+	<span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">m_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="n">m_shift</span><span class="p">);</span>
+
+	<span class="n">g</span> <span class="o">=</span> <span class="n">g_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="n">g_shift</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
+	<span class="n">hight</span> <span class="o">=</span> <span class="n">h_shift</span> <span class="o">&gt;=</span> <span class="mi">64</span> <span class="o">?</span> <span class="n">highs</span> <span class="o">:</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&lt;&lt;</span> <span class="n">h_shift</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
+
+	<span class="n">dm1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+	<span class="n">m</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">39</span> <span class="o">+</span> <span class="n">c</span><span class="p">));</span>
+	<span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">38</span> <span class="o">+</span> <span class="n">c</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
+	<span class="n">hight</span> <span class="o">=</span> <span class="p">(</span><span class="n">highs</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">26</span> <span class="o">-</span> <span class="n">c</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_TONEAREST</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">b</span> <span class="o">=</span> <span class="n">g</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">hight</span> <span class="o">&amp;&amp;</span> <span class="n">lowt</span><span class="p">)</span> <span class="o">||</span> <span class="p">((</span><span class="n">m</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">));</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">((</span><span class="n">output_sign</span><span class="p">.</span><span class="n">is_neg</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_DOWNWARD</span><span class="p">)</span> <span class="o">||</span>
+         	<span class="p">(</span><span class="n">output_sign</span><span class="p">.</span><span class="n">is_pos</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">round_mode</span> <span class="o">==</span> <span class="n">FE_UPWARD</span><span class="p">))</span> <span class="p">{</span>
+	<span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">g</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">hight</span> <span class="o">&amp;&amp;</span> <span class="n">lowt</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+	<span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+</code></pre></div></div>
+
+<p>Finally, we compute the exponent and cast the result to float:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">uint32_t</span> <span class="n">exp16</span> <span class="o">=</span> <span class="p">(</span><span class="n">dm1</span> <span class="o">&lt;&lt;</span> <span class="mi">23</span><span class="p">);</span>
+
+<span class="kt">uint32_t</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">m</span> <span class="o">&amp;</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;::</span><span class="n">FRACTION_MASK</span><span class="p">;</span>
+
+<span class="kt">uint32_t</span> <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">exp16</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span>
+
+<span class="k">auto</span> <span class="n">result_bits</span> <span class="o">=</span> <span class="n">fputil</span><span class="o">::</span><span class="n">FPBits</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<span class="n">result_bits</span><span class="p">.</span><span class="n">set_sign</span><span class="p">(</span><span class="n">output_sign</span><span class="p">);</span>
+<span class="k">return</span> <span class="n">result_bits</span><span class="p">.</span><span class="n">get_val</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p>And there you have it: the implementation of:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">float</span> <span class="nf">fmul</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">,</span> <span class="kt">double</span> <span class="n">y</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>I enjoyed doing this.</p>
+
+<h3 id="acknowledgements">Acknowledgements</h3>
+
+<p>I want to thank Tue, the libc maintainer, for explaining a lot of this to me.</p>
+
+<h3 id="references">References</h3>
+
+<p>Handbook of Floating Point Arithmetic</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="computer-science" /><category term="floating-point-arithmetic" /><category term="llvm" /><summary type="html"><![CDATA[Recently, my fmul pr got merged into LLVM. And I would like to talk about my contribution. You can see my pr here.]]></summary></entry><entry><title type="html">Compiler problems and their implementation</title><link href="http://localhost:4000/2024/05/02/compilers-are-interesting.html" rel="alternate" type="text/html" title="Compiler problems and their implementation" /><published>2024-05-02T00:00:00-07:00</published><updated>2024-05-02T00:00:00-07:00</updated><id>http://localhost:4000/2024/05/02/compilers-are-interesting</id><content type="html" xml:base="http://localhost:4000/2024/05/02/compilers-are-interesting.html"><![CDATA[<p>So, far in my compiler journey I have faced three interesting problems. The problems were translating a subset of language to <em>A-Normal form</em>, compiling tuples to x86, and floating point math.</p>
 
 <h3 id="compiling-without-continuations">Compiling without continuations</h3>
 
@@ -2227,80 +2537,4 @@ exit:
 
 <h3 id="conclusion">Conclusion</h3>
 
-<p>So, there you go. Based on my observations and conversations I have had I have tried to show the power of macros. Firstly, I showed how you can do more with less code by using macros which in turn leads to systems without repeating patterns. If you consider that Lisp also has higher order functions you can see how Lisp is a great language to build modular code. In addition, I shared how macros can help the programmer extend the Lisp language itself which is the ultimate way to conquer complexity.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="lisp" /><summary type="html"><![CDATA[Introduction]]></summary></entry><entry><title type="html">Reflecting on my open source experience</title><link href="http://localhost:4000/2023/10/24/reflection-on-open-source.html" rel="alternate" type="text/html" title="Reflecting on my open source experience" /><published>2023-10-24T00:00:00-07:00</published><updated>2023-10-24T00:00:00-07:00</updated><id>http://localhost:4000/2023/10/24/reflection-on-open-source</id><content type="html" xml:base="http://localhost:4000/2023/10/24/reflection-on-open-source.html"><![CDATA[<h3 id="introduction">Introduction</h3>
-
-<p>I have been reading “Rebel Code”, a book about the early days of Linux and open source and I just find the stories in this book amazing. So, I am really excited about contributing to Coalton, a programming language written in Common Lisp that is embedded in Common Lisp. Coalton is a statically typed language, similar to Haskell, with type inference.</p>
-
-<p>In <a href="https://www.engineeringchallenges.org/challenges.aspx">14 Grand Challenges for Engineering in the 21st Century</a> some experts got together and determined 14 grand engineering challenges for the 21st century. Among these challenges was to build the tools for scientific discovery.</p>
-
-<p>It happens that Coalton is a language that is used in production at a quantum computing company to build a quantum compiler. So, Coalton is a tool for advancing science. So, I think the peope at HRL labs are doing great work. So, I would like to contribute to Coalton.</p>
-
-<h3 id="lessons-i-learned-from-contributing-to-open-source">Lessons I learned from contributing to open source</h3>
-
-<p>Contributing to open source is like doing an internship. If the system is being used in production then by contributing you are essentially doing an internship because you get to work on a production system and with other engineers.</p>
-
-<p>One of the things I learned from contributing to Coalton is how to independently investigate the codebase, identify the relevant code I need to understand to make my changes; moreover, I learned that often you can make a contribution by following the patterns of the surrounding code. In addition, working on a github issue is also just like working on some personal project. That is, you still need to research the problem and understand the problem.</p>
-
-<p>One of the things I also learned was about the importance of code review. I learned that software is improved iteratively through code reviews. As the lead, Robert and very good software engineer, said:</p>
-
-<blockquote>
-  <p>It [the PR] started as a humble initial piece of code with the basic structure, and now it’s being “chiseled” and refined. It’s turning into a higher and higher quality contribution with each pass. This iteration is the essence of good software.</p>
-</blockquote>
-
-<p>In addition I also learned that PRs should be a series of sensible and well crafted commits. Or as Robert Smith says:</p>
-
-<blockquote>
-  <p>Commits should cover an atomic amount of useful change, and be well described by the short and long commit message. Most ideal scenario: what I described above. Less ideal scenario: you squash everything into a single commit and describe your changes. Less^2 ideal scenario: I squash them all for you and write a message for you. Less^infinity ideal scenario: I merge something with whatever unpolished commit history.</p>
-</blockquote>
-
-<p>Finally, I learned about the amazing feeling you get when you contribute code to a codebase that gets used. I felt excited when my first non trivial pr got merged because I felt I did something useful.</p>
-
-<p>Now, I will say a little bit about my contributions to Coalton.</p>
-
-<h3 id="my-contributions">My contributions</h3>
-
-<h4 id="dual-numbers-and-automatic-differentiation">Dual numbers and automatic differentiation</h4>
-
-<p>I started fixing typos but after a conversation I had with Robert, he suggested that I work on a dual number library.</p>
-
-<p>A dual number has the form \(a + b\epsilon\) where \(a\) and \(b\) are real numbers and \(\epsilon\) is a symbol that satisfies \(\epsilon^2 = 0\)  and \(\epsilon \neq 0\). One application of dual numbers is automatic differentiation.</p>
-
-<p>Consider the function \(f(x) = 5x+3\) and you want to calculate \(f(3)\) and \(f'(x)\).</p>
-
-<p>We can rewrite \(f(x)\) as a dual number as follows:</p>
-
-<p>\(f(3 + \epsilon) = 5(3 + \epsilon) + 3 = 18 + 5\epsilon\).</p>
-
-<p>Here \(18\) is \(f(3)\) and 5 is the derivative of \(f’(3)\).</p>
-
-<p>So, this is what I did. I wrote this library in Coalton for Coalton’s standard library. The code I wrote supports <strong>Number</strong> such as addition, subtraction, and multiplication and division, <strong>Radical</strong>, <strong>Exponentiable</strong> and <strong>Trigonometric</strong> data types.</p>
-
-<h4 id="signaling-when-an-unsigned-value-underflows">Signaling when an unsigned value underflows</h4>
-
-<p>Another contribution that I am currently working on, which has not been merged, but has been approved, is detecting underflow of unsigned integers and signaling an error.</p>
-
-<p>This pull request has taught me a lot and taught me a good lesson. Namely, it is good to gain some practical experience and then read a textbook to learn some theory. Practice and theory go together.</p>
-
-<p>In the textbook “Computer Systems, A Programmer’s Perspective” the authors claim the following:</p>
-
-<blockquote>
-  <p>By studying the actual number representations, we can understand the ranges of values that can be represented and the properties of the different arithmetic operations. This understanding is critical to writing programs that work correctly over the full range of numeric values and that are portable across different combinations of machine, operating system, and compiler</p>
-</blockquote>
-
-<p>In response to reading the above quote, which was after I started working on this issue, I appreciated taking the time and researching what an unsigned value is and the arithmetic properties such as when it overflows and underflows.</p>
-
-<p>So, as I mentioned above, I picked up an issue that involved signaling an underflow error for unsigned values. Unsigned values are numbers in the range \(0\) to \(2^{w} - 1\) where \(w\) is the the size of the unsigned number; for example, an 8 bit unsigned number. In other words, a bit vector \(\vec{x}\) of \(w\) bits can represent a decimal number in the range  \(0\) to \(2^{w} - 1\).</p>
-
-<p>This is saying that the set of decimal numbers that the computer represents is contingent on the bit size of the number and whether it is an unsigned or signed number; for example, an 8 bit unsigned number can represent values ranging from \(0\) to \(255\), a 16 bit unsigned number can can represent values ranging from \(0\) to \(65535\), a 32 bit unsigned number can represent values ranging from \(0\) to \(4294967295\) and a 64 bit unsigned value can represent values ranging from \(0\) to \(18446744073709551615\).</p>
-
-<p>Recall that a \(w\)-bit number is stored as consecutive addressable bytes. So, a \(8\)-bit unsigned integer gets stored in one byte whose address could be 0x100. In contrast, a \(32\)-bit unsigned number is stored in 4 bytes whose address locations may be 0x100, 0x101, 0x102, 0x103.</p>
-
-<p>Given a bit vector \(\vec{x}\) one converts a bit vector into a decimal number as follows:</p>
-
-<p>\(B2U_{w}\) \(\vec{x}\) \(=\) \(\sum_{i=0}^{w-1} x_{i}2^i\)</p>
-
-<p>So, I learned a lot thinking about this github issue.</p>
-
-<h3 id="conclusion">Conclusion</h3>
-
-<p>Above I have said a little bit about the lessons I have learned from contributing to Coalton. I learned how to investigate a codebase – e.g., identifying the relevant source code/files – and how code review leads to an iterative process for improving software. I also wrote about my contributions which consisted of building a dual number library, and on a current PR involving detecting unsigned number underflow.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="open-source" /><summary type="html"><![CDATA[Introduction]]></summary></entry></feed>
+<p>So, there you go. Based on my observations and conversations I have had I have tried to show the power of macros. Firstly, I showed how you can do more with less code by using macros which in turn leads to systems without repeating patterns. If you consider that Lisp also has higher order functions you can see how Lisp is a great language to build modular code. In addition, I shared how macros can help the programmer extend the Lisp language itself which is the ultimate way to conquer complexity.</p>]]></content><author><name>Job Hernandez Lara</name></author><category term="lisp" /><summary type="html"><![CDATA[Introduction]]></summary></entry></feed>

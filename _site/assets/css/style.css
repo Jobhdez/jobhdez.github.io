@@ -312,7 +312,7 @@ a:hover {
  */
 blockquote {
   color: #999999;
-  border-left: 4px solid #404040;
+  border-left: 4px solid rgb(63.75, 63.75, 63.75);
   padding-left: 15px;
   font-size: 1.125rem;
   font-style: italic;
@@ -331,7 +331,7 @@ pre,
 code {
   font-family: "Menlo", "Inconsolata", "Consolas", "Roboto Mono", "Ubuntu Mono", "Liberation Mono", "Courier New", monospace;
   font-size: 0.9375em;
-  border: 1px solid #404040;
+  border: 1px solid rgb(63.75, 63.75, 63.75);
   border-radius: 3px;
   background-color: #212121;
 }
@@ -414,20 +414,20 @@ table {
   text-align: left;
   color: #bbbbbb;
   border-collapse: collapse;
-  border: 1px solid #404040;
+  border: 1px solid rgb(63.75, 63.75, 63.75);
 }
 table tr:nth-child(even) {
-  background-color: #222222;
+  background-color: rgb(34.2, 34.2, 34.2);
 }
 table th, table td {
   padding: 10px 15px;
 }
 table th {
-  background-color: #323232;
-  border: 1px solid #4e4e4e;
+  background-color: rgb(49.5, 49.5, 49.5);
+  border: 1px solid rgb(77.55, 77.55, 77.55);
 }
 table td {
-  border: 1px solid #404040;
+  border: 1px solid rgb(63.75, 63.75, 63.75);
 }
 @media screen and (max-width: 800px) {
   table {
@@ -443,7 +443,7 @@ table td {
  */
 .site-header {
   border-top: 5px solid #999999;
-  border-bottom: 1px solid #404040;
+  border-bottom: 1px solid rgb(63.75, 63.75, 63.75);
   min-height: 55.95px;
   line-height: 54px;
   position: relative;
@@ -462,7 +462,7 @@ table td {
   }
 }
 .site-title, .site-title:visited {
-  color: #a6a6a6;
+  color: rgb(165.75, 165.75, 165.75);
 }
 
 .site-nav {
@@ -470,7 +470,7 @@ table td {
   top: 9px;
   right: 15px;
   background-color: #181818;
-  border: 1px solid #404040;
+  border: 1px solid rgb(63.75, 63.75, 63.75);
   border-radius: 5px;
   text-align: right;
 }
@@ -544,7 +544,7 @@ table td {
  * Site footer
  */
 .site-footer {
-  border-top: 1px solid #404040;
+  border-top: 1px solid rgb(63.75, 63.75, 63.75);
   padding: 30px 0;
 }
 
@@ -714,10 +714,10 @@ table td {
 .social-media-list li a, .pagination li a {
   display: block;
   padding: 7.5px;
-  border: 1px solid #404040;
+  border: 1px solid rgb(63.75, 63.75, 63.75);
 }
 .social-media-list li a:hover, .pagination li a:hover {
-  border-color: #a6a6a6;
+  border-color: rgb(165.75, 165.75, 165.75);
 }
 
 /**
@@ -737,7 +737,7 @@ table td {
   border: 1px solid transparent;
 }
 .pagination li div.pager-edge {
-  color: #404040;
+  color: rgb(63.75, 63.75, 63.75);
   border: 1px dashed;
 }
 
