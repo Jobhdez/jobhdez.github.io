@@ -115,7 +115,7 @@ And to the nearest 24 bits, following the same process, we do:
 
 So the rounding process, should always start with picking the "integral part".
 
-so the exact mult will return prod.hi and prod.lo so that $$ a * b = prod.hi + prod.lo $$; for example,
+So the exact mult will return prod.hi and prod.lo so that $$ a * b = prod.hi + prod.lo $$; for example,
 
 we can actually see it in action with Sollya:
 

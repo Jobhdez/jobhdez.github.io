@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T18:22:54-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T18:28:00-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
 </subtitle><author><name>Job Hernandez Lara</name><email>hj93@protonmail.com</email></author><entry><title type="html">Improving the performance of fmul with double-double arithmetic</title><link href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" rel="alternate" type="text/html" title="Improving the performance of fmul with double-double arithmetic" /><published>2024-09-21T00:00:00-07:00</published><updated>2024-09-21T00:00:00-07:00</updated><id>http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic</id><content type="html" xml:base="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"><![CDATA[<p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
 
 <p>If \(x_{1}\) and \(x_{2}\) are radix-2 precision-p floating point numbers, whose exponents \(e_{x1}\) and \(e_{x2}\) satisfy \(e_{x1} + e_{x2} &lt;  e_{min} + p - 1\) and if \(r\) is \(R(x_{1} x_{2})\) where R is a rounding function then \(t = x_{1}x_{2} - r\) is a radix 2 precision-p floating point number.</p>
@@ -98,7 +98,7 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <p>So the rounding process, should always start with picking the “integral part”.</p>
 
-<p>so the exact mult will return prod.hi and prod.lo so that \(a * b = prod.hi + prod.lo\); for example,</p>
+<p>So the exact mult will return prod.hi and prod.lo so that \(a * b = prod.hi + prod.lo\); for example,</p>
 
 <p>we can actually see it in action with Sollya:</p>
 
