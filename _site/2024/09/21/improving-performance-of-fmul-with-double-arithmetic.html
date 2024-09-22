@@ -13,8 +13,8 @@
 <meta property="og:title" content="Improving the performance of fmul with double-double arithmetic" />
 <meta name="author" content="Job Hernandez Lara" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc." />
-<meta property="og:description" content="Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc." />
+<meta name="description" content="draft" />
+<meta property="og:description" content="draft" />
 <link rel="canonical" href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" />
 <meta property="og:url" content="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" />
 <meta property="og:site_name" content="(lambda () ‘(Jobs Blog))" />
@@ -23,7 +23,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Improving the performance of fmul with double-double arithmetic" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2024-09-21T00:00:00-07:00","datePublished":"2024-09-21T00:00:00-07:00","description":"Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.","headline":"Improving the performance of fmul with double-double arithmetic","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"},"url":"http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Job Hernandez Lara"},"dateModified":"2024-09-21T00:00:00-07:00","datePublished":"2024-09-21T00:00:00-07:00","description":"draft","headline":"Improving the performance of fmul with double-double arithmetic","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"},"url":"http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="(lambda () &apos;(Jobs Blog))" />
 </head>
@@ -57,7 +57,9 @@
 
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
+    <p><em>draft</em></p>
+
+<p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
 
 <p>If \(x_{1}\) and \(x_{2}\) are radix-2 precision-p floating point numbers, whose exponents \(e_{x1}\) and \(e_{x2}\) satisfy \(e_{x1} + e_{x2} &lt;  e_{min} + p - 1\) and if \(r\) is \(R(x_{1} x_{2})\) where R is a rounding function then \(t = x_{1}x_{2} - r\) is a radix 2 precision-p floating point number.</p>
 

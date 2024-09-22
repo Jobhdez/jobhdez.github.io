@@ -5,6 +5,8 @@ author: Job Hernandez Lara
 tags: [computer-science, floating-point-arithmetic, llvm]
 ---
 
+*draft*
+
 Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.
 
 If $$ x_{1} $$ and $$ x_{2} $$ are radix-2 precision-p floating point numbers, whose exponents $$ e_{x1} $$ and $$ e_{x2} $$ satisfy $$ e_{x1} + e_{x2} <  e_{min} + p - 1 $$ and if $$ r $$ is $$ R(x_{1} x_{2}) $$ where R is a rounding function then $$ t = x_{1}x_{2} - r $$ is a radix 2 precision-p floating point number.
