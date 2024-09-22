@@ -98,7 +98,7 @@ and if you add the whole thing by 1 lowest bit, it will be?
 1.0000000011111101111111110000000000000000000000000000
 ```
 
-and that will be the bits when we do `round(a*b, D, RN)`
+and that will be the bits when we do `round(a*b, D, RN)`.
 
 Which is the same as `prod.hi` now, your next step is to round that (`prod.hi`) to 24 bits.
 
@@ -128,8 +128,6 @@ we can actually see it in action with Sollya:
 > prod_hi + prod_lo;
 ```
 
-do you see that
-
 ```
 prod_hi = round(a*b, D, RN);
 ```
@@ -142,7 +140,7 @@ so we will round that bit string to 24 bits:
 1.00000000111111011111111|10000000000000000000000000000
 ```
 
-so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.
+So we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.
 
 So first we get the leading 24 bit ("integer part"):
 

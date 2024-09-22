@@ -141,7 +141,7 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 1.0000000011111101111111110000000000000000000000000000
 </code></pre></div></div>
 
-<p>and that will be the bits when we do <code class="language-plaintext highlighter-rouge">round(a*b, D, RN)</code></p>
+<p>and that will be the bits when we do <code class="language-plaintext highlighter-rouge">round(a*b, D, RN)</code>.</p>
 
 <p>Which is the same as <code class="language-plaintext highlighter-rouge">prod.hi</code> now, your next step is to round that (<code class="language-plaintext highlighter-rouge">prod.hi</code>) to 24 bits.</p>
 
@@ -168,8 +168,6 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 &gt; prod_hi + prod_lo;
 </code></pre></div></div>
 
-<p>do you see that</p>
-
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>prod_hi = round(a*b, D, RN);
 </code></pre></div></div>
 
@@ -180,7 +178,7 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 1.00000000111111011111111|10000000000000000000000000000
 </code></pre></div></div>
 
-<p>so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.</p>
+<p>So we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.</p>
 
 <p>So first we get the leading 24 bit (“integer part”):</p>
 
