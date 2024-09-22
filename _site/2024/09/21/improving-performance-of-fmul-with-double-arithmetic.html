@@ -71,7 +71,7 @@
 
 <p>R1 &lt;-  \(RN(x_{1} * x_{2})\)</p>
 
-<p>R2 &lt;- RN(x_{1} * x_{2} - r1)</p>
+<p>R2 &lt;- \(RN(x_{1} * x_{2} - r1)\)</p>
 
 <p>Return (r1, r2)</p>
 
@@ -126,7 +126,7 @@
 
 <p><code class="language-plaintext highlighter-rouge">1.0000000011111101111111101111111111111111111111111111|11_2</code></p>
 
-<p>All the bits on the left of <code class="language-plaintext highlighter-rouge">|</code> are integer part, the bit right on the right of <code class="language-plaintext highlighter-rouge">| </code> is the rounding bit
+<p>All the bits on the left of <code class="language-plaintext highlighter-rouge">|</code> are integer part, the bit right on the right of <code class="language-plaintext highlighter-rouge">| </code> is the rounding bit and 
 the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <p>When we round up, we simply increase the “integer part” by 1 and the integer part above is:</p>
@@ -148,13 +148,13 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111110000000000000000000000000000
 </code></pre></div></div>
 
-<p>to nearest 24 bits, following the same process</p>
+<p>And to the nearest 24 bits, following the same process, we do:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; round(a * b, SG, RN); // round to 24-bit precision
 &gt; round(a * b, D, RN); // round to 53-bit precision
 </code></pre></div></div>
 
-<p>So the rounding process, should always start with picking the “integral part”</p>
+<p>So the rounding process, should always start with picking the “integral part”.</p>
 
 <p>so the exact mult will return prod.hi and prod.lo so that \(a * b = prod.hi + prod.lo\); for example,</p>
 
@@ -162,7 +162,7 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; a = 2^52 + 1; b = 2^52 + 1;
 &gt; prod_hi = round(a*b, D, RN); prod_lo = a*b - prod_hi;
-&gt; a \* b;
+&gt; a * b;
 &gt; prod_hi;
 &gt; prod_lo;
 &gt; prod_hi + prod_lo;
@@ -182,15 +182,14 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <p>so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.</p>
 
-<p>So first
-first we get the leading 24 bit (“integer part”):</p>
+<p>So first we get the leading 24 bit (“integer part”):</p>
 
 <p><code class="language-plaintext highlighter-rouge">1.00000000111111011111111</code></p>
 
 <p>then we look at the rounding bit, which is?
 The 1 after the bar and the sticky bits are?</p>
 
-<p>The 0s after that</p>
+<p>The 0s after that.</p>
 
 <p>So you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.</p>
 
@@ -210,8 +209,7 @@ The 1 after the bar and the sticky bits are?</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 10000000000 -&gt; 1.00000000111111011111111 + 1 ULP
 </code></pre></div></div>
 
-<p>but the least sig val needs to be a 0 right?
-So the round up it is:</p>
+<p>So the round up it is:</p>
 
 <p>1.00000000111111100000000</p>
 

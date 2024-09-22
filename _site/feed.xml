@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T17:56:22-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T18:14:31-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
 </subtitle><author><name>Job Hernandez Lara</name><email>hj93@protonmail.com</email></author><entry><title type="html">Improving the performance of fmul with double-double arithmetic</title><link href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" rel="alternate" type="text/html" title="Improving the performance of fmul with double-double arithmetic" /><published>2024-09-21T00:00:00-07:00</published><updated>2024-09-21T00:00:00-07:00</updated><id>http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic</id><content type="html" xml:base="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"><![CDATA[<p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
 
 <p>If \(x_{1}\) and \(x_{2}\) are radix-2 precision-p floating point numbers, whose exponents \(e_{x1}\) and \(e_{x2}\) satisfy \(e_{x1} + e_{x2} &lt;  e_{min} + p - 1\) and if \(r\) is \(R(x_{1} x_{2})\) where R is a rounding function then \(t = x_{1}x_{2} - r\) is a radix 2 precision-p floating point number.</p>
@@ -13,7 +13,7 @@
 
 <p>R1 &lt;-  \(RN(x_{1} * x_{2})\)</p>
 
-<p>R2 &lt;- RN(x_{1} * x_{2} - r1)</p>
+<p>R2 &lt;- \(RN(x_{1} * x_{2} - r1)\)</p>
 
 <p>Return (r1, r2)</p>
 
@@ -68,7 +68,7 @@
 
 <p><code class="language-plaintext highlighter-rouge">1.0000000011111101111111101111111111111111111111111111|11_2</code></p>
 
-<p>All the bits on the left of <code class="language-plaintext highlighter-rouge">|</code> are integer part, the bit right on the right of <code class="language-plaintext highlighter-rouge">| </code> is the rounding bit
+<p>All the bits on the left of <code class="language-plaintext highlighter-rouge">|</code> are integer part, the bit right on the right of <code class="language-plaintext highlighter-rouge">| </code> is the rounding bit and 
 the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <p>When we round up, we simply increase the “integer part” by 1 and the integer part above is:</p>
@@ -90,13 +90,13 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111110000000000000000000000000000
 </code></pre></div></div>
 
-<p>to nearest 24 bits, following the same process</p>
+<p>And to the nearest 24 bits, following the same process, we do:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; round(a * b, SG, RN); // round to 24-bit precision
 &gt; round(a * b, D, RN); // round to 53-bit precision
 </code></pre></div></div>
 
-<p>So the rounding process, should always start with picking the “integral part”</p>
+<p>So the rounding process, should always start with picking the “integral part”.</p>
 
 <p>so the exact mult will return prod.hi and prod.lo so that \(a * b = prod.hi + prod.lo\); for example,</p>
 
@@ -104,7 +104,7 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; a = 2^52 + 1; b = 2^52 + 1;
 &gt; prod_hi = round(a*b, D, RN); prod_lo = a*b - prod_hi;
-&gt; a \* b;
+&gt; a * b;
 &gt; prod_hi;
 &gt; prod_lo;
 &gt; prod_hi + prod_lo;
@@ -124,15 +124,14 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <p>so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.</p>
 
-<p>So first
-first we get the leading 24 bit (“integer part”):</p>
+<p>So first we get the leading 24 bit (“integer part”):</p>
 
 <p><code class="language-plaintext highlighter-rouge">1.00000000111111011111111</code></p>
 
 <p>then we look at the rounding bit, which is?
 The 1 after the bar and the sticky bits are?</p>
 
-<p>The 0s after that</p>
+<p>The 0s after that.</p>
 
 <p>So you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.</p>
 
@@ -152,8 +151,7 @@ The 1 after the bar and the sticky bits are?</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111 | 10000000000 -&gt; 1.00000000111111011111111 + 1 ULP
 </code></pre></div></div>
 
-<p>but the least sig val needs to be a 0 right?
-So the round up it is:</p>
+<p>So the round up it is:</p>
 
 <p>1.00000000111111100000000</p>
 

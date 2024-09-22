@@ -19,7 +19,7 @@ Ensure: $$ r_{1} + r_{2} = x_{1}x_{2} $$
 
 R1 <-  $$ RN(x_{1} * x_{2}) $$
 
-R2 <- RN(x_{1} * x_{2} - r1)
+R2 <- $$ RN(x_{1} * x_{2} - r1) $$
 
 Return (r1, r2)
 
@@ -81,7 +81,7 @@ to the nearest 53-bit?
 
 `1.0000000011111101111111101111111111111111111111111111|11_2`
 
-All the bits on the left of `|` are integer part, the bit right on the right of `| ` is the rounding bit
+All the bits on the left of `|` are integer part, the bit right on the right of `| ` is the rounding bit and 
 the remaining bits on the right of rounding bit are sticky bits.
 
 When we round up, we simply increase the "integer part" by 1 and the integer part above is:
@@ -106,14 +106,14 @@ Which is the same as `prod.hi` now, your next step is to round that (`prod.hi`) 
 1.0000000011111101111111110000000000000000000000000000
 ```
 
-to nearest 24 bits, following the same process
+And to the nearest 24 bits, following the same process, we do:
 
 ```
 > round(a * b, SG, RN); // round to 24-bit precision
 > round(a * b, D, RN); // round to 53-bit precision
 ```
 
-So the rounding process, should always start with picking the "integral part"
+So the rounding process, should always start with picking the "integral part".
 
 so the exact mult will return prod.hi and prod.lo so that $$ a * b = prod.hi + prod.lo $$; for example,
 
@@ -122,7 +122,7 @@ we can actually see it in action with Sollya:
 ```
 > a = 2^52 + 1; b = 2^52 + 1;
 > prod_hi = round(a*b, D, RN); prod_lo = a*b - prod_hi;
-> a \* b;
+> a * b;
 > prod_hi;
 > prod_lo;
 > prod_hi + prod_lo;
@@ -144,15 +144,14 @@ so we will round that bit string to 24 bits:
 
 so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.
 
-So first
-first we get the leading 24 bit ("integer part"):
+So first we get the leading 24 bit ("integer part"):
 
 `1.00000000111111011111111`
 
 then we look at the rounding bit, which is?
 The 1 after the bar and the sticky bits are?
 
-The 0s after that
+The 0s after that.
 
 So you round up or down depending on which direction gives you an even number, i.e., the least-significant bit of the answer is 0.
 
@@ -174,7 +173,6 @@ Round up:
 1.00000000111111011111111 | 10000000000 -> 1.00000000111111011111111 + 1 ULP
 ```
 
-but the least sig val needs to be a 0 right?
 So the round up it is:
 
 1.00000000111111100000000
