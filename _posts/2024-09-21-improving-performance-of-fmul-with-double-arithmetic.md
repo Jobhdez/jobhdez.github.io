@@ -5,7 +5,7 @@ author: Job Hernandez Lara
 tags: [computer-science, floating-point-arithmetic, llvm]
 ---
 
-Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.
+Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.
 
 If $$ x_{1} $$ and $$ x_{2} $$ are radix-2 precision-p floating point numbers, whose exponents $$ e_{x1} $$ and $$ e_{x2} $$ satisfy $$ e_{x1} + e_{x2} <  e_{min} + p - 1 $$ and if $$ r $$ is $$ R(x_{1} x_{2}) $$ where R is a rounding function then $$ t = x_{1}x_{2} - r $$ is a radix 2 precision-p floating point number.
 
@@ -37,7 +37,7 @@ Or in sollya:
 > prod_lo = a * b - prod_hi;
 ```
 
-The product of `a * b` might not fit in a double precision, so _exact mult_ will return `prod.hi` and `prod.lo` so that $$ a \* b = prod.hi + prod.lo $$.
+The product of `a * b` might not fit in a double precision, so _exact mult_ will return `prod.hi` and `prod.lo` so that $$ a * b = prod.hi + prod.lo $$.
 
 Example:
 
@@ -61,7 +61,7 @@ And when we use round to nearest, the 24 bit precision will be?
 1.00000000111111011111111
 ```
 
-Then we look at the rounding bit, the one right after the separator you added which is `0` in this case so you will round down, and the answer is the same as the "integer part"
+Then we look at the rounding bit, the one right after the separator that was added which is `0` in this case so you will round down, and the answer is the same as the "integer part":
 
 ```
 1.00000000111111011111111
@@ -77,7 +77,7 @@ Now can you try to round:
 1.000000001111110111111110111111111111111111111111111111_2
 ```
 
-to the nearest 53-bit ?
+to the nearest 53-bit?
 
 `1.0000000011111101111111101111111111111111111111111111|11_2`
 
@@ -115,16 +115,18 @@ to nearest 24 bits, following the same process
 
 So the rounding process, should always start with picking the "integral part"
 
-so the exact mult will return prod.hi and prod.lo so that a \* b = prod.hi + prod.lo mathematically
+so the exact mult will return prod.hi and prod.lo so that $$ a * b = prod.hi + prod.lo $$; for example,
 
-you can actually see it in action with Sollya
+we can actually see it in action with Sollya:
 
+```
 > a = 2^52 + 1; b = 2^52 + 1;
 > prod_hi = round(a*b, D, RN); prod_lo = a*b - prod_hi;
 > a \* b;
 > prod_hi;
 > prod_lo;
 > prod_hi + prod_lo;
+```
 
 do you see that
 
@@ -132,12 +134,15 @@ do you see that
 prod_hi = round(a*b, D, RN);
 ```
 
-so ill round that bit string to 24 bits
-this one `1.0000000011111101111111110000000000000000000000000000`
-`1.00000000111111011111111|10000000000000000000000000000`
-so we need to round to even
-since the round bit is non zero and the sticky bits is 0
-round to even means that the last significant value is 0
+so we will round that bit string to 24 bits:
+
+```
+1.0000000011111101111111110000000000000000000000000000
+
+1.00000000111111011111111|10000000000000000000000000000
+```
+
+so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.
 
 So first
 first we get the leading 24 bit ("integer part"):
@@ -196,8 +201,7 @@ Or in Sollya:
 
 That will calculate the exact result which is `a*b`.
 
-In C++ `prod_hi + prod_lo` will round the exact result to `double`
-so how do you do that in Sollya, and what will the answer be?
+In C++ `prod_hi + prod_lo` will round the exact result to `double` which in sollya you do by:
 
 ```
 round(prod_hi+prod_lo, D, RN);
@@ -213,7 +217,8 @@ Round to single precision:
 1.00000000111111011111111_2 * 2^(23)
 ```
 
-so whats happening here is that we are rounding one extra time?
+so whats happening here is that we are rounding one extra time.
+
 And that's why this type of errors is called `double-rounding errors`.
 
 The fix of the double rounding errors is handling `prod.lo`.

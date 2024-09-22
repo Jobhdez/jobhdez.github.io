@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T17:24:25-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
-</subtitle><author><name>Job Hernandez Lara</name><email>hj93@protonmail.com</email></author><entry><title type="html">Improving the performance of fmul with double-double arithmetic</title><link href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" rel="alternate" type="text/html" title="Improving the performance of fmul with double-double arithmetic" /><published>2024-09-21T00:00:00-07:00</published><updated>2024-09-21T00:00:00-07:00</updated><id>http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic</id><content type="html" xml:base="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"><![CDATA[<p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-09-21T17:56:22-07:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">(lambda () ‘(Jobs Blog))</title><subtitle>A technical blog about things I find interesting :)
+</subtitle><author><name>Job Hernandez Lara</name><email>hj93@protonmail.com</email></author><entry><title type="html">Improving the performance of fmul with double-double arithmetic</title><link href="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html" rel="alternate" type="text/html" title="Improving the performance of fmul with double-double arithmetic" /><published>2024-09-21T00:00:00-07:00</published><updated>2024-09-21T00:00:00-07:00</updated><id>http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic</id><content type="html" xml:base="http://localhost:4000/2024/09/21/improving-performance-of-fmul-with-double-arithmetic.html"><![CDATA[<p>Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.</p>
 
 <p>If \(x_{1}\) and \(x_{2}\) are radix-2 precision-p floating point numbers, whose exponents \(e_{x1}\) and \(e_{x2}\) satisfy \(e_{x1} + e_{x2} &lt;  e_{min} + p - 1\) and if \(r\) is \(R(x_{1} x_{2})\) where R is a rounding function then \(t = x_{1}x_{2} - r\) is a radix 2 precision-p floating point number.</p>
 
@@ -29,7 +29,7 @@
 &gt; prod_lo = a * b - prod_hi;
 </code></pre></div></div>
 
-<p>The product of <code class="language-plaintext highlighter-rouge">a * b</code> might not fit in a double precision, so <em>exact mult</em> will return <code class="language-plaintext highlighter-rouge">prod.hi</code> and <code class="language-plaintext highlighter-rouge">prod.lo</code> so that \(a \* b = prod.hi + prod.lo\).</p>
+<p>The product of <code class="language-plaintext highlighter-rouge">a * b</code> might not fit in a double precision, so <em>exact mult</em> will return <code class="language-plaintext highlighter-rouge">prod.hi</code> and <code class="language-plaintext highlighter-rouge">prod.lo</code> so that \(a * b = prod.hi + prod.lo\).</p>
 
 <p>Example:</p>
 
@@ -50,7 +50,7 @@
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111
 </code></pre></div></div>
 
-<p>Then we look at the rounding bit, the one right after the separator you added which is <code class="language-plaintext highlighter-rouge">0</code> in this case so you will round down, and the answer is the same as the “integer part”</p>
+<p>Then we look at the rounding bit, the one right after the separator that was added which is <code class="language-plaintext highlighter-rouge">0</code> in this case so you will round down, and the answer is the same as the “integer part”:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.00000000111111011111111
 </code></pre></div></div>
@@ -64,7 +64,7 @@
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.000000001111110111111110111111111111111111111111111111_2
 </code></pre></div></div>
 
-<p>to the nearest 53-bit ?</p>
+<p>to the nearest 53-bit?</p>
 
 <p><code class="language-plaintext highlighter-rouge">1.0000000011111101111111101111111111111111111111111111|11_2</code></p>
 
@@ -98,30 +98,31 @@ the remaining bits on the right of rounding bit are sticky bits.</p>
 
 <p>So the rounding process, should always start with picking the “integral part”</p>
 
-<p>so the exact mult will return prod.hi and prod.lo so that a * b = prod.hi + prod.lo mathematically</p>
+<p>so the exact mult will return prod.hi and prod.lo so that \(a * b = prod.hi + prod.lo\); for example,</p>
 
-<p>you can actually see it in action with Sollya</p>
+<p>we can actually see it in action with Sollya:</p>
 
-<blockquote>
-  <p>a = 2^52 + 1; b = 2^52 + 1;
-prod_hi = round(a<em>b, D, RN); prod_lo = a</em>b - prod_hi;
-a * b;
-prod_hi;
-prod_lo;
-prod_hi + prod_lo;</p>
-</blockquote>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt; a = 2^52 + 1; b = 2^52 + 1;
+&gt; prod_hi = round(a*b, D, RN); prod_lo = a*b - prod_hi;
+&gt; a \* b;
+&gt; prod_hi;
+&gt; prod_lo;
+&gt; prod_hi + prod_lo;
+</code></pre></div></div>
 
 <p>do you see that</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>prod_hi = round(a*b, D, RN);
 </code></pre></div></div>
 
-<p>so ill round that bit string to 24 bits
-this one <code class="language-plaintext highlighter-rouge">1.0000000011111101111111110000000000000000000000000000</code>
-<code class="language-plaintext highlighter-rouge">1.00000000111111011111111|10000000000000000000000000000</code>
-so we need to round to even
-since the round bit is non zero and the sticky bits is 0
-round to even means that the last significant value is 0</p>
+<p>so we will round that bit string to 24 bits:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.0000000011111101111111110000000000000000000000000000
+
+1.00000000111111011111111|10000000000000000000000000000
+</code></pre></div></div>
+
+<p>so we need to round to even since the round bit is non zero and the sticky bits is 0. Round to even means that the last significant value is 0.</p>
 
 <p>So first
 first we get the leading 24 bit (“integer part”):</p>
@@ -176,8 +177,7 @@ So the round up it is:</p>
 
 <p>That will calculate the exact result which is <code class="language-plaintext highlighter-rouge">a*b</code>.</p>
 
-<p>In C++ <code class="language-plaintext highlighter-rouge">prod_hi + prod_lo</code> will round the exact result to <code class="language-plaintext highlighter-rouge">double</code>
-so how do you do that in Sollya, and what will the answer be?</p>
+<p>In C++ <code class="language-plaintext highlighter-rouge">prod_hi + prod_lo</code> will round the exact result to <code class="language-plaintext highlighter-rouge">double</code> which in sollya you do by:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>round(prod_hi+prod_lo, D, RN);
 1.000000001111110111111111_2 * 2^(23)
@@ -191,8 +191,9 @@ so how do you do that in Sollya, and what will the answer be?</p>
 1.00000000111111011111111_2 * 2^(23)
 </code></pre></div></div>
 
-<p>so whats happening here is that we are rounding one extra time?
-And that’s why this type of errors is called <code class="language-plaintext highlighter-rouge">double-rounding errors</code>.</p>
+<p>so whats happening here is that we are rounding one extra time.</p>
+
+<p>And that’s why this type of errors is called <code class="language-plaintext highlighter-rouge">double-rounding errors</code>.</p>
 
 <p>The fix of the double rounding errors is handling <code class="language-plaintext highlighter-rouge">prod.lo</code>.</p>
 
@@ -309,7 +310,7 @@ if (lo_bits.sign() != hi_bits.sign()) {
   double result = FPBits&lt;double&gt;(result_bits).get_val();
   return static_cast&lt;float&gt;(result);
 }
-</code></pre></div></div>]]></content><author><name>Job Hernandez Lara</name></author><category term="computer-science" /><category term="floating-point-arithmetic" /><category term="llvm" /><summary type="html"><![CDATA[Lately, I co-authored a PR that improved the performance of fmul by 7x by using double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.]]></summary></entry><entry><title type="html">Compiling core programming constructs</title><link href="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html" rel="alternate" type="text/html" title="Compiling core programming constructs" /><published>2024-06-12T00:00:00-07:00</published><updated>2024-06-12T00:00:00-07:00</updated><id>http://localhost:4000/2024/06/12/compiling-core-programming-constructs</id><content type="html" xml:base="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html"><![CDATA[<p>I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.</p>
+</code></pre></div></div>]]></content><author><name>Job Hernandez Lara</name></author><category term="computer-science" /><category term="floating-point-arithmetic" /><category term="llvm" /><summary type="html"><![CDATA[Lately, I co-authored a PR that improved the performance of fmul by 7x by using double-double arithmetic. The following is a summary of my conversation with Tue Ly, the maintainer of LLVM libc.]]></summary></entry><entry><title type="html">Compiling core programming constructs</title><link href="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html" rel="alternate" type="text/html" title="Compiling core programming constructs" /><published>2024-06-12T00:00:00-07:00</published><updated>2024-06-12T00:00:00-07:00</updated><id>http://localhost:4000/2024/06/12/compiling-core-programming-constructs</id><content type="html" xml:base="http://localhost:4000/2024/06/12/compiling-core-programming-constructs.html"><![CDATA[<p>I would like to share a bit about compiling core programming constructs; recently, I implemented a compiler in Haskell that lowered core constructs such as tuples, if expressions, loops, comparison operators (i.e., &lt;, &gt;) and assignment and simple arithmetic.</p>
 
 <p>Compilers have been traditionally broken up into three main components, namely, the frontend, optimizer, and the backend; nevertheless, in my project, I did not implemented an optimizer.</p>
 
