@@ -219,10 +219,11 @@ And that's why this type of errors is called `double-rounding errors`.
 
 The fix of the double rounding errors is handling `prod.lo`.
 
-So now, we will handle 3 cases: `lo > 0, lo = 0, lo < 0`
+So now, we will handle 3 cases: `lo > 0, lo = 0, lo < 0`.
+
 Ok, lets start with $$ lo = 0 $$. When $$ lo = 0 $$ we have $$ hi + lo = hi $$.
 
-Ok, so now lets say we have `hi + lo`
+Ok, so now lets say we have $$ hi + lo $$, 
 both of which are double precision. What does this mean?
 
 When $$ lo = 0 $$ — i.e., $$ hi + lo = hi $$ —

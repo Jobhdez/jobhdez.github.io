@@ -251,10 +251,11 @@ The 1 after the bar and the sticky bits are?</p>
 
 <p>The fix of the double rounding errors is handling <code class="language-plaintext highlighter-rouge">prod.lo</code>.</p>
 
-<p>So now, we will handle 3 cases: <code class="language-plaintext highlighter-rouge">lo &gt; 0, lo = 0, lo &lt; 0</code>
-Ok, lets start with \(lo = 0\). When \(lo = 0\) we have \(hi + lo = hi\).</p>
+<p>So now, we will handle 3 cases: <code class="language-plaintext highlighter-rouge">lo &gt; 0, lo = 0, lo &lt; 0</code>.</p>
 
-<p>Ok, so now lets say we have <code class="language-plaintext highlighter-rouge">hi + lo</code>
+<p>Ok, lets start with \(lo = 0\). When \(lo = 0\) we have \(hi + lo = hi\).</p>
+
+<p>Ok, so now lets say we have \(hi + lo\), 
 both of which are double precision. What does this mean?</p>
 
 <p>When \(lo = 0\) — i.e., \(hi + lo = hi\) —
