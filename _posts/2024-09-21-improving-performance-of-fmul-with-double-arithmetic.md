@@ -23,7 +23,7 @@ $$ r_{1} + r_{2} = x_{1} * x_{2} $$ and $$ r_{1} = RN(x_{1} * x_{2}) $$.
 
 More specifically:
 
-<br />
+```
 Ensure: $$ r_{1} + r_{2} = x_{1}x_{2} $$
 
 R1 <-  $$ RN(x_{1} * x_{2}) $$
@@ -31,7 +31,7 @@ R1 <-  $$ RN(x_{1} * x_{2}) $$
 R2 <- $$ RN(x_{1} * x_{2} - r1) $$
 
 Return (r1, r2)
-<br />
+```
 
 So, the algorithm we have for `exact_mult` in C++ is essentially:
 
@@ -348,7 +348,7 @@ if (lo_bits.sign() != hi_bits.sign()) {
 
 So, in conclusion we have something like:
 
-```
+```C++
 DoubleDouble prod = exact_mult(x, y);
 
 FPBits<double> hi_bits(prod.hi), lo_bits(prod.lo);
@@ -383,7 +383,7 @@ return static_cast<float>(prod.hi);
 
 The final code looked something like this:
 
-```
+```C++
 #ifndef LIBC_TARGET_CPU_HAS_FMA
   return fputil::generic::mul<float>(x, y);
 #else
